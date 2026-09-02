@@ -1,0 +1,12 @@
+{
+  "name": "petty-cash-portal",
+  "version": "1.0.0",
+  "description": "Static HTML Petty Cash Portal",
+  "scripts": {
+    "dev": "vite",
+    "build": "mkdir -p dist && cp *.html dist/"
+  },
+  "devDependencies": {
+    "vite": "^8.2.2"
+  }
+}

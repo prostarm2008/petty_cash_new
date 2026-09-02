@@ -1,0 +1,2605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Petty Cash Requisition &amp; Approval — Prostarm</title>
+<style>
+:root{
+  --navy:#0b3f7a; --blue:#1e5fa8; --blue-lt:#2f80d2;
+  --teal:#00b3a4; --teal-lt:#5fdccb;
+  --ink:#123047; --muted:#5d7c93; --line:#c9dae6;
+  --panel:#fff; --page:#dfeaf2; --tile:#f2f8fb;
+  --amber:#b06a00; --amber-lt:#fdf1de;
+  --green:#0a8a53; --green-lt:#e2f5ec;
+  --red:#c0392b; --red-lt:#fdeceb;
+  --violet:#5a3fa8; --violet-lt:#eeeafa;
+  --shadow:0 1px 3px rgba(11,63,122,.14), 0 6px 16px rgba(11,63,122,.08);
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{overflow-x:hidden;background:var(--page);color:var(--ink);
+  font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:13px;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1440px;margin:0 auto;padding:14px}
+.topbar{display:flex;align-items:center;gap:16px;background:linear-gradient(180deg,#f7fbfd,#e3eef5);
+  border:1px solid var(--line);border-radius:8px;padding:10px 14px;box-shadow:var(--shadow)}
+.logo{width:178px;height:auto;flex:0 0 auto;display:block}
+.title{flex:1 1 auto;text-align:center;background:linear-gradient(180deg,var(--blue-lt),var(--navy));
+  color:#fff;border-radius:6px;padding:13px 16px;font-size:19px;font-weight:700;letter-spacing:.4px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+.userbox{flex:0 0 auto;text-align:right;min-width:158px}
+.userbox b{display:block;font-size:13px;font-weight:800;color:var(--navy);line-height:1.2}
+.userbox span{display:block;font-size:10px;letter-spacing:.4px;color:var(--muted);font-weight:700}
+.userbox button{margin-top:5px;font:inherit;font-size:10.5px;font-weight:700;color:var(--blue);
+  background:#fff;border:1px solid var(--line);border-radius:4px;padding:3px 10px;cursor:pointer}
+.userbox button:hover{background:#eef7fb}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 11px;
+  box-shadow:var(--shadow);border-top:3px solid var(--accent,var(--blue))}
+.kpi .lbl{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:700;display:block}
+.kpi .val{font-size:17px;font-weight:800;letter-spacing:-.2px;font-variant-numeric:tabular-nums;display:block}
+.kpi.total{background:linear-gradient(160deg,#1e5fa8,#0b3f7a);border-color:#0b3f7a}
+.kpi.total .lbl{color:#a9d3f2}
+.kpi.total .val{color:#fff;font-size:19px}
+.navbar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+.navtabs{display:flex;gap:6px;flex-wrap:wrap}
+.navtab{font:inherit;font-size:12px;font-weight:700;padding:7px 16px;border-radius:6px 6px 0 0;cursor:pointer;
+  border:1px solid var(--line);border-bottom:none;background:#e7f1f7;color:var(--blue)}
+.navtab.on{background:linear-gradient(180deg,#4c93d6,#1e5fa8);color:#fff;border-color:#1e5fa8}
+.navtab .cnt{display:inline-block;background:var(--teal);color:#fff;font-size:9.5px;font-weight:800;
+  border-radius:9px;padding:0 6px;margin-left:6px;font-variant-numeric:tabular-nums}
+.navtab.on .cnt{background:#fff;color:var(--navy)}
+.navtools{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.btn{font:inherit;font-size:11px;font-weight:700;color:var(--navy);background:#fff;
+  border:1px solid var(--line);border-radius:4px;padding:5px 11px;cursor:pointer}
+.btn:hover{background:#eef7fb}
+.btn-go{background:linear-gradient(180deg,#12a768,#0a8a53);color:#fff;border-color:#0a8a53}
+.btn-rec{background:linear-gradient(180deg,#6f52c4,#5a3fa8);color:#fff;border-color:#5a3fa8}
+.btn-no{color:var(--red);border-color:#eab9b3}
+.btn-main{background:linear-gradient(180deg,#4c93d6,#1e5fa8);color:#fff;border-color:#1e5fa8;
+  font-size:12.5px;padding:8px 20px}
+.grid{display:grid;grid-template-columns:1fr 268px;gap:10px;margin-top:6px;align-items:start}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:hidden}
+.card>h3{margin:0;padding:8px 12px;font-size:12.5px;font-weight:700;letter-spacing:.3px;color:#fff;
+  background:linear-gradient(180deg,#4c93d6,#1e5fa8);border-radius:7px 7px 0 0;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card>h3 em{font-style:normal;font-size:10.5px;font-weight:600;color:#cfe6f7}
+.card .body{padding:10px 12px 12px}
+.stack>*+*{margin-top:10px}
+.view{display:none}
+.view.on{display:block}
+.frow{display:grid;grid-template-columns:repeat(3,1fr);gap:9px 12px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f.wide{grid-column:span 2}
+.f.full{grid-column:1/-1}
+label{font-size:10px;font-weight:700;letter-spacing:.35px;text-transform:uppercase;color:var(--muted)}
+.req{color:var(--red)}
+.auto{color:#a9bccb;font-weight:700}
+input,select,textarea{font:inherit;font-size:12.5px;color:var(--ink);background:#fff;
+  border:1px solid var(--line);border-radius:4px;padding:6px 8px;width:100%}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--teal);outline-offset:0;border-color:var(--teal)}
+input[readonly]{background:var(--tile);color:var(--muted)}
+textarea{resize:vertical;min-height:54px}
+input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+.hint{color:#a9bccb;font-weight:700}
+.flag{border-color:var(--red)!important;background:var(--red-lt)!important}
+.drop{border:1.5px dashed var(--line);border-radius:5px;padding:12px;text-align:center;
+  color:var(--muted);font-size:11.5px;cursor:pointer;background:var(--tile)}
+.drop:hover{border-color:var(--teal);color:var(--blue)}
+.drop b{display:block;font-size:12.5px;color:var(--ink)}
+#logisticsCard{display:none}
+#logisticsCard.on{display:block}
+.cond{font-size:10.5px;color:var(--amber);background:var(--amber-lt);border-left:3px solid var(--amber);
+  padding:6px 9px;border-radius:0 3px 3px 0;margin-bottom:10px;font-weight:600}
+.formfoot{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 12px;
+  background:var(--tile);border-top:1px solid var(--line)}
+.formfoot .sp{margin-left:auto;font-size:10.5px;color:var(--muted);font-weight:700}
+.slab{font-size:10.5px;font-weight:800;color:var(--violet);background:var(--violet-lt);
+  padding:4px 8px;border-radius:4px;display:inline-block;margin-bottom:10px}
+.chain{list-style:none;margin:0;padding:0;position:relative}
+.chain::before{content:"";position:absolute;left:10px;top:12px;bottom:14px;width:2px;background:#e2edf4}
+.chain li{position:relative;padding:0 0 13px 28px}
+.nd{position:absolute;left:0;top:0;width:22px;height:22px;border-radius:50%;background:#fff;
+  border:2px solid var(--line);display:grid;place-items:center;font-size:9px;font-weight:800;
+  color:var(--muted);z-index:1;font-variant-numeric:tabular-nums}
+.chain li.origin .nd{border-color:var(--blue);background:var(--blue);color:#fff}
+.chain li.rec .nd{border-color:var(--violet);background:var(--violet-lt);color:var(--violet)}
+.chain li.fin .nd{border-color:var(--green);background:var(--green);color:#fff}
+.rl{font-size:11.5px;font-weight:700;line-height:1.25}
+.rl small{display:block;font-weight:600;font-size:10px;color:var(--muted)}
+.rl .cd{font-size:9.5px;color:#a9bccb;font-weight:700}
+.tag{font-size:9px;font-weight:800;border-radius:3px;padding:1px 5px;display:inline-block;margin-top:3px;
+  background:var(--tile);color:var(--muted);border:1px solid var(--line)}
+.tag.v{background:var(--violet-lt);color:var(--violet);border-color:transparent}
+.tag.g{background:var(--green-lt);color:var(--green);border-color:transparent}
+.why{margin-top:8px;font-size:10.5px;color:var(--muted);background:var(--tile);
+  border:1px solid var(--line);border-radius:5px;padding:8px 9px;line-height:1.4;font-weight:600}
+.why b{color:var(--ink)}
+.rq{border:1px solid var(--line);border-radius:6px;margin-bottom:8px;overflow:hidden;background:#fff}
+.rq-top{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:9px 11px;cursor:pointer}
+.rq-top:hover{background:#f3fafd}
+.rq-top input[type=checkbox]{width:15px;height:15px;flex:0 0 auto;cursor:pointer;accent-color:var(--teal)}
+.rq-no{font-size:10.5px;font-weight:800;color:var(--blue);font-variant-numeric:tabular-nums}
+.rq-main{flex:1 1 200px;min-width:0}
+.rq-main b{display:block;font-size:12.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rq-main small{font-size:10.5px;color:var(--muted);font-weight:600}
+.rq-amt{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--navy)}
+.st{font-size:9.5px;font-weight:800;border-radius:20px;padding:3px 10px;white-space:nowrap}
+.st.p{background:var(--amber-lt);color:var(--amber)}
+.st.r{background:var(--violet-lt);color:var(--violet)}
+.st.a{background:var(--green-lt);color:var(--green)}
+.st.x{background:var(--red-lt);color:var(--red)}
+.excep{font-size:9px;font-weight:800;background:var(--amber-lt);color:var(--amber);border-radius:3px;padding:2px 6px}
+.rq-body{display:none;border-top:1px solid var(--line);padding:11px;background:var(--tile)}
+.rq.open .rq-body{display:block}
+.dl{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:8px 12px;margin-bottom:11px}
+.dl div span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+.dl div b{font-size:11.5px;font-weight:600;word-break:break-word}
+.sub{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:800;margin-bottom:5px}
+.trail{border-left:2px solid var(--line);padding-left:11px;margin-bottom:11px}
+.trail div{margin-bottom:7px;font-size:11.5px}
+.trail b{font-weight:800}
+.trail .tt{display:block;font-size:9.5px;color:var(--muted);font-weight:700}
+.trail .ok{color:var(--green)}.trail .no{color:var(--red)}.trail .wt{color:var(--amber)}.trail .rc{color:var(--violet)}
+.act{display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap}
+.act .f{flex:1 1 210px}
+.empty{border:1px dashed var(--line);border-radius:6px;padding:30px 16px;text-align:center;color:var(--muted);font-weight:600}
+.empty b{display:block;font-size:14px;color:var(--ink);margin-bottom:3px}
+.msg{border-radius:5px;padding:10px 12px;font-size:12px;margin-bottom:10px;font-weight:600;display:none}
+.msg.on{display:block}
+.msg.ok{background:var(--green-lt);border:1px solid #a8ddc4;color:#0a6b42}
+.msg.no{background:var(--red-lt);border:1px solid #eab9b3;color:#96271b}
+.bulk{display:none;align-items:center;gap:10px;flex-wrap:wrap;background:var(--green-lt);
+  border:1px solid #a8ddc4;border-radius:6px;padding:9px 12px;margin-bottom:10px;font-weight:700;color:#0a6b42}
+.bulk.on{display:flex}
+.bulk .sp{margin-left:auto;display:flex;gap:6px}
+.btn-post{background:linear-gradient(180deg,#12a768,#0a8a53);color:#fff;border-color:#0a8a53;font-size:12px;padding:7px 14px}
+.posthint{font-size:10.5px;color:var(--muted);font-weight:600;flex:1 1 200px}
+:focus-visible{outline:2px solid var(--teal);outline-offset:1px}
+@media (max-width:1100px){
+  .kpis{grid-template-columns:repeat(3,1fr)}
+  .grid{grid-template-columns:1fr}
+  .frow{grid-template-columns:1fr 1fr}
+  .f.wide{grid-column:1/-1}
+}
+@media (max-width:760px){
+  .topbar{flex-wrap:wrap}
+  .logo{width:132px}
+  .title{font-size:14px;order:3;width:100%}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .frow{grid-template-columns:1fr}
+  .f.wide{grid-column:auto}
+}
+
+.tbl{width:100%;border-collapse:collapse;font-size:11.5px}
+.tbl th{background:var(--tile,#f2f8fb);text-align:left;padding:7px 8px;font-size:9.5px;text-transform:uppercase;
+  letter-spacing:.4px;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:7px 8px;border-bottom:1px solid #edf3f7;vertical-align:top}
+.tbl tr:hover td{background:#f7fbfd}
+.tbl .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.tblwrap{overflow-x:auto}
+.btn-post{background:linear-gradient(180deg,#12a768,#0a8a53);color:#fff;border-color:#0a8a53;font-size:12px;padding:7px 14px}
+.posthint{font-size:10.5px;color:var(--muted);font-weight:600;flex:1 1 200px}
+
+/* ---- rework workflow ---- */
+.st.d{background:#eef4f9;color:#5d7c93}
+.vtag{display:block;font-size:8.5px;font-weight:700;color:var(--muted);letter-spacing:.3px;margin-top:1px}
+.rework-box{margin-top:12px;border:1px solid #f0c8c2;background:#fdf6f5;border-radius:6px;padding:11px 12px}
+.rework-box>b{font-size:12px;color:#96271b}
+.mgr-say{display:flex;flex-wrap:wrap;gap:10px 18px;margin-top:8px}
+.mgr-say div span{display:block;font-size:9px;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);font-weight:700}
+.mgr-say div b{font-size:12px;font-weight:700}
+.warnbar{margin-top:9px;padding:7px 10px;border-radius:4px;background:#fdeceb;border:1px solid #eab9b3;
+  color:#96271b;font-size:11px;font-weight:700}
+.okbar{margin-top:9px;padding:7px 10px;border-radius:4px;background:#eef7fb;border:1px solid var(--line);
+  color:var(--navy);font-size:11px;font-weight:700}
+.locknote{margin-top:8px;font-size:10px;color:var(--muted);font-weight:600}
+  /* ===== TRANSFER TO PETTY CASH SHEET ===== */
+  #pcModal{position:fixed;inset:0;background:rgba(11,63,122,.45);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;z-index:400;padding:18px}
+  #pcModal.on{display:flex}
+  #pcModal .pc-box{background:#fff;border:1px solid var(--line);border-radius:10px;
+    width:min(620px,100%);max-height:92vh;display:flex;flex-direction:column;
+    box-shadow:0 18px 50px rgba(11,63,122,.32)}
+  #pcModal .pc-head{padding:12px 18px;background:linear-gradient(180deg,#4c93d6,#1e5fa8);
+    color:#fff;border-radius:9px 9px 0 0;display:flex;align-items:center;justify-content:space-between}
+  #pcModal .pc-head b{font-size:15px;font-weight:800;letter-spacing:.2px}
+  #pcModal .pc-head button{background:none;border:none;color:#fff;font-size:19px;cursor:pointer}
+  #pcModal .pc-body{padding:16px 18px;overflow-y:auto;flex:1}
+  #pcModal .pc-foot{padding:12px 18px;background:linear-gradient(180deg,#f7fbfd,#e3eef5);
+    border-top:1px solid var(--line);border-radius:0 0 9px 9px;display:flex;gap:9px}
+  .pc-sum{background:#f2f8fb;border:1px solid var(--line);border-radius:6px;padding:11px 13px;margin-bottom:14px;
+    display:grid;grid-template-columns:1fr 1fr;gap:7px 16px}
+  .pc-sum div{display:flex;flex-direction:column}
+  .pc-sum span{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:800}
+  .pc-sum b{font-size:12.5px;color:var(--ink);font-weight:700;margin-top:1px}
+  .pc-sum b.pc-amt{color:#0a7d4f;font-size:15px}
+  .pc-opts{display:flex;flex-direction:column;gap:9px;margin-bottom:14px}
+  .pc-opt{text-align:left;padding:12px 14px;border-radius:7px;border:1.5px solid var(--line);
+    background:#fff;cursor:pointer;font-family:inherit;transition:border-color .12s,background .12s}
+  .pc-opt:hover{border-color:#2f80d2}
+  .pc-opt>b{display:block;font-size:12.5px;font-weight:800;color:var(--navy)}
+  .pc-opt small b{display:inline;font-weight:800;color:inherit}
+  .pc-opt small{display:block;font-size:11px;color:var(--muted);font-weight:500;line-height:1.5;margin-top:4px}
+  .pc-opt[data-k="A"].on{border-color:#9a6b12;background:#fdf6e6}
+  .pc-opt[data-k="A"].on b{color:#8a5f10}
+  .pc-opt[data-k="B"].on{border-color:#0a7d4f;background:#eafbf3}
+  .pc-opt[data-k="B"].on b{color:#0a7d4f}
+  .pc-lbl{display:block;font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;
+    color:var(--muted);font-weight:800;margin-bottom:5px}
+  .pc-file{display:flex;align-items:center;gap:9px;padding:7px 10px;border:1px solid var(--line);
+    border-radius:5px;background:#f2f8fb;margin-top:6px}
+  .pc-file .pf-n{flex:1;font-size:11.5px;font-weight:700;color:var(--ink);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .pc-file .pf-s{font-size:10px;color:var(--muted);font-weight:700}
+  .pc-file button{background:none;border:none;color:#c0392b;cursor:pointer;font-size:13px}
+  .pc-badge{display:inline-block;font-size:9.5px;font-weight:800;padding:2px 8px;border-radius:20px;
+    border:1px solid transparent;margin-left:6px}
+  .pc-badge.sub{background:#eef2f5;color:#5d7c93;border-color:#d5e2ea}
+  .pc-badge.rm{background:#eaf3fa;color:#1e5fa8;border-color:#bfdcec}
+  @media(max-width:600px){.pc-sum{grid-template-columns:1fr}}
+
+</style>
+</head>
+<body>
+
+<div id="loading" style="display:flex;justify-content:center;align-items:center;height:100vh;font-weight:700;font-size:16px;color:var(--navy);">
+  Loading data from server...
+</div>
+
+<div id="app" style="display:none">
+<div class="wrap">
+
+  <div class="topbar">
+    <img class="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAB7CAMAAACfHw5fAAAB/lBMVEVsH2x0dCpdXl7SGx0/fz8Am+IAoOBgYmRcXmBVVaq/PwD/f3///wAAAAAAZrMAndoAVarvHSQAZLEApeYAZbJVVlYAf39ZWlwBZbIBZbEBZbF/f38AAP8BZLAAZ7FhYmRVV1gAf/8Afr4A//9XWFpXWFpWWFn+AABXWFpXWFoAqqo+Pj4AbcAAndoAnNtdXmAAqfwAndkAnNoAndkAndoAoN0AP79eYGLsHCMAnNkAv/8AaJZMSk7///8Ec8VlZWXsHCMAAH/sHCPpGyIAP3/pGCOvAADrHBzsHCPsHCM+Pn1LS2YAXp0AZsx/AAABXqw/f38Ae84AmuwA/wAASZMAiM3yJSUAVVUAo9QAoNm/AD/pGR4AVf8AcrwApONOZGT/ADX/AFUASLYAV38AickAs/gzZmZeYGKqAFUAoNw/P19SY1LVBQrRAC3/ICcApeUAv78Atto/Xz8/X19WVmFcXmBkZE3cFyLMMzP/AH8AP58AVcYAcrsAf8YAesAAiMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8dxprAAAAgHRSTlMEBAkdBCTWf4EDBAIBAP79A/wv/owJAvXScrACAVER/iwCBAGy0E4Bb5ADBP7KFf4DM2yNpv0E/tFPBAULAf4GsQKPLwQaAxFPcAQKCAUCKAQIDAEH/g0DDjAEIwP9iw0FAwcGDf8FfgOJCA8JBf84BAcICBd+CxYFAggJMTaoz852vMcAACSuSURBVHja7Z2Je9s2lsAzM3vvwqYlkaJIihZJUYdlW/Il27Ed24lzpzma3se0nXY6nXNndu49//UFwAsAH3iIdOp2hO9L4lgUCQI/vgsPj7fQ961teOj4bbRs33K79X26GcuZzfA/u1szZBX9jqa4ihYe7eGfnSUT9YClFGqOpuVMlVK0OZpnVUBnAzfPwc3bEJpHmdje2W+u7qAifFgKg1HSJ0dRZB30lIoNOKcDHJY/QGWGO1fGz2RtY+Yt9jWnjMRSXMeqCWf3SlvgVN7G7ewD3t453ttaba6uHhcAS3PJ35eNbqfTMgxDx39arU63QSff1d6YlL3+S3iJTH6DEqtRsNknKGvEtUbhZivh7Za6Wcv1QnZ29/ZJ29vb2909jtou/u0WhqqJsVpt7qJZztmuyL00Ooa+srKyuRK1TfyjbnQoXJB0sRsVGzB64BDlPuQlhtsOVb78cZS3f9/ZkH1tlvW1D9GtlYJN141W16aiG7qMzUxP7qmMVoeOnVNYLjjk/raP9/ZXD5oZ7WCVNgyWm60DyZPQ0uU9bL3A5ItST0GtOytV2ubKiShMwIHb7GT3X0ONssP9ivRfA881W80Y0dUPYOG/gY6zJmKrOFhBw08znhegg7ZedpQppkohqeXNCFUBVKsFWo7EwiOldPL6a3RTvcNgrVRrugiWizrgcYqXB1bZK7e6+Gn6xALOtb11kDGUxwiUWbfRXsZUlAeLjHgDUhPlwSJsNWCNI8gXDMnO7lYsj/LbwXEWWAo66eiL3Og1gIWQAR7YyDQSFwCLXLxjA8ONwVrNQmQPBMvyvP26wQpG3KkDLIyWgpwcrwXf1/beQTFRFbUMrxCbsY2ifW3Z3ETUD5aUkFbmA7cYWLhhtEQdkQfWFvJAob+9elA7WPi+n4k3viBYKytY41xmi6vt3dXiwooKLGwYWNI5UUrQoTfQ/DrBmsvOqGd6NguDtaJ3S0qsA/yQarCJtXoNYK0YtkDWwmARsaBlmUPHW+WwouJbk3NllOReuT6wLPmwdVmi6wMLD/el5ZUAixhZLgTW3vWARawApR6wNg1FygHm6ufllCB5yA52ZIpEK9/PTjLDtYOloK70yc0KcFUBa8WYW6XA2oPMCg1tXRdYmCytFrDwcNsItrOwGtwvi5XU3gyce30BXa1cH1hy8WmjawJrxdhgfc5csLY2oA7sZJlY1cDSORVWBawVwwHDDi7a+YcmKJLYoFXqpvZdD44GWkpJPSh4aHWDRYJYGZLy6prA4j2DPLCIJ+SlZybTxKoGFpbW79cEFh5FBZJXO+ItN/lA1kGKL/zx3gdkICwwzrAQGHq0IFI3WHM4iBVd1bKuCSzOcMwFC4o2O9kmVkWwOByqgbXyIq3IMVcHTV5OrW7t7+0ef7izPdv2vNk2Xd3ZWmUDx6t7H5LbnncBs81ZdDpa4cnqBstCRnEjtk6wdDuBNh+sfcB6d7auEyxsB1g1gdVKgbXBcXWA5dK7//s/X6UH+XezHQIYbbs7b5M1SIQBAGSgtpAiZJRhzWDl4NG6PrDY0ckHa+ttURd6OSZWZbA6iZVcESzBFaARuPihwFS9e+eO/oL8+rY7i/JuPGd2+7ao/p1tJ4hUdcV5UeSzscn8DSt95RrA2sg+HRYr3nWBxdjH+TZWc0d0hmZoN+crFcHSlVhkVQVLWHb1NmJ/ED8aZOm3c4JmUJDe8xxnYzZzcdvGf/BvukFXFEEISl0w3eh0ut1up2XkiKx6wbKQoudYQu51gcU8dgXA2hXBcnNMrMpgMf0DwdosMeRvcfZ2/ExgYfVpcCWLk0DD4fDzIZRl0Y3wMFxFCEZKYtE28GVQNNcLVkYQKy+UJQGrxHAbZcDaF8DyGG1SCiyj2+GaPL/EyARL7wotXygkBlYzUIIBVlh0z2Oior/wP+TPg3imhPPzZpYLz2MLn1c7cRXlikq7SNyJd5KkzWymG6xegXZn5ctiQazIhPXKgIWnjR/tjOHWY/O4AFhbH/BKGZtYOWshErBa6WS0lrR/r+VgGaBE0fNdYG9jRh+JA6oE8YmU6MOAKPzXo7sXj39EyUJf0L89zdY3M+y2GWptQrdqMSE0S1EkOt0OQhjdFtigkQEP7CiMEWmXNA9ywNrsQMMty+OIfU4QrAMxkjXj/SrBxDooCpaQNk3COJKMgLh/IFjpBGx8pmet3NiFEvT84N3YlIu4Qujeo2+Gw19drOF2dB+Ddu9HgeQCFt4MVnvCvr0thlJPYC3TzUpjUcDbycuMzgpixYrTKgFWKzXcZOJsI3stMl9ipSJZGyhvPUQqsURHV5tLnuT4oYIlVtphtk4QbKkwF/VoTkYkrhKung/Rn++uHWGOHhOu1n5zF/94d+3uxwFa6TgVFwpSwB46qFDqXXifjptu2y6EYufEBo6d52diFQllySQWMNwu0qDrJDmqEFjNPe5X2MjiNeEHnInV3EpxVhgsEiWGhm+zlSmxwHHRHJBR5mDqdBysfioML1GAR2trF/iHo7WgvYcwWGtrjx9Qsq5EM8pgM3KeAVdtpfOsFQ+UBuhEmt4KjkwnJ4OxULS2VRkshN4HVW5yMAjWLkfOwerbrOgkKyI8hnsVwJLYmkZkXxYHS7KSkRzseNskdCUumj1AgQJkwbofgLV28TElKyVt2EfeXSnUQ08i2pR6wdIAua3LTezFwSLGZdYcw2AJqHC7njzBxEodXQ6sudVdybDPS4AFO/7JwUGuT/L7eSiv7gc4QWCtrd2jZIn0syLLho1yN9W7L3UgtQd5tYLlobdSVzE6gCU0qwyWAk3cZjZYx/wac3MPcRvvBNW3XQksGAfdKw8WygbLs17hOxXDEDFXErACsjRN6AfjGP4nqICfobm4qnjZTbdGFiMLgAXNdtcuGsoqBZbs4Cwba5dPPG7uO95rRgbyFtgWqgQWsiwoVOUsAtY7esZFaUrGp8mv50GY4WEEkwSsgCwx6sik6b0Peh8kf9+7qrKdcyGwHMCwaCA9azX2jYKFBCNrO3lAnZSJZe1XAktB1wpWPCwelrR3xJEdoouQn9+IYP0m/PnoIQlyubxFkQT0pakErUawZT3Rdcpc9NvnTr1gaYDQNhTU2UyfZnYtYCVhQwlYvBBiN4HdFk2sY3QdYFl12ViRne2hr1bfFbsSBRgIP/eGzxmw/vpxRNzaXWzfp2zv2HyfAdMWGzd2wJajvSGJBfkvHQScSLcrSyx48T22ESRg7TQlSbmvNV5ANbE0qwaWhvR6jHcHdAOi9fYZ2l0VuXg+/Dii5+Ih0XgJWENGGT4iZAnKMB7teebSnNEJlgwt13kjqhAYywa6dPXsla6FwAIDc3qc+C4Ba1sIVXHZEAdCkGu/mvEOu+FWabBcyP81opUVB+29KwYwH8TwXPyawMOCNRzGHx7RBR+Fm544BJqTTLBJazYE69GKcs1gQWAY8CI3OBclVaGRNcUSsHhYDpKdmuLGr9SxpeNYViMrQa84WHPJRLjRff6faAkM0b0InfeC5RtWYg0T++sRYL/HW4AK5SZEkkspXlhnAbCg7YTYmgKDptBKdBmwYEndzQUrZUjdhjd+HexUBQual+RmioLlnKATI0MTOujvPxUVwTexhRVEqwRV+GD4MJJnw7+SElpciCg2sgpnJmPJRfrietcFFig8G6RmBzCKXeBEhcGylDkoqJl9UTKw+BxRbGR54Mav5tZ2NbDmcICxW3atEFuoBnhJLZr+/xYTCYfoL0eMeZ4CizHtP06LrCRdrnA6FVaLLVLJyFKuBywoE0vXHLiHRkXjHcweYLYAScCaaQI/TrK3vskT92pxsCzNlewgjp0LGKzLVNq5JAHnRWSrcYPeolAkmvDeEAQLxUGuRwF5Njfcs/x9x1Dol9TV0ZzrAAsKYtHjwdw/O12CQAaWeKBid1uSbCeUA9Y2r/Hinfa3RROL1F8pDJbLrcyfKDI5w+xRgheWxaZLM4+STaEd0fCKBdJFlOCXAiuy3wORdsk++C02tNctle9Ji59YtYN1CQl/qrHBQAyQlQWHpvTCw523/YuClQJIC+52TwydeiUklki+LNEvO4O0uHR4Fpcy5LRBMACfR9g8jjRhCqzho9C4D9eiu7AqUfJzoNJoKXWDNQN6ET6h4NL0T1IbDCvmvBuWkyuxXqVVXiD5PTEOUUJi6UJmspT8vJz3oq2RCHFuGZkqWuz3XfCmOyCx3gt/QaNc3LjrShWySMmSDatu410HnmVXmj+dzsqqBha7q1AK1m1BDhEj3QOiWLtoY6MwWGljVp6VrdUAFhsE5MCivssQRRZUiBFKIu8PUZT8fsSwx5Vo0JWCZThk09CtWWKBVIRDAG66b9ULFl8aQQqWmH98QCNZGmBiLQ5WkUS0xcHS+TxPFqzQKYzAijB6wBhdKPzNES/UmN48ExPsyteb0eoEC3L9Yvohuz69El0FLMyVg1ARifXhQXoTmLDxq7k6Q941gMWosIXBMsSqeflgDYcPg5z3exKwPDlY2M9+p7Q6RFnVrEuCpQGBpSRSACZPpTYYVgCrdSKsEcnBElZ1yCYwD83Sv6wfrBabRrcYWETRaNJEVTsA672QmmHE0RB9/vji4u7D2ObiVSH+lg661uFIlirql5UivAhYIDpMFNfOSNOtDFZquOVgYZucF05bX3kkZSYtxuoHy9a0imB13hfrjxcz3oOwKDa2ov8+ZK15i83LAerJKmQ/m15OGyp1gQUpO/2tZJ49A+LOqgWsDkqnNWaAdSwaWRupCpHE8KodLG6xYUGJZaQlVks0ab+I1gIfDz+KN0Ljnz6Kd0LHIdRgGZrLdtIBLUZC6tJdzxKl/349YGk55jm4K0wMZS0Klk7CJ0UllpV2AN0NyFWsGyy+QEx9NhYQx4pt9X9l99gnP3+RHPFAXBU04PmlQd9OYbZ0RasHLCiIxQYULtGLldysrCo2lliXUwqWmNuO7SnH+x1vYv2cEF8zWAb/fpZKXqEjiTSJSzr3h0Nwtoa/OmJDqC6/LAQvywQLgY2uoReqedCVKsOyXqGetSQs2W8ohLKqeIWGwq/8yMESasqQjD70ISfEDmhiab1gtYR4cIU4ls5uhVd4aeNQsIbiIjTfHqBHa/xenWQ3fdbbQzz6yU8KCS5dWjS8FFhgikWLLbqxAYm0Vn1gYYw5iSAHCxtUB4JBxaNG1nOsmsHqiNXZqwRIWeHHjXz4KA+ZrTjfAPJqGG/g+ZfnQ/Ghz6xrjVViUPkqH66GLJpVCixwk19XeStJr39LgU6nIKu2yDtPqRys12LAYRd5+8AO6RrBIjJGsIkrLekws8CnIDSERL+LB2llOEzySx+FwQalCBBMJRB6LzbxFKVaUS75yoAFlm3W85WlEMqquFbYzStuG9pYGykj6+3VZrqmQ21g6Z2T9KhVK7zGRIO5eEP4cD2Pc0TvIjQU5VWcjXX03jC1U0G/LJSvpwWvy2t0Mio21aAKwRUlQ9zEaEBXr09i8XVzs8CyjnnN98GOWIVmoz6wjK6LAHu4SH2sjlTfdNjCDSwWthfAcy/eivNrzh8kCVqP1ziBhRwnjSaygBIdgntEa4JfyaIQ+nYtYC1eBtXKA8soXI2sQNrMbRSUGuVrRu4KwQarBlVIlIQevLEQfEVksfpYdke2gAUPWmghfZFsxbkgtWU+onA9J3/fTz4J0gAd4QRldkYQi0uTrPgokppCJcCqIGk4TVy4PpZkuI1i4QbPEo2s/SawJ6w4WFDRsE6nG+xhkbyps0h9rCuytwqu18TZEHpqNWM4jJZ1SEzhYRLHuv84+f39IBLPL/IG5j+e/PQtGQ04t18y+zJjrQRY5bN2WPXl5YAl1sean+BvvNBz7iUrjiW8lPBgi+fsuCxYLak5Id/SWTDn3XLhXVhMtInfB9cNOp/Y71QfPrp3H6HP7z26m2CFFeE3Qa2aRtqTBzdt3umADqN1AqfW1AAWlIlVXBcq5XPeNUkdOUb+ZYE1EwIOB6vQlrASYGknmtAcZT5XstyrwpspXDitVpGEevS5Y6XJIpb6Ef//0MASBFaoCeEdOi1JCRkXtISqg1XJ5m4tAhapUAgXCXKKgOVlvZWwue8EQnSj4k7o7FZ8lw68WYYTzlCJ2hRZMq44LN2MFTpwGVGusaqDtVGp6jITni+zS2fDgbd/aQXAgtLZWRPrt+hGgeXBRSocSbGBaEIxWUcyrOLMLI+vYxRtc5Jsg25Yl8XBktUwLgxWbmH3vOjTfBGwZqDIShbVM8H6bdabAqJCITcFLMt6pWdqfcvjymYab3lRDsNf7sJc3b0frfXwe4wTixesaLICG1lSsCp6heXTomWhrDJgWWDt3dyd0LdDZnbkr179KuzQTQELrN2w2WLcQmEG4o9IzeSLNFYXj+KoqVAAo5PzqkFdAe3GK8jG0q+qxrEWD2KJurhU7QawflOnGFjIeyV7VUBzP5LgNwYsOPzMvglOqGMRSzMSYrh39yiN1RCsUxCGVzOkRQvNLcDebVxH5N2p/mYld8FqM5sZU5wNlvwVvUmN7hsDFjgs+jMGLHEOkiEjCD28d/eC+IRHRxd3H/2ZyczSBHoYu002qySnUsh1giuPb0rzYIqCpS0exIotbmshsLpZU5MHluSNlwerH0Y5GTcGLLAGKZ+TJE5CJ9nsHmD0/OHDh+/9mkv408Rq3FwRd+sTQ5b4hjxSa580Za5I35XQqAoWciq+x4p9m0QJsMBnqihYjizg0NyaaejGgQV5R9xuN08Rzte6TM41HEYpyl98lKwb4o87GWd0ZfJC7/C7LSSbvnXFq6YKK2tCroR2qfpY0HNcLNyAP57BAQemxt8NAgvePKdlTYNhc0vfGK7h8yG7gozsVlbOp5Xx6hqj0200bFtpNLrS7IZW1QzS6q8OSxzTksb7W3pGCC8HrNuSgANTlfTmgOVBYyzUREy7/B3pOiVSnPRru1pCKMHJmFhq3Oo5asipBJYG16lqSJuRsaJaCizccT3TXssEy4EDDmwd5ZsDlgaDpeQ84WSLCVLEDENLIyGD1DwYYk0+zbIrBZGcal4huJ1QviqLUNbrGsqBpWQqiBywEPwOp+Z+UuHp5oAF1Z1O5bdYSnqHnUHrKLjziBkMlQvbRUKBgoqpBZl5qEUlFrj+yCYls81VbLgblzWB1SgKFvzCevaImwOWWwQsYhUBWzujArTJjNlA+qBYoICez7laOECZVb6hEFiw6a5nZIaBIIahrLJgtTI9zGywbsMBhx10AyUWWG8VCvyAuVt6C8NFlnmsud3oglmSOmgReWhRZWh8qXjVwJpJXlY3k4IFqk7dpUGZsmB1MhLg8sDSoDfWN7desWvrN0cVdgtd1IHJCkxt3OL/pOVV8YhOschkRsZQMVUIZmI15AOtwbsIgiemOli5rzy5zfQkvarT3GOe3JsDVk7Ijh3dqwV8dMOW9f+ThZaB9UbW61ULgeVIVom0LF0ofxtcWbC6mTGxHLCgVZ3mMbO0e3PAAmNK+tyygCPLW9ypTeTc8nJ5maW/yHtDXD5YcCZWZi14yeqmHdTVKwdWI2PpswBYKSOrGZW6vWkBUgtKYgEdL0spWShN72JfUd7NT0rXXTMUlF06uQBYHqzX7KwzW+gnuiwrqxxYcOj9pChYwKoO8waUG7akA7k8XVlyVJlqVi07Z3+qgp6VkoEdlMNVEbBg6WNYOW+ea8lCWeXAghMMo+c4FyzkpV4bF1T3u5FgdaCMLNkDJ6kFDoqr3K6XOB195ZyXV4+7AFhwECt787/srVIEiHJgwS8vYt4xkwNWelWnucNmDNwosBolgjrkwe4WUGB65woVeDEcPZ1REKsCI5EPlmQThWyjYpxpq8iyXkuCBb6E20gk1lY2WKlVHVIWy0FZ1j0M1p2FwEo7/nfkNpan6HdSh8ttWYe8T9fIk1Y2KthvxwtK+m1mY0o2rxZ4gSEBazNzDD9BrTvQKOecXAG/RlaitdxLppylzVTMJsxWoxJLaD/d5d8BPdviP97n4m9YYv1UPAEGC9ic2pWW7JE3t1PmPA7qAntiM32kzMIKOn1NavHHgQg2Da4wsxnGYOm6ZLGzKbljCAxOq5FnvF1Cu2xbLbp8bHfKTVsXOjwUmNu7P9/j2493hI0jxz/mPj7mPtaEj8kRu+gWujnNylRgeBrmmIU0XEaLLPN4SqkXOztR+aKWoTMFS3WjFW751hQNfW+a9eYveSu9AOp4i5zISZ8oa2a09OFeIRbsRpfCQJqBn7tG+Nrd8j2OvoO7YgepKrYdhv08Vyt3ppwxBO5WKTDKFvA1R3bJzBMCs8Nkgm8IzfNSxgP3eapArieewLlREiu/adCbdS13YdlC0iOELATXVTy0bNUl1netw54TPZ7hT5U1luVpmkOapnnWkoi/VbCWbQnWsi3BWrZlW4K1bEuwlm0J1rIt2xKsZVuCtWxLsJZt2ZZgLdsSrGVbgvWtNzVupnkDOrFQL0y12FHxudV6bvVbHLHvmMRSv7+9UNH3u900sNRB0nrqDejEoHcLlRUE+EsFLtLDhwUZOr0ix+e308FAXYIFy3I0mrbXD9dJO5y2/cG30YknaHDYXo/atN0v24vT9nSQI5FMNPCn03X/5RmRXeP1PppU7fYEDdrt0yVYkvHuH7b7YfPb69PxyzdvNuCJTjpBetEelZFZKuq122reMYP21B/3R4Q/E/nrozrAGmE+l2BBzUIqGeNYV4zb09G3YYz018fJf3r9drtXohdY4K37BS7RP48eJpVcoIYHaIy7rS7BAgVWD2uRyemENDJE/Wn7Wxgptb0+mvxiErRb6NTHE2aWuIkxyyXUzrC2JLBOzPAJ6k3q6LZ/OMBYL8ECNcSUeXjPPaxUGGvFnIQyn/nGefLpefLBhOUg+BofAjDPTeKdmxK6WRFFQPEnbCgCDBAwV+lzmi04nu3RRH0ymPqqOok5Y+4HH6eeQSGL4AyTdGQk+rAuwfe9BAvPocpMscqawSYdRjX8qYQECb9mAh/AtsqU6QS1Xdoqf7bT1OnC35N7OGW5JL8//+yziXB8hjkE95f857PPUjcfHPxL/PtzbLb5NyiGccNUYZ/VOgJYqDfCprTfH6nRr87QYDQIjj/Dn+IPgof/F6NR9OziX/TG2EryxwNWFfXGPXK+cT/9jE+ok6ZyYPk/SCZyMPbJ6cQAQXIV1nZXmeOjC00Go5E/7Y9If+kx5Acz9BVxx9GA3uaAf+ROyXnYmxe7Y/LdXoLFWzdTRouYVqKUsFkyxv5ZGztp634IU+ion4UWxno7+L3KiBgT/ZJ8zSe+Xf8pazsPyPnWDwHlMfE5I9ikF4k9vv40PN1YZZ+A+CpjKo3MxPQnx7cT15Jo2nV8I4frUSd7iQozcb/IjYRnMtnoxDo5z2F0k5HWjrszoBr4bx4sC6iyFjjqzEyfk6hW+DCj0z6emx62qQb+NDK8CEL+1+FP7dAeOzNP/cNwiE3KG/6a2hu11/tqdNGn+Dr9dX88HkkciGSGJsQojk+HofAH5HTj9mEchDhDatC5P+HOrQ8S54xEFdb7A1UNHdzwcRgNxu02FliDyK4MVRj1Dwf4o95TlfiicS/I3R32e+Q8/WlCFtMdfPc9/xByXsGR/m6CZZHmeV701l+H3YZ7NXevZFutqTVzSpbQSFPPiXsWPrbmLzAHvdj78U/PzoJJOfQJeWdnT7FUaFNpR2kLXHnCGMYp+NqA8DIJNSFWHu3RqSzE1O5FK4UT6sX76tnrcCIPx+HpRvEzcKY+ZTvXxmwlHE7HIQVj1sFlAhJ/l2he/GBN/chQ+o/EF6VdCh+Br/uxFcp1Z9Dut+OHUGye4rrzK3Y7NdlESRueJzpfNwgsi2z01AJoXNxOTk5cxdGKdVF5x7ZAR521aXt+5CNS7dbDvo+F/TlEfcVJOBN0NPHQr/fHoTNG3W41duhU6jKZk+TkgXjrwW4h5ZLtRH89Isg875NT4NOdYeOaTPyEuYppesSVG7QTqatSOLDKPJuYT2O5h61tLNS800CVvjZjFUb7Rc8UdKPPWQgqPt5Ug5uPTx90h97dFLbdFWVebDo9Rwkm0XWvAvjIBl6rTrCskBkKzZUbXqnwhSzXdm3FJo1WROji1iGN1DgxcAvqLvxXulSFiSeiF7XBuB0ZFGYwnOdsAFNNIgMmsYumvRH+7XkAhsoGDsIghTmIZIZJZoE5nQBW/xDryLD1/SnWQUwwRI2lSDTxYeduJRD4aoJopH1VGt2ahN9IIKMOSi8Cqx/3V01MNZP1JtQ4mIGPOIy7g+8OC0dAYGnhaJNGS/rgRiYkrFWBG5mpIkUKGEESIYGhoFIPouIWxxKGqdCOdU35kr7UKMSmG2FDuQkrduSVSUvVHaMmRnsaNWys9uMRxzLhXE1FIIkJRWZlglViH40C3fHUj0ykQEidqkG8dZJ4a1TyyGKSp8TUjlubuH9mDPQoOR1WZz9MPAg1djj9+H/EODOj45/EEuiMjTiFC0CMCPpnBsSXiLw8lhw+Cc9zao7p8xOYj7GnQ+mG1oW03Ip1PHiUPA69d5RCWshzIsgsqcQ6eZWIGx6cmJvKL7ICwcJqxI9bn5lSRo9EYx6ZNNSg+QHRfgPyiE9Yp+yU2LOJUgvBEqMY6fDoeBS2cZ8shKvCCWI7SYWCbdF0m8Lxo0QTM6vFVDL9gBV9agRo6CC/xJLJFxZuzkP5+QfWjgfDo1oNU7USoceKvJA88tY0WwFKSN1CJzalJ0Anxc2dpK3U2tJgPSGq4/RWaDafJzFMYVk3kFhmHDegNnyfmlmX2ArxE82Cv+b3meXkdmwjS+3cCZkvxqofTds9xgLqM6eb+r8XFWRgvQf6mwRaueOxUH3Na9H4KTHjS09SC4gquzCPWzsCa8yENei9Qs5ILWCt5PDAgEepa7ywn90itXwc8q4gxiIKbSJRu10zWHRlll0jMZNl3UPOMI3XTAhjWJSd96ckMEkPGiWaiBrSXDuNJ9Y8k6/0+eEy4YQ4hbFzdk4sM671E0zO2AmOLt/nj5/GCpOLOPmRsxqc6XXEd7sdGoHnvnAX1FYLRKOZPA9wLL9msCC9yQowLL9cVyHKs5hXqLnKM6oe7RegOV7QrsoBiwaMJnAYos+HUQcJWFgrYoE1IVPqn6Nf+vF6Cp2oHtdi+3csMd1Dz8AEHNUJ+URlz6YmIuc8meBEb4HH0/uM+i+osAS4RKpZdFi485wmojEx7cZweLQUWHrCjZGyt4L5t58pxcqR3RJ8wcAVnNPwgUvflVzM4dTeUah/0WhwnmCL8wT1LLDExV8+AtDnjwt1D/GMsD7oYwvr60B5MBaWKluRm/gZiXinJPL5BAAr8McgLzK0skUuL8HjeZaoZHoaPzAMKhFkJvqMsxSZx4sNwp/GD1sGWAk4rZSHiMlRiL3kFqs/a2maQsMTsuhE0TiWFbbQd1TiSASNXhWrgacorEugQakNoOnzhCOENS5MEramf6iX1O7RBWCNAUul0SoSbz0dDE6Z+D6S2+6MEXyWgEWlo3l+Rk52ho3AASD/aMwylLr/Rtgwz+nF8Zfi9OMJDbWfpeAPL21F+m8a5cCQuFxwDyY5CJ/njDPmInsOTm1osFb2VaF5IhEtAkwcU4j9vRKh1Loi7xFzmsOXu3TCWnlabmVrCsxEalCr8RgyvhOZDB/1g4Ao9hBpLCvxHrFaOj9j1ellNLHn0k7wqQ2M3feSMd9CnC6FaMPZhNhVPTbYobLOopqobxUJkolKX591YSNQrERDmuZ54oISw+Fl2BusXQulNljRYoiTmieNixZ8x9YKGW2rpIWFLKHODEPPJMT8hKx19JOIudr2B23/yVnoIfqMzGMCATRcH/6sZuWsTDhfK4zZJqvHITTmOV33CZ02KmjPaUQ9DJ0nEvg0+GDCSuOXrO2e2FsscMwCIu2Sr9J0L3WS5BWFmfJEIr+kGZGS1IY4jul5b3TV8MZkN5hCaoPoqkXaS+2zKVvE0ggtJuKF+VMxLyFZw8NqkbGRn0jDo3x+76mfUKAmC4895iHAqioKq43aPjPBT0mEIVrKY9bFmWwGVjJ9nQDHp+6QyFp8gTazENkeRGPSZgN9y7SZ9OIvHF06M1WSd4LBIOkD3FEmyUb6vRmHA1QmH5MGp32yJao38gliocEcLTVK6B6kwJrEoYTDPjbUJjRV4mkYsaAdH/eeotNBnyxYjhP1N2hP++SD3rgdY01Xmv+QLC9PfZONXIm2Owq3Lo2xT0lzKhihPiYpFYiOyai/3luCJU9tkA9Nz58ehmlVPH399ZAE8pQLLjd+qn2yi4zs9+knOQGH0vAoibLydJuMaDojWVHtKBuLucooSMaaHo4ncWpDSBb5gDteZR1Xk01tGKy344Q//CD1GGNxFJ+H3TD0p36UBDbKCPn+rYOF1cXPBlmKctRvhyma3AAO/jiKpE8vyslkvnZKv8btDcSHyTvR++Poh9JeYaEx8ttCOir9FknjJBdRuS6Y4Qd8vungH5kwweBn8Uc99kpj/laS83CB3QG9Ofzb3j+NJuhGtf8HYT2Ara6nZD8AAAAASUVORK5CYII=" alt="Prostarm - Power Redefined">
+    <div class="title">Petty Cash Requisition &amp; Approval</div>
+    <div class="userbox">
+      <b id="uName">—</b><span id="uSub">—</span>
+      <button type="button" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="navbar">
+    <div class="navtabs">
+      <button type="button" class="navtab" data-v="new">New Request</button>
+      <button type="button" class="navtab on" data-v="inbox"><span id="inboxLabel">Pending With Me</span><span class="cnt" id="inboxCount">0</span></button>
+      <button type="button" class="navtab" data-v="rework">Rework Queue<span class="cnt" id="reworkCount">0</span></button>
+      <button type="button" class="navtab" data-v="mine">My Requisitions</button>
+      <button type="button" class="navtab" data-v="all" id="tabAll">All Requests</button>
+      <button type="button" class="navtab" data-v="admin" id="tabAdmin" style="display:none">Admin Tracker</button>
+    </div>
+    <div class="navtools">
+      <select id="fltStatus" style="width:auto;display:none"><option>All status</option><option>Draft</option><option>Submitted</option><option>Under Review</option><option>Rejected for Rework</option><option>Reworked &amp; Resubmitted</option><option>Approved</option><option>Cancelled</option><option>Final Approved</option></select>
+      <button type="button" class="btn" onclick="refresh()">Refresh</button>
+      <button type="button" class="btn" onclick="window.location.href=TRACKER_URL">Petty Cash Tracker &rarr;</button>
+      <button type="button" class="btn" id="csvBtn" style="display:none">Download CSV</button>
+    </div>
+  </div>
+
+  <!-- ---------- NEW REQUEST ---------- -->
+  <div class="view" id="v-new">
+    <div class="msg" id="toast"></div>
+    <div class="grid">
+      <div class="stack">
+
+        <div class="card">
+          <h3>A · Requisition Details<em id="reqNoTop">—</em></h3>
+          <div class="body">
+            <div class="frow">
+              <div class="f"><label>Employee <span class="auto">auto</span></label><input id="aEmp" readonly></div>
+              <div class="f"><label>Branch <span class="auto">auto</span></label><input id="fBranch" readonly></div>
+              <div class="f"><label>Zone <span class="auto">auto</span></label><input id="aZone" readonly></div>
+              <div class="f"><label>Designation <span class="auto">auto</span></label><input id="aDesig" readonly></div>
+              <div class="f"><label>Reporting Manager <span class="auto">auto</span></label><input id="aRM" readonly></div>
+              <div class="f"><label>Mobile No <span class="req">*</span></label><input id="aMobile" maxlength="10" inputmode="numeric" placeholder="10 digits"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>B · Expense Details<em>Same fields as the Entry Tracker</em></h3>
+          <div class="body">
+            <div class="frow">
+              <div class="f"><label>Date <span class="req">*</span></label><input type="date" id="fDate"></div>
+              <div class="f"><label>Voucher No <span class="auto">auto</span></label><input id="fVoucher" readonly title="Auto-generated from branch and month"></div>
+              <div class="f"><label>Division <span class="req">*</span></label>
+                <select id="fDivision">
+                  <option value="">— Select —</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Sales">Sales</option>
+                </select></div>
+              <div class="f"><label>Expense Limit <span class="req">*</span></label>
+                <select id="fExpenseLimit">
+                  <option value="">— Select —</option>
+                  <option value="As Per Rate Card">As Per Rate Card</option>
+                  <option value="Above Rate Card">Above Rate Card</option>
+                  <option value="Rate Card Not Specified">Rate Card Not Specified</option>
+                </select></div>
+              <div class="f"><label>Expense Type <span class="req">*</span></label><select id="fExpenseType"></select></div>
+              <div class="f"><label>Category <span class="req">*</span></label><select id="fCategory"></select></div>
+              <div class="f"><label>Amount (₹) <span class="req">*</span></label><input class="amt" id="fAmount" type="number" min="1" placeholder="0.00"></div>
+              <div class="f"><label>Expense Group <span class="req">*</span></label>
+                <select id="fExpenseGroup">
+                  <option value="">— Select —</option>
+                  <option value="Branch Person">Branch Person</option>
+                  <option value="Engineer">Engineer</option>
+                  <option value="TRC Person">TRC Person</option>
+                  <option value="Sales Person">Sales Person</option>
+                  <option value="Direct Vendor">Direct Vendor</option>
+                  <option value="3rd Party">3rd Party</option>
+                </select></div>
+              <div class="f"><label id="lblEmployee">Employee Name <span class="req">*</span></label>
+                <select id="fEngineerSelect"></select>
+                <input id="fEngineerInput" style="display:none" placeholder="Enter Name / Party / Vendor"></div>
+              <div class="f"><label>Paid To — Person / Vendor <span class="req">*</span></label><input id="fPerson" placeholder="Name of Person / Vendor"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>C · Job &amp; Customer<em>To bill the right customer</em></h3>
+          <div class="body">
+            <div class="frow">
+              <div class="f"><label>Expense Segment <span class="req">*</span></label>
+                <select id="fBizCategory">
+                  <option value="">— Select —</option>
+                  <option value="Dealer/Channel Sales">Dealer/Channel Sales</option>
+                  <option value="ATM">ATM</option>
+                  <option value="Non ATM">Non ATM</option>
+                  <option value="Branch">Branch</option>
+                  <option value="Tender">Tender</option>
+                </select></div>
+              <div class="f"><label>Customer Name <span id="custReq" class="req">*</span></label>
+                <input id="fCustomerName" list="custList" placeholder="Client / Bank / Corporate">
+                <datalist id="custList"><option>Hitachi Payment Services Pvt Ltd</option><option>BTI Payments Pvt Ltd</option><option>India1 Payments Ltd</option><option>Perto</option><option>EPS</option><option>CMS Info Systems</option></datalist></div>
+              <div class="f"><label>Ticket No <span id="tktReq" class="req">*</span></label><input id="fTicket" placeholder="e.g. TK-8802"></div>
+              <div class="f"><label>UID No</label><input id="fUid" placeholder="Prostar UID"></div>
+              <div class="f"><label>ATM ID / Site ID</label><input id="fAtmSiteId" placeholder="ATM / Site Code"></div>
+              <div class="f wide"><label>Site Address</label><input id="fSiteAddress" placeholder="Location address of work"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="logisticsCard">
+          <h3>D · Movement Details<em>Transport &amp; loading heads</em></h3>
+          <div class="body">
+            <div class="cond">Opened because this head involves material movement. Finance rejects such claims without From–To and material details.</div>
+            <div class="frow">
+              <div class="f"><label>Material Details <span class="req">*</span></label><input id="fMaterialDetails" placeholder="UPS, Battery, Spare..."></div>
+              <div class="f"><label>Inward / Outward Material <span class="req">*</span></label>
+                <select id="fInOutMaterial"><option value="">— Select —</option><option value="Inward">Inward</option><option value="Outward">Outward</option></select></div>
+              <div class="f"><label>Distance / Place</label><input id="fDistancePlace" placeholder="e.g. 45 Km / City"></div>
+              <div class="f"><label>From Location <span class="req">*</span></label><input id="fFromLoc" placeholder="Origin"></div>
+              <div class="f"><label>To Location <span class="req">*</span></label><input id="fToLoc" placeholder="Destination"></div>
+              <div class="f"><label>Transporter Co.</label><input id="fTransporterCo" placeholder="Courier / Truck Co."></div>
+              <div class="f"><label>Vehicle No</label><input id="fVehicleNo" style="text-transform:uppercase" placeholder="MH-04-XX-0000"></div>
+              <div class="f"><label>Transporter Contact</label><input id="fTransporterContact" placeholder="Driver / Phone"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>E · Invoice, Approval &amp; Remark<em>No bill, no approval</em></h3>
+          <div class="body">
+            <div class="frow">
+              <div class="f"><label>Invoice No</label><input id="fInvoiceNo" placeholder="Bill / Tax Invoice No"></div>
+              <div class="f"><label>Invoice Date</label><input type="date" id="fInvoiceDate"></div>
+              <div class="f"><label>Vendor GSTIN No <span id="gstReq" class="hint">above ₹5,000</span></label><input id="fVendorGstin" maxlength="15" style="text-transform:uppercase" placeholder="GSTIN Number"></div>
+              <div class="f"><label>LR / POD Number</label><input id="fLrPodNo" placeholder="Docket / POD / LR No"></div>
+              <div class="f wide"><label>Approval Taken from Person Name <span class="auto">auto on approval</span></label>
+                <input id="fHOApproval" readonly value="— filled automatically when final authority approves —"></div>
+              <div class="f full"><label>Detailed Remark <span class="req">*</span></label>
+                <textarea id="fRemark" placeholder="Purpose, detailed notes, specific instructions..."></textarea></div>
+              <div class="f full"><label>Document Image / Invoice Receipt <span class="auto">optional</span></label>
+                <div class="drop" onclick="document.getElementById('fDocUpload').click()">
+                  <b id="fileLabel">Tap to attach bill photo or PDF</b>
+                  JPG, PNG or PDF · file names travel with the requisition
+                </div>
+                <input type="file" id="fDocUpload" multiple accept="image/*,.pdf" style="display:none">
+              </div>
+            </div>
+          </div>
+          <div class="formfoot">
+            <button type="button" class="btn btn-main" id="submitBtn">Send For Recommendation</button>
+            <button type="button" class="btn" id="clearBtn">Clear Form</button>
+            <span class="sp">Only the Final Approving Authority can approve · everyone before him recommends</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card">
+        <h3>Approval Route</h3>
+        <div class="body">
+          <span class="slab" id="slabTag">Dynamic Route</span>
+          <ul class="chain" id="chain"></ul>
+          <div class="why" id="why">Built from the reporting hierarchy in the employee master.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- INBOX ---------- -->
+  <div class="view on" id="v-inbox">
+    <div class="card"><h3 id="inboxTitle">Waiting For Your Recommendation</h3>
+      <div class="body">
+        <div class="bulk" id="bulkbar"><span><b id="bulkCount">0</b> selected</span>
+          <span class="sp">
+            <button type="button" class="btn" onclick="selectAll(false)">Clear</button>
+            <button type="button" class="btn" onclick="selectAll(true)">Select all</button>
+            <button type="button" class="btn btn-go" onclick="bulkAct()">Approve selected</button>
+          </span>
+        </div>
+        <div id="inboxList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ---------- MINE ---------- -->
+  <div class="view" id="v-rework">
+    <div class="card"><h3>Returned To You For Rework<em>edit the amount, add your negotiation note, resubmit</em></h3>
+      <div class="body"><div id="reworkList"></div></div></div>
+  </div>
+
+  <div class="view" id="v-mine">
+    <div class="card"><h3>My Requests</h3><div class="body"><div id="mineList"></div></div></div>
+  </div>
+
+  <!-- ---------- ALL ---------- -->
+  <div class="view" id="v-all">
+    <div class="card">
+      <h3>All Requests</h3>
+      <div class="body"><div id="allList"></div></div>
+    </div>
+  </div> <!-- This closing tag fixes the bug! -->
+
+  <!-- ---------- ADMIN ---------- -->
+  <div class="view" id="v-admin">
+    <div class="kpis" id="adminKpis" style="margin-bottom:10px"></div>
+
+    <div class="card">
+      <h3>Live Requisition Tracker<em>every requisition and whose desk it is on</em></h3>
+      <div class="body" style="padding:0"><div class="tblwrap"><table class="tbl" id="trackTbl"></table></div></div>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <h3>Expense Conversion Summary<em>approved vs actually entered</em></h3>
+      <div class="body" style="padding:0"><div class="tblwrap"><table class="tbl" id="convTbl"></table></div></div>
+    </div>
+
+    <div class="card" style="margin-top:10px">
+      <h3>SLA Reminder Queue &mdash; 3 hours
+        <span style="display:flex;gap:6px">
+          <button type="button" class="btn" onclick="runSlaNow()">Run check now</button>
+          <button type="button" class="btn" onclick="exportReminders()">Export queue</button>
+        </span>
+      </h3>
+      <div class="body">
+        <div class="cond" id="remNote"></div>
+        <div class="tblwrap"><table class="tbl" id="remTbl"></table></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ===== TRANSFER TO PETTY CASH SHEET ===== -->
+<div id="pcModal">
+  <div class="pc-box">
+    <div class="pc-head">
+      <b>Transfer to Petty Cash Sheet</b>
+      <button type="button" onclick="closeTransferModal()">&#10005;</button>
+    </div>
+    <div class="pc-body" id="pcModalBody"></div>
+    <div class="pc-foot">
+      <button type="button" class="btn btn-main" id="pcConfirmBtn" onclick="confirmTransfer()">Select an option</button>
+      <button type="button" class="btn" onclick="closeTransferModal()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= POWER AUTOMATE ENDPOINTS ================= */
+// 1. Fetch Config (Employee Master)
+const EXCEL_GET_CONFIG_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3d8c890bdd85458eb4af7f65b3a49577/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jBQBA8EMi2xs9QMwg9Cpcb1f2GtFGrCxDJPXRwIvHUw";
+
+// 2. Fetch Requests (Inbox Data)
+const EXCEL_GET_REQUESTS_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/20/workflows/ce49d00feb0c4c17b1355b9ace5811c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ud9s9XYUjZ9jhpZ4ENValYbZWPf9VIAzAxacXwpGL4c"; 
+
+// 3. Save NEW Request (ADD)
+const EXCEL_ADD_REQUEST_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/07/workflows/8b0f2746772643e6bc72f891fdb61b74/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=OkfWZ51wK-v29yQXlYJQFzlsJiPPfD3DZBdBJszBjRQ";
+
+// 4. Save ACTION (UPDATE)
+const EXCEL_UPDATE_REQUEST_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/51c5cffdd2ec4a9ba9eb7eaa1cff6374/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Vg-lFD26cugqXacXFpaajdmteupXY2YBZQCq98RbeFg";
+
+// 5. Transfer Data URL
+const EXCEL_TRANSFER_DATA_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/19/workflows/a4e7b67a42fc47e59e6ec804a3237678/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2NEZ1dYXpyG4ch_XV229JxmhdHwZVYRPPXIZ0CdjYtE";
+
+/* ================= EMPLOYEE MASTER DATA & VARIABLES ================= */
+let EMP = {};
+let BRANCH_STAFF_MAP = {};
+let ZONE = {};
+/* ----------------------------------------------------------------
+   SINGLE SIGN-IN
+   Identity comes from the Petty Cash session (index.html) and nowhere
+   else. The employee master is still used for the reporting hierarchy
+   where it has the person, but it is no longer an authorisation gate —
+   a valid Petty Cash login is always allowed in.
+   ---------------------------------------------------------------- */
+const BRANCH_REGION = {
+  AS_Guwahati:'R_EAST', BH_Patna:'R_EAST', JH_Ranchi:'R_EAST', OD_Bhubaneswar:'R_EAST', WB_Kolkata:'R_EAST',
+  MH_HO:'R_HO',
+  RJ_Jaipur:'R_NORTH1', UP_Lucknow:'R_NORTH1', UP_Noida:'R_NORTH1',
+  JK_Jammu:'R_NORTH2', PN_Mohali:'R_NORTH2',
+  KL_Kerala:'R_SOUTH1', KN_Bangalore:'R_SOUTH1',
+  TN_Chennai:'R_SOUTH2', TN_Coimbatore:'R_SOUTH2',
+  TL_Hyderabad:'R_SOUTH3',
+  CG_Chhattisgarh:'R_WEST', GJ_Ahmedabad:'R_WEST', MH_Mumbai:'R_WEST', MH_Nagpur:'R_WEST', MH_Pune:'R_WEST', MP_Bhopal:'R_WEST'
+};
+const REGION_INFO = {
+  R_EAST:   { name:'East', manager:'BACHHANK' },
+  R_HO:     { name:'HO', manager:'' },
+  R_NORTH1: { name:'North - 1', manager:'ANJANIK' },
+  R_NORTH2: { name:'North - 2', manager:'ANKITT' },
+  R_SOUTH1: { name:'South - 1', manager:'SHYAMR' },
+  R_SOUTH2: { name:'South - 2', manager:'PETHURAMASAMYN' },
+  R_SOUTH3: { name:'South - 3', manager:'GABRIELR' },
+  R_WEST:   { name:'West', manager:'RAHULM' }
+};
+const ROLE_TITLE = { admin:'HO Admin', regional:'Regional Manager',
+                     branch:'Branch User', auditor:'Finance Auditor' };
+
+let SESSION = null;
+
+let APPROVER = "";
+let ADMINS = [];
+
+const LOOKUP_EXPENSE_TYPES = {
+  "3rd Party Engineer Payment": ["3rd Party Engineer Payment"],
+  "Fabrication Expense": ["Fabrication - Alteration", "Fabrication - New"],
+  "Loading & Unloading Charges": [
+    "Loading Material at Branch", "Un-Loading Material at Branch",
+    "Loading Material at Customer Site", "Un-Loading Material at Customer Site",
+    "Loading Material to BUS", "Un-Loading Material from BUS",
+    "Loading / Un-Loading Material Within Branch"
+  ],
+  "Office Expense": [
+    "AC Technician Payment", "Broadband", "Drinking Water Suppy", "Electric Consumption",
+    "Hardwares & Electrics -", "Tools & Equipment Expenses - TRC", "House Keeping",
+    "Misc. Office Expense", "Courier Charges", "Rent", "Stationery", "Tea / Coffee / Snacks"
+  ],
+  "Stay Expense": ["Dormitary", "Hotel", "Lodge"],
+  "Transport Expense": ["Bus", "Bus & Auto", "Goods Auto", "Large Truck", "Small Tempo", "Taxi", "Local Transporter", "Porter"],
+  "Travel Expense": ["Bike - Self", "Bus", "Taxi/Cab"]
+};
+const MOVEMENT_HEADS=["Transport Expense","Loading & Unloading Charges"];
+const FREE_ENTRY_GROUPS=["Sales Person","Direct Vendor","3rd Party"];
+const FLAGGED={
+ "Rent":"recurring commitment","Electric Consumption":"fixed monthly liability",
+ "Fabrication - New":"capital in nature","3rd Party Engineer Payment":"third-party manpower",
+ "Large Truck":"full-truck movement","Tools & Equipment Expenses - TRC":"asset purchase"
+};
+const TAT={rec:"24 hrs",app:"72 hrs"};
+const TRACKER_URL="dashboard.html";
+const HANDOFF_KEY="prostarm:pettycash:handoff";
+
+/* ================= SERVER STORAGE (Power Automate) ================= */
+let MEM = [];
+
+/* Wraps fetch with a hard timeout so a stalled Power Automate call
+   (cold start, throttling, CORS preflight hang) fails fast instead of
+   leaving the UI stuck forever. Also treats non-2xx responses as errors
+   and reports the real HTTP status / body back to the caller. */
+async function fetchJSON(url, opts = {}, timeoutMs = 20000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...opts, signal: ctrl.signal });
+    const text = await res.text();
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status} ${res.statusText} — ${text.slice(0, 300)}`);
+    }
+    try {
+      return JSON.parse(text);
+    } catch (parseErr) {
+      throw new Error(`Response was not valid JSON — ${text.slice(0, 300)}`);
+    }
+  } catch (err) {
+    if (err.name === "AbortError") {
+      throw new Error(`Request timed out after ${timeoutMs / 1000}s (flow may be disabled, throttled, or blocked by CORS)`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function loadAll() {
+  try {
+    if(EXCEL_GET_REQUESTS_URL.includes("PLACE_YOUR_GET")) return MEM; 
+    
+    // Cache buster guarantees fresh data
+    const urlWithCacheBuster = EXCEL_GET_REQUESTS_URL + "&t=" + Date.now();
+    const rawData = await fetchJSON(urlWithCacheBuster);
+    const dataArray = rawData.value ? rawData.value : rawData;
+    
+    MEM = dataArray.map(raw => {
+      const getVal = (key) => {
+        const foundKey = Object.keys(raw).find(k => k.toLowerCase() === key.toLowerCase());
+        return foundKey ? raw[foundKey] : undefined;
+      };
+
+      let r = { ...raw }; 
+      
+      r.id = getVal('id');
+      r.no = getVal('no');
+      r.status = String(getVal('status') || "").trim();
+      r.by = String(getVal('by') || "").trim().toUpperCase();
+      r.step = parseInt(getVal('step') || 0, 10);
+      r.expenseAmount = parseFloat(getVal('expenseamount') || 0);
+      r.category = getVal('category');
+      r.person = getVal('person');
+      r.branch = getVal('branch');
+      r.raised = getVal('raised');
+      r.flagged = getVal('flagged');
+      r.entered = getVal('entered');
+      
+      let chainStr = getVal('chain') || "[]";
+      let trailStr = getVal('trail') || "[]";
+      
+      try { r.chain = typeof chainStr === 'string' ? JSON.parse(chainStr) : chainStr; } catch(e){ r.chain=[]; }
+      try { r.trail = typeof trailStr === 'string' ? JSON.parse(trailStr) : trailStr; } catch(e){ r.trail=[]; }
+
+      let verStr = getVal('versions') || "[]";
+      try { r.versions = typeof verStr === 'string' ? JSON.parse(verStr) : verStr; } catch(e){ r.versions=[]; }
+
+      r.originalAmount         = Number(getVal('originalamount') || r.expenseAmount || 0);
+      r.currentTargetedAmount  = getVal('currenttargetedamount');
+      r.currentRevisedAmount   = getVal('currentrevisedamount');
+      r.approvedAmount         = getVal('approvedamount');
+      r.currentVersion         = Number(getVal('currentversion') || (r.versions.length || 1));
+      r.submissionCount        = Number(getVal('submissioncount') || r.currentVersion || 1);
+      r.maxResubmissions       = Number(getVal('maxresubmissions') || MAX_RESUBMISSIONS);
+      r.escalationFlag         = getVal('escalationflag') || "N";
+      r.currentRejectionReason = getVal('currentrejectionreason') || "";
+      r.managerRemarks         = getVal('managerremarks') || "";
+      r.reworkManager          = getVal('reworkmanager') || "";
+      r.currentOwner           = getVal('currentowner') || "";
+      r.pendingSince           = getVal('pendingsince') || r.raised;
+      r.vendorName             = getVal('vendorname') || r.person;
+      r.firstViewedAt          = getVal('firstviewedat') || "";
+      r.approvalDate           = getVal('approvaldate') || "";
+      r.cancellationReason     = getVal('cancellationreason') || "";
+
+      /* legacy rows saved before the rework build */
+      if(!r.status || r.status === "Pending") r.status = ST.SUBMITTED;
+      if(!r.versions.length){
+        r.versions=[{v:1,submittedBy:r.by,submissionDate:r.raised,resubmissionDate:null,
+          proposedAmount:r.originalAmount,targetedAmount:"",variance:"",managerRemarks:"",
+          branchResponse:"",rejectionReason:"",outcome:"PENDING",actionedBy:"",actionDate:"",
+          reviewedBy:(r.chain&&r.chain[0])||""}];
+        r.currentVersion=1; r.submissionCount=1;
+      }
+      
+      return r;
+    });
+
+    console.log(`loadAll(): fetched ${dataArray.length} row(s) from EXCEL_GET_REQUESTS_URL, mapped to ${MEM.length} requisition(s).`, MEM);
+
+    if (dataArray.length === 0) {
+      console.warn("Server returned 0 requisition rows. Check that the flow's underlying Excel table actually has rows, and that the flow isn't filtering them out before returning.");
+    } else if (MEM.every(r => !r.no)) {
+      console.warn(`Server returned ${dataArray.length} row(s), but none had a recognizable "no" (requisition number) field — check the column name in your Excel table matches what the flow returns (case-insensitive "no" expected). First raw row:`, dataArray[0]);
+    }
+
+    return MEM;
+  } catch (e) {
+    console.error("Error loading requests from server", e);
+    showServerError("Couldn't load requisitions: " + e.message);
+    return MEM || [];
+  }
+}
+
+/* Same idea as showServerError but neutral/blue — for informational
+   diagnostics (e.g. "server returned 0 rows") rather than hard failures.
+   Renders as a normal block at the very top of <body> (not a fixed
+   overlay), so it pushes the header down instead of covering it, and
+   includes a manual dismiss button since diagnostic text can be long. */
+function showServerInfo(msg) {
+  renderBanner("serverInfoBanner", "ℹ", msg, "#e7f1f7", "#0b3f7a", "#c9dae6", 20000);
+}
+
+/* Small non-blocking banner so server errors are visible on-screen,
+   not just in the console. */
+function showServerError(msg) {
+  renderBanner("serverErrBanner", "⚠", msg, "#fdeceb", "#c0392b", "#eab9b3", 15000);
+}
+
+function renderBanner(id, icon, msg, bg, fg, border, autoHideMs) {
+  let el = document.getElementById(id);
+  if (!el) {
+    el = document.createElement("div");
+    el.id = id;
+    el.style.cssText =
+      "position:relative;z-index:50;width:100%;box-sizing:border-box;"+
+      "background:"+bg+";color:"+fg+";border-bottom:1px solid "+border+";"+
+      "font:700 12px 'Segoe UI',Roboto,Arial,sans-serif;padding:8px 36px 8px 14px;"+
+      "text-align:left;word-break:break-word;box-shadow:0 2px 8px rgba(0,0,0,.08)";
+    const closeBtn = document.createElement("span");
+    closeBtn.textContent = "✕";
+    closeBtn.setAttribute("aria-label", "Dismiss");
+    closeBtn.style.cssText =
+      "position:absolute;top:6px;right:10px;cursor:pointer;font-weight:800;"+
+      "opacity:.6;padding:2px 6px";
+    closeBtn.onmouseenter = () => closeBtn.style.opacity = "1";
+    closeBtn.onmouseleave = () => closeBtn.style.opacity = ".6";
+    closeBtn.onclick = () => { el.style.display = "none"; };
+    el.appendChild(closeBtn);
+    document.body.prepend(el);
+  }
+  // keep the close button, replace the text content before it
+  const closeBtn = el.querySelector("span");
+  el.textContent = icon + " " + msg + " ";
+  if (closeBtn) el.appendChild(closeBtn);
+  el.style.display = "block";
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.display = "none"; }, autoHideMs);
+}
+
+async function pushToExcel(rq, isUpdate = false) {
+  try {
+    const targetURL = isUpdate ? EXCEL_UPDATE_REQUEST_URL : EXCEL_ADD_REQUEST_URL;
+
+    const payload = { ...rq };
+    
+    // 1. Convert Arrays to Strings
+    payload.chain    = JSON.stringify(rq.chain || []);
+    payload.trail    = JSON.stringify(rq.trail || []);
+    payload.versions = JSON.stringify(rq.versions || []);
+
+    // 2. Scrub Empty Dates & Fix Strict Date Formats
+    const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered'];
+    dateFields.forEach(f => {
+        if (!payload[f] || payload[f] === "") {
+            delete payload[f];
+        } else if ((f === 'date' || f === 'invoiceDate') && payload[f].includes('T')) {
+            // CRITICAL FIX: The schema strictly requires YYYY-MM-DD.
+            // We must chop off the "T00:00:00.000Z" part returned by Excel.
+            payload[f] = payload[f].split('T')[0];
+        }
+    });
+
+    // 3. Clean up Numbers
+    const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step'];
+    numFields.forEach(f => {
+        if (payload[f] === "" || payload[f] === null || payload[f] === undefined) {
+            delete payload[f];
+        } else if (!isNaN(payload[f])) {
+            payload[f] = Number(payload[f]);
+        }
+    });
+
+    // 4. Convert any stray Excel nulls into empty strings
+    Object.keys(payload).forEach(k => {
+        if (payload[k] === null) {
+            payload[k] = "";
+        }
+    });
+
+    const res = await fetch(targetURL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    
+    // CRITICAL: If the server rejects the data, grab the exact reason why!
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errText}`);
+    }
+
+    const text = await res.text();
+    return text ? JSON.parse(text) : { success: true };
+
+  } catch(e) {
+    console.error("Error saving to server", e);
+    showServerError("Server rejected the save: " + e.message);
+    return { success: false, error: e.message }; // Pass the detailed error out
+  }
+}
+
+/* ================= GLOBALS & LOGOUT ================= */
+const $=id=>document.getElementById(id);
+let ME=null;
+const pad = n => (n < 10 ? '0' + n : String(n));
+let REQNO="";
+
+$("logoutBtn").addEventListener("click", () => {
+  sessionStorage.removeItem('activeUser');
+  window.location.href = 'index.html';
+});
+
+/* ================= TAB NAVIGATION ================= */
+document.querySelectorAll(".navtab").forEach(t=>t.addEventListener("click",()=>{
+  document.querySelectorAll(".navtab").forEach(x=>x.classList.remove("on"));
+  document.querySelectorAll(".view").forEach(x=>x.classList.remove("on"));
+  t.classList.add("on"); 
+  $("v-"+t.dataset.v).classList.add("on");
+  
+  const isAll = t.dataset.v === "all";
+  $("fltStatus").style.display = isAll ? "block" : "none";
+  $("csvBtn").style.display = isAll ? "block" : "none";
+  
+  if(t.dataset.v === "admin") { renderAdmin(); }
+  if(t.dataset.v === "new") {
+    clearForm(); 
+  } else {
+    refresh();
+  }
+}));
+
+/* ================= FORM LOGIC ================= */
+const typeSel=$("fExpenseType"),catSel=$("fCategory");
+
+let typeOpts = '<option value="">— Select —</option>';
+typeOpts += Object.keys(LOOKUP_EXPENSE_TYPES).map(t=>'<option value="'+t+'">'+t+'</option>').join("");
+typeSel.innerHTML = typeOpts;
+
+function onExpenseTypeChange(){
+  const cats=LOOKUP_EXPENSE_TYPES[typeSel.value]||[];
+  let catOpts = '<option value="">— Select —</option>';
+  catOpts += cats.map(c=>'<option value="'+c+'">'+c+'</option>').join("");
+  catSel.innerHTML = catOpts;
+}
+onExpenseTypeChange();
+
+function fillStaff(){
+  const grp=$("fExpenseGroup").value, br=$("fBranch").value;
+  const sel=$("fEngineerSelect"), inp=$("fEngineerInput"), lbl=$("lblEmployee");
+  if(FREE_ENTRY_GROUPS.indexOf(grp)>-1){
+    sel.style.display="none"; inp.style.display="block";
+    lbl.innerHTML="Party / Vendor Name <span class='req'>*</span>";
+    return;
+  }
+  sel.style.display="block"; inp.style.display="none";
+  lbl.innerHTML="Employee Name <span class='req'>*</span>";
+  const pool=(BRANCH_STAFF_MAP[br]&&grp)?(BRANCH_STAFF_MAP[br][grp]||[]):[];
+  let opts=['<option value="">— Select Employee —</option>'];
+  pool.forEach(p=>opts.push('<option value="'+p+'">'+p+'</option>'));
+  const me=ME+" - "+((EMP[ME]&&EMP[ME].n)||ME);
+  if(pool.indexOf(me)<0) opts.push('<option value="'+me+'">'+me+' (me)</option>');
+  sel.innerHTML=opts.join("");
+  if(pool.indexOf(me)>-1||!pool.length) sel.value=me;
+}
+$("fExpenseGroup").addEventListener("change",fillStaff);
+
+function setToday() {
+  const d = new Date();
+  const f = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  $("fDate").value = f;
+  $("fDate").max = f;
+}
+
+function stampHeader(){
+  const bc = String((EMP[ME]&&EMP[ME].b)||"").split("_")[0];
+  const d = new Date();
+  REQNO = "REQ/" + bc + "/" + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + "/" + String(Math.floor(Math.random()*9000)+1000);
+  $("reqNoTop").textContent = REQNO;
+}
+
+const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+function voucherPrefix(branch,dateStr){
+  if(!branch||!dateStr) return "";
+  const d=new Date(dateStr);
+  if(isNaN(d.getTime())) return "";
+  return branch.substring(0,2).toUpperCase()+"-"+MON[d.getMonth()]+String(d.getFullYear()).slice(2)+"-";
+}
+
+async function refreshVoucher(){
+  if(!ME) return;
+  const list = await loadAll();
+  
+  const pre = voucherPrefix($("fBranch").value, $("fDate").value);
+  if(!pre) { $("fVoucher").value = ""; return; }
+  
+  let max = 0;
+  list.forEach(r => {
+    const v = r.voucher || "";
+    if(v.indexOf(pre) === 0){
+      const n = parseInt(v.substring(pre.length), 10);
+      if(!isNaN(n) && n > max) max = n;
+    }
+  });
+  $("fVoucher").value = pre + String(max+1).padStart(3,"0");
+}
+$("fDate").addEventListener("change",refreshVoucher);
+
+/* ================= ROUTE ================= */
+/* Find this person in the employee master under any reasonable key,
+   then fill the gaps from the Petty Cash session. Never rejects. */
+function resolveSessionEmployee(su) {
+  const uname = String(su.username || '').trim();
+  const UP = uname.toUpperCase();
+
+  let key = null;
+  if (EMP[UP]) key = UP;
+  else if (EMP[uname]) key = uname;
+  else {
+    const hit = Object.keys(EMP).find(k =>
+      String(k).toUpperCase() === UP ||
+      (EMP[k].email && su.email && String(EMP[k].email).toLowerCase() === String(su.email).toLowerCase()));
+    if (hit) key = hit;
+  }
+
+  const branch = su.branch && su.branch !== 'ALL'
+    ? su.branch
+    : ((su.branches && su.branches.length === 1) ? su.branches[0] : (key && EMP[key] ? EMP[key].b : ''));
+  const region = BRANCH_REGION[branch] || '';
+  const rmCode = region && REGION_INFO[region] ? REGION_INFO[region].manager : '';
+
+  if (key) {
+    /* Known to the master — keep its hierarchy, only fill blanks. */
+    if (!EMP[key].b && branch) EMP[key].b = branch;
+    if (!EMP[key].m && rmCode && rmCode !== key) EMP[key].m = rmCode;
+    if (!EMP[key].n) EMP[key].n = su.name || uname;
+  } else {
+    /* Not in the master — build the record from the session. */
+    key = UP;
+    EMP[key] = {
+      n: su.name || uname,
+      b: branch,
+      d: ROLE_TITLE[su.role] || 'User',
+      m: (su.role === 'branch' && rmCode && rmCode !== key) ? rmCode : (APPROVER && APPROVER !== key ? APPROVER : null),
+      email: su.email || '',
+      synthetic: true
+    };
+  }
+
+  /* Make sure the regional manager on the chain has a record, otherwise
+     buildChain() stops at an unknown code and the route renders blank. */
+  if (rmCode && !EMP[rmCode]) {
+    EMP[rmCode] = { n: rmCode, b: branch, d: 'Regional Manager',
+                    m: (APPROVER && APPROVER !== rmCode) ? APPROVER : null,
+                    email: '', synthetic: true };
+  }
+  if (branch && !ZONE[branch] && region) ZONE[branch] = REGION_INFO[region].name;
+
+  /* Petty Cash HO Admin carries admin rights here too. */
+  if (su.role === 'admin' && ADMINS.indexOf(key) < 0) ADMINS.push(key);
+
+  return key;
+}
+
+function buildChain(start){
+  const path=[];
+  if(!EMP[start]) return path;
+  let cur=EMP[start].m; const seen={}; seen[start]=1;
+  while(cur&&!seen[cur]){
+    seen[cur]=1;
+    path.push(cur);
+    if(!EMP[cur]){
+      // Broken hierarchy link (manager code not found in employee master).
+      // Stop the chain here instead of crashing — a crash here happens
+      // BEFORE the submit handler ever reaches pushToExcel(), which means
+      // the ADD flow never gets called at all.
+      console.warn('buildChain: manager code "'+cur+'" not found in employee master — approval chain stops here.');
+      break;
+    }
+    cur=EMP[cur].m;
+  }
+  return path;
+}
+
+function route(){
+  if(!ME) return;
+  const chain=buildChain(ME), amt=parseFloat($("fAmount").value)||0, cat=catSel.value;
+  const recs=chain.length-1;
+  const meRec = EMP[ME] || { n: ME, d: '' };
+  let html='<li class="origin"><div class="nd">&#10003;</div><div class="rl">'+meRec.n+
+    '<small>'+meRec.d+'</small><span class="cd">'+ME+' · raises the request</span></div></li>';
+  chain.forEach((c,i)=>{
+    const e=EMP[c] || {n: "Unknown", d: "Unknown"}; 
+    const isApp=c===APPROVER;
+    html+='<li class="'+(isApp?"fin":"rec")+'"><div class="nd">'+(isApp?"OK":"R"+(i+1))+'</div>'+
+      '<div class="rl">'+e.n+'<small>'+e.d+'</small><span class="cd">'+c+'</span>'+
+      '<span class="tag '+(isApp?"g":"v")+'">'+(isApp?"approves · "+TAT.app:"recommends · "+TAT.rec)+'</span></div></li>';
+  });
+  $("chain").innerHTML=html;
+  $("slabTag").textContent=recs>0?recs+" recommendation"+(recs>1?"s":"")+" → approval":"Straight to approval";
+  $("why").innerHTML = FLAGGED[cat]
+    ? "<b>"+cat+"</b> is a flagged head ("+FLAGGED[cat]+") — it reaches Final Approver marked for extra scrutiny."
+    : (recs===0
+        ? "This request goes straight to the <b>Final Approver</b> for approval — no recommendation stage."
+        : "<b>"+recs+"</b> recommendation"+(recs>1?"s":"")+" in the reporting line, then <b>Final Approver</b> approves. On approval it can be posted straight into the Expenses Entry Tracker.");
+  $("logisticsCard").classList.toggle("on",MOVEMENT_HEADS.indexOf(typeSel.value)>-1);
+  $("gstReq").className=amt>5000?"req":"hint";
+  $("gstReq").textContent=amt>5000?"*":"above ₹5,000";
+  const own=$("fBizCategory").value==="Branch";
+  $("custReq").style.display=own?"none":"inline";
+  $("tktReq").style.display=own?"none":"inline";
+}
+
+typeSel.addEventListener("change",()=>{onExpenseTypeChange();route();});
+["fAmount","fCategory","fBizCategory"].forEach(id=>$(id).addEventListener("input",route));
+$("fBizCategory").addEventListener("change",route);
+$("fDocUpload").addEventListener("change",e=>{
+  const n=e.target.files.length;
+  $("fileLabel").textContent=n?n+" file"+(n>1?"s":"")+" attached — tap to change":"Tap to attach bill photo or PDF";
+});
+
+/* ================= SUBMIT ================= */
+const V=id=>($(id)?$(id).value.trim():"");
+function employeeName(){
+  return FREE_ENTRY_GROUPS.indexOf($("fExpenseGroup").value)>-1 ? V("fEngineerInput") : V("fEngineerSelect");
+}
+
+function validate(){
+  const own=$("fBizCategory").value==="Branch", amt=parseFloat($("fAmount").value)||0;
+  const need=[
+    ["aMobile","Mobile no"],["fDate","Date"],["fDivision","Division"],
+    ["fExpenseLimit","Expense limit"],["fExpenseType","Expense type"],
+    ["fCategory","Category"],["fExpenseGroup","Expense group"],
+    ["fBizCategory","Expense segment"],["fPerson","Paid to"],["fRemark","Detailed remark"]
+  ];
+  if(!own){ need.push(["fCustomerName","Customer name"]); need.push(["fTicket","Ticket no"]); }
+  if(MOVEMENT_HEADS.indexOf(typeSel.value)>-1){
+    need.push(["fMaterialDetails","Material details"]); need.push(["fInOutMaterial","Inward / Outward"]);
+    need.push(["fFromLoc","From location"]); need.push(["fToLoc","To location"]);
+  }
+  if(amt>5000) need.push(["fVendorGstin","Vendor GSTIN"]);
+  const miss=[];
+  need.forEach(p=>{ const el=$(p[0]),empty=!el.value.trim(); el.classList.toggle("flag",empty); if(empty) miss.push(p[1]); });
+  if(amt<=0){ $("fAmount").classList.add("flag"); miss.unshift("Amount"); } else $("fAmount").classList.remove("flag");
+  if(!employeeName()) miss.push("Employee / party name");
+  /* Document / invoice image is OPTIONAL — never blocks submission */
+  return miss;
+}
+
+$("submitBtn").addEventListener("click", async function(){
+  const miss=validate(), t=$("toast");
+  if(miss.length){
+    t.className="msg no on"; 
+    t.innerHTML="<b>Cannot send yet.</b> Fill these first — "+miss.join(", ")+".";
+    const f=document.querySelector(".flag"); if(f) f.scrollIntoView({behavior:"smooth",block:"center"});
+    return;
+  }
+  
+  t.className="msg ok on";
+  t.innerHTML="<b>Sending to server... Please wait.</b>";
+  t.scrollIntoView({behavior:"smooth",block:"center"});
+
+  try {
+
+  const chain=buildChain(ME);
+  const rq={
+    id: "TX" + Date.now(),
+    no:REQNO, raised:new Date().toISOString(), by:ME, mobile:V("aMobile"),
+    branch:$("fBranch").value, zone:ZONE[(EMP[ME]&&EMP[ME].b)||$("fBranch").value]||"",
+    date:V("fDate"), voucher:V("fVoucher"), division:V("fDivision"), 
+    
+    expenseLimit: V("fExpenseLimit"), // Schema expects a string
+    
+    expenseType:typeSel.value, category:catSel.value, expenseAmount:parseFloat($("fAmount").value),
+    originalAmount:parseFloat($("fAmount").value),
+    requestedAmount:parseFloat($("fAmount").value),
+    
+    currentTargetedAmount: null, // Schema allows number or null
+    currentRevisedAmount:parseFloat($("fAmount").value),
+    approvedAmount: null, 
+    targetedAmount: null, 
+    
+    vendorName:V("fPerson"),
+    currentVersion: 1, // Schema minimum is 1
+    submissionCount: 1, 
+    maxResubmissions:MAX_RESUBMISSIONS,
+    
+    escalationFlag: "N", // Schema expects a string, not boolean
+    
+    currentRejectionReason: "", managerRemarks: "",
+    reworkManager: "", currentOwner: chain.length ? chain[0] : ME, pendingSince:new Date().toISOString(),
+    versions:[],
+    expenseGroup:V("fExpenseGroup"), engineer:employeeName(), person:V("fPerson"),
+    bizCategory:V("fBizCategory"), customerName:V("fCustomerName"), ticket:V("fTicket"),
+    uid:V("fUid"), atmSiteId:V("fAtmSiteId"), siteAddress:V("fSiteAddress"),
+    inOutMaterial:V("fInOutMaterial"), materialDetails:V("fMaterialDetails"),
+    fromLoc:V("fFromLoc"), toLoc:V("fToLoc"), distancePlace:V("fDistancePlace"),
+    transporterCo:V("fTransporterCo"), vehicleNo:V("fVehicleNo"), transporterContact:V("fTransporterContact"),
+    invoiceNo:V("fInvoiceNo"), invoiceDate:V("fInvoiceDate"), vendorGstin:V("fVendorGstin"), lrPodNo:V("fLrPodNo"),
+    hoApproval:"", remark:V("fRemark"),
+    docImageName:[].slice.call($("fDocUpload").files).map(f=>f.name).join(", "),
+    
+    flagged: FLAGGED[catSel.value] || (V("fExpenseLimit") === "Above Rate Card" ? "above rate card" : ""), 
+    
+    chain:chain, step:0, status:chain.length?ST.SUBMITTED:ST.FINAL,
+    approvedBy:"", approvedOn:"", entered:"",
+    trail:[{code:ME,act:"Raised",remark:V("fRemark").slice(0,120),ts:new Date().toISOString()}]
+  };
+  
+  openVersion(rq, ME, rq.originalAmount, "Initial submission");
+  rq.currentOwner = chain.length ? chain[0] : ME;
+  logAction(rq,"SUBMIT",ST.DRAFT,rq.status,"",rq.originalAmount,V("fRemark").slice(0,150));
+  if(chain.length) queueMail("RESUBMITTED", rq, chain[0], "Initial submission");
+  // Submit to Server via Power Automate POST (ADD)
+  console.log("Submitting new requisition — payload sent to EXCEL_ADD_REQUEST_URL:", rq);
+  const saveResult = await pushToExcel(rq, false);
+  console.log("EXCEL_ADD_REQUEST_URL response:", saveResult);
+
+  if (!saveResult || saveResult.success === false) {
+    t.className = "msg no on";
+    t.innerHTML = "<b>Server Error:</b> Could not save the request. Please check connection.";
+    return; // Stop here, do not show success message
+  }
+
+  // Self-check: re-fetch and confirm the row we just added actually has
+  // real data in it, not just an empty placeholder row. If the flow's
+  // "Add a row" step isn't mapping fields correctly, this catches it
+  // immediately instead of you discovering it later on refresh.
+  setTimeout(async () => {
+    const check = await loadAll();
+    const saved = check.find(x => x.no === rq.no);
+    if (!saved) {
+      showServerError(`Submitted requisition ${rq.no}, but it isn't showing up when re-fetched from the server. Check the Add flow's run history in Power Automate.`);
+    } else if (!saved.by || !saved.branch || !saved.expenseAmount) {
+      showServerError(`Requisition ${rq.no} was added to the table, but came back with blank fields (by="${saved.by}", branch="${saved.branch}", amount="${saved.expenseAmount}"). Your Add flow is creating the row but not writing the field values — check its field mapping in Power Automate. See the browser console for the exact payload that was sent.`);
+    } else {
+      console.log(`Self-check passed: requisition ${rq.no} was saved correctly.`, saved);
+    }
+  }, 2000);
+
+  const nx=chain[0];
+  t.className="msg ok on";
+  t.innerHTML=chain.length
+    ? "<b>Sent.</b> Requisition "+rq.no+" is with <b>"+((EMP[nx]&&EMP[nx].n)||nx)+" ("+nx+")</b> for "+(nx===APPROVER?"approval":"recommendation")+"."
+    : "<b>Approved.</b> Requisition "+rq.no+" is ready to post into the Expenses Entry Tracker.";
+  t.scrollIntoView({behavior:"smooth",block:"center"});
+  
+  document.querySelector('.navtab[data-v="mine"]').click();
+
+  } catch (err) {
+    console.error("Submit handler failed before/while saving", err);
+    t.className = "msg no on";
+    t.innerHTML = "<b>Something went wrong before this could be sent:</b> " + err.message + " — nothing was submitted. Check the console for details.";
+    t.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+});
+
+function stampApproval(r,code,amount){
+  const d=new Date();
+  r.status="Approved";
+  const fallback=(r.targetedAmount!==""&&r.targetedAmount!=null)?Number(r.targetedAmount):Number(r.requestedAmount||r.expenseAmount);
+  r.approvedAmount=(amount===undefined||amount===null||isNaN(amount))?fallback:Number(amount);
+  r.expenseAmount=r.approvedAmount;          
+  r.approvedBy=EMP[code].n+" ("+code+")";
+  
+  // CRITICAL: Must be a strict ISO date-time string to pass Schema validation
+  r.approvedOn = d.toISOString(); 
+  
+  r.hoApproval=EMP[code].n+" ("+code+") · "+EMP[code].d+" · approved "+pad(d.getDate())+"-"+MON[d.getMonth()]+"-"+d.getFullYear()+" · "+r.no;
+}
+
+function clearForm(){
+  ["aMobile","fAmount","fCustomerName","fTicket","fUid","fAtmSiteId","fSiteAddress","fMaterialDetails",
+   "fDistancePlace","fFromLoc","fToLoc","fVehicleNo","fTransporterCo","fTransporterContact","fLrPodNo",
+   "fPerson","fInvoiceNo","fInvoiceDate","fVendorGstin","fRemark","fExpenseLimit", "fDivision", "fExpenseType", "fCategory", "fExpenseGroup", "fBizCategory", "fInOutMaterial"]
+   .forEach(id=>{
+     if($(id)){
+       $(id).value="";
+       $(id).classList.remove("flag");
+     }
+   });
+  
+  $("fDocUpload").value=""; 
+  $("fileLabel").textContent="Tap to attach bill photo or PDF";
+  
+  setToday(); 
+  stampHeader(); 
+  route(); 
+  refreshVoucher();
+}
+$("clearBtn").addEventListener("click",clearForm);
+
+/* ================= LISTS & ACTION ================= */
+const money=n=>"₹"+Number(n).toLocaleString("en-IN");
+function dt(s){const d=new Date(s);return pad(d.getDate())+"-"+MON[d.getMonth()]+" "+pad(d.getHours())+":"+pad(d.getMinutes());}
+function recsDone(r){return r.trail.filter(t=>t.act==="Recommended").length;}
+
+/* ==========================================================
+   REWORK & RESUBMISSION WORKFLOW ENGINE
+   Implements the 8-status model, version control and the
+   Branch <-> Reporting Manager negotiation loop.
+   ========================================================== */
+
+const ST = {
+  DRAFT:"Draft", SUBMITTED:"Submitted", UNDER_REVIEW:"Under Review",
+  REJ_REWORK:"Rejected for Rework", REWORKED:"Reworked & Resubmitted",
+  APPROVED:"Approved", CANCELLED:"Cancelled", FINAL:"Final Approved"
+};
+const TERMINAL = [ST.CANCELLED, ST.FINAL];
+const OPEN_WITH_MANAGER = [ST.SUBMITTED, ST.UNDER_REVIEW, ST.REWORKED];
+/* states in which the person holding the requisition may act; ST.APPROVED means it is
+   sitting with the Final Approving Authority awaiting sanction */
+const ACTIONABLE = [ST.SUBMITTED, ST.UNDER_REVIEW, ST.REWORKED, ST.APPROVED];
+
+const REJECTION_REASONS = [
+  ["RATE_HIGH",     "Rate above market / rate card"],
+  ["QTY_EXCESS",    "Quantity not justified"],
+  ["VENDOR_CHANGE", "Alternate vendor available"],
+  ["DOC_MISSING",   "Supporting document missing"],
+  ["BUDGET",        "Outside branch budget"],
+  ["OTHER",         "Other (see remarks)"]
+];
+let MAX_RESUBMISSIONS = 3;          /* overridden by the config sheet if a MaxResubmissions row exists */
+let ALLOW_ABOVE_TARGET = true;
+
+/* ---------- helpers ---------- */
+function num(v){ const n=Number(v); return isNaN(n)?0:n; }
+function isTerminal(r){ return TERMINAL.indexOf(r.status)>-1; }
+function versionsOf(r){
+  if(Array.isArray(r.versions)) return r.versions;
+  if(typeof r.versions==="string"&&r.versions){ try{ return JSON.parse(r.versions); }catch(e){} }
+  return [];
+}
+function currentVersion(r){
+  const v=versionsOf(r);
+  return v.length?v[v.length-1]:null;
+}
+/* the amount currently on the table */
+function liveAmount(r){
+  if(r.approvedAmount!==""&&r.approvedAmount!=null) return num(r.approvedAmount);
+  if(r.currentRevisedAmount!==""&&r.currentRevisedAmount!=null) return num(r.currentRevisedAmount);
+  if(r.targetedAmount!==""&&r.targetedAmount!=null&&r.status===ST.REJ_REWORK) return num(r.originalAmount||r.expenseAmount);
+  return num(r.originalAmount||r.requestedAmount||r.expenseAmount);
+}
+function targetOf(r){
+  return (r.currentTargetedAmount!==""&&r.currentTargetedAmount!=null)?num(r.currentTargetedAmount):null;
+}
+function reasonText(code){
+  for(let i=0;i<REJECTION_REASONS.length;i++) if(REJECTION_REASONS[i][0]===code) return REJECTION_REASONS[i][1];
+  return code||"—";
+}
+function nameOf(code){ return (EMP[code]&&EMP[code].n)||code||"—"; }
+function emailOf(code){
+  if(EMP[code]&&EMP[code].email) return EMP[code].email;
+  return nameOf(code).toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@prostarm.com";
+}
+
+/* ---------- version creation (FR-24) ---------- */
+function openVersion(r, submittedBy, amount, branchResponse){
+  const vs = versionsOf(r);
+  const no = vs.length+1;
+  const prevTarget = targetOf(r);
+  vs.push({
+    v:no,
+    submittedBy:submittedBy,
+    submissionDate:new Date().toISOString(),
+    resubmissionDate: no>1 ? new Date().toISOString() : null,
+    proposedAmount:num(amount),
+    targetedAmount:"",
+    variance: prevTarget!=null ? num(amount)-prevTarget : "",
+    managerRemarks:"",
+    branchResponse:branchResponse||"",
+    rejectionReason:"",
+    outcome:"PENDING",
+    actionedBy:"",
+    actionDate:"",
+    reviewedBy:r.chain&&r.chain.length?r.chain[0]:""
+  });
+  r.versions = vs;
+  r.currentVersion = no;
+  r.submissionCount = no;
+  r.currentRevisedAmount = num(amount);
+  return vs[vs.length-1];
+}
+function closeVersion(r, outcome, actor, remarks, targeted, reasonCode){
+  const v = currentVersion(r);
+  if(!v) return null;
+  v.outcome = outcome;
+  v.actionedBy = actor;
+  v.actionDate = new Date().toISOString();
+  if(remarks!=null) v.managerRemarks = remarks;
+  if(targeted!=null&&targeted!=="") v.targetedAmount = num(targeted);
+  if(reasonCode) v.rejectionReason = reasonCode;
+  r.versions = versionsOf(r);
+  return v;
+}
+
+/* ---------- action log (FR-27) ---------- */
+function logAction(r, code, from, to, before, after, comments){
+  r.trail = r.trail || [];
+  r.trail.push({
+    code:ME, act:code, actorRole:(ME===APPROVER?"Final Approver":(r.by===ME?"Branch Person":"Reporting Manager")),
+    statusFrom:from, statusTo:to,
+    amountBefore:(before===""||before==null)?"":num(before),
+    amountAfter:(after===""||after==null)?"":num(after),
+    amount:(after===""||after==null)?"":num(after),
+    remark:comments||"", version:r.currentVersion||"",
+    ts:new Date().toISOString()
+  });
+}
+
+/* ---------- notification outbox (FR-30..FR-37) ---------- */
+const OUTBOX_KEY="prostarm:pettycash:outbox";
+function outbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX_KEY)||"[]"); }catch(e){ return []; } }
+function queueMail(evt, r, toCode, extra){
+  const box=outbox();
+  const key=r.no+"|"+evt+"|"+(r.currentVersion||0)+"|"+toCode;
+  for(let i=0;i<box.length;i++) if(box[i].dedupeKey===key) return;
+  const body={
+    REJECTED:"Your requisition has been returned for rework. Targeted amount "+money(targetOf(r)||0)+
+             ". Reason: "+reasonText(r.currentRejectionReason)+". Remarks: "+(extra||""),
+    RESUBMITTED:"Requisition resubmitted at "+money(liveAmount(r))+" against your target of "+
+             money(targetOf(r)||0)+". Branch note: "+(extra||""),
+    APPROVED:"Your requisition has been approved at "+money(liveAmount(r))+".",
+    FINAL:"Requisition finally approved at "+money(r.approvedAmount||liveAmount(r))+". Please post the expense.",
+    CANCELLED:"Requisition cancelled by the branch. Reason: "+(extra||""),
+    LIMIT:"Resubmission limit reached after "+(r.submissionCount||0)+" attempts. Escalated with full history."
+  }[evt]||"";
+  box.push({
+    id:"NT"+Date.now()+"-"+box.length, dedupeKey:key, event:evt,
+    reqNo:r.no, version:r.currentVersion||0,
+    toUserId:toCode, toName:nameOf(toCode), toEmail:emailOf(toCode),
+    subject:"["+r.no+"] "+evt.charAt(0)+evt.slice(1).toLowerCase()+" — petty cash requisition",
+    body:body, amount:liveAmount(r), branch:r.branch,
+    queuedAt:new Date().toISOString(), status:"queued"
+  });
+  try{ localStorage.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
+  if(typeof REMINDER_ENDPOINT!=="undefined"&&REMINDER_ENDPOINT) flushOutbox();
+}
+async function flushOutbox(){
+  if(typeof REMINDER_ENDPOINT==="undefined"||!REMINDER_ENDPOINT) return 0;
+  const box=outbox(), due=box.filter(x=>x.status==="queued");
+  if(!due.length) return 0;
+  try{
+    const res=await fetch(REMINDER_ENDPOINT,{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({notifications:due})});
+    if(!res.ok) throw new Error(res.status);
+    due.forEach(x=>{ x.status="sent"; x.sentAt=new Date().toISOString(); });
+  }catch(e){ due.forEach(x=>{ x.status="failed"; x.error=String(e.message||e); }); }
+  try{ localStorage.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
+  return due.length;
+}
+
+/* ==========================================================
+   MANAGER ACTIONS
+   ========================================================== */
+
+/* T5 / T13 — Under Review is set when the assigned manager opens it (FR-07) */
+async function markUnderReview(id){
+  const list=await loadAll();
+  const r=list.find(x=>x.id===id);
+  if(!r) return;
+  if(r.status!==ST.SUBMITTED&&r.status!==ST.REWORKED) return;
+  if(!r.chain||r.chain[r.step]!==ME) return;
+  const from=r.status;
+  r.status=ST.UNDER_REVIEW;
+  r.firstViewedAt=r.firstViewedAt||new Date().toISOString();
+  logAction(r,"VIEW",from,ST.UNDER_REVIEW,"","","Opened by "+nameOf(ME));
+  await pushToExcel(r,true);
+  refresh();
+}
+
+/* T7 — approve / recommend onward */
+/* T7 — approve / recommend onward */
+async function actApprove(id){
+  const list=await loadAll();
+  const r=list.find(x=>x.id===id);
+  if(!r) return guardFail();
+  if(ACTIONABLE.indexOf(r.status)<0||r.chain[r.step]!==ME) return guardFail();
+
+  const amtEl=$("amt-"+id), rem=($("rem-"+id)?$("rem-"+id).value.trim():"");
+  const typed=amtEl?parseFloat(amtEl.value):NaN;
+  const onTable=liveAmount(r);
+  const amount=(!isNaN(typed)&&typed>0)?typed:onTable;
+
+  if(amount>num(r.originalAmount||r.expenseAmount)){
+    alert("Approved amount cannot exceed the original request of "+money(r.originalAmount||r.expenseAmount)+".");
+    return;
+  }
+  if(amount!==onTable&&!rem){ alert("A comment is mandatory when you change the amount."); return; }
+
+  const from=r.status;
+  const isFinal=(ME===APPROVER);
+
+  if(isFinal){
+    closeVersion(r,"APPROVED",ME,rem,"","");
+    r.status=ST.FINAL;
+    r.approvedAmount=amount;
+    r.expenseAmount=amount;          /* only this figure goes downstream */
+    r.approvalDate=new Date().toISOString();
+    r.hoApproval=nameOf(ME)+" ("+ME+") · Final Approving Authority · approved "+
+                 pad(new Date().getDate())+"-"+MON[new Date().getMonth()]+"-"+new Date().getFullYear()+" · "+r.no;
+    r.currentOwner=""; r.pendingSince="";
+    logAction(r,"FINAL_APPROVE",from,ST.FINAL,onTable,amount,rem);
+    queueMail("FINAL",r,r.by,rem);
+  } else {
+    r.step+=1;
+    r.currentRevisedAmount=amount;
+    const nextIsFinal=(r.chain[r.step]===APPROVER);
+    r.status=nextIsFinal?ST.APPROVED:ST.SUBMITTED;
+    r.currentOwner=r.chain[r.step];
+    r.pendingSince=new Date().toISOString();
+    logAction(r,"APPROVE",from,r.status,onTable,amount,rem);
+    if(nextIsFinal) queueMail("APPROVED",r,r.by,rem);
+  }
+  
+  // UPDATED: Added success notification
+  await commit(r, id, isFinal ? "Final Approval successful." : "Approved and forwarded to the next manager.");
+}
+/* T8 — reject for rework: targeted amount + reason + remarks all mandatory (FR-10) */
+async function actRejectRework(id){
+  const list=await loadAll();
+  const r=list.find(x=>x.id===id);
+  if(!r) return guardFail();
+  if(ACTIONABLE.indexOf(r.status)<0||r.chain[r.step]!==ME) return guardFail();
+
+  const tgt=parseFloat(($("tgt-"+id)||{}).value);
+  const reason=(($("rsn-"+id)||{}).value)||"";
+  const rem=(($("rem-"+id)||{}).value||"").trim();
+  const onTable=liveAmount(r);
+
+  const missing=[];
+  if(isNaN(tgt)||tgt<=0) missing.push("Targeted Amount");
+  if(!reason) missing.push("Rejection Reason");
+  if(!rem) missing.push("Remarks");
+  if(missing.length){ alert("Rejection needs all of: "+missing.join(", ")+"."); return; }
+  if(tgt>onTable){ alert("Targeted amount cannot be higher than the amount under review ("+money(onTable)+")."); return; }
+
+  const from=r.status;
+  closeVersion(r,"REJECTED",ME,rem,tgt,reason);
+  r.currentTargetedAmount=tgt;
+  r.currentRejectionReason=reason;
+  r.managerRemarks=rem;
+  r.status=ST.REJ_REWORK;
+  r.currentOwner=r.by;                       /* returns to the branch person (FR-14) */
+  r.pendingSince=new Date().toISOString();
+  r.reworkManager=ME;                        /* same manager gets it back (FR-19) */
+  logAction(r,"REJECT_REWORK",from,ST.REJ_REWORK,onTable,tgt,reasonText(reason)+" — "+rem);
+  queueMail("REJECTED",r,r.by,rem);
+  
+  // UPDATED: Added success notification
+  await commit(r, id, "Request has been successfully returned to the branch for rework.");
+}
+
+/* ==========================================================
+   BRANCH ACTIONS
+   ========================================================== */
+
+/* T10 / T12 — resubmit, or escalate when the limit is reached */
+async function actResubmit(id){
+  const list=await loadAll();
+  const r=list.find(x=>x.id===id);
+  if(!r) return guardFail();
+  if(r.status!==ST.REJ_REWORK||r.by!==ME){ return guardFail(); }
+
+  const revised=parseFloat(($("rev-"+id)||{}).value);
+  const note=(($("neg-"+id)||{}).value||"").trim();
+  const vendor=(($("ven-"+id)||{}).value||"").trim();
+  const target=targetOf(r);
+
+  if(isNaN(revised)||revised<=0){ alert("Enter the revised amount."); return; }
+  if(!note){ alert("A negotiation remark is mandatory on every resubmission."); return; }
+  if(!ALLOW_ABOVE_TARGET&&target!=null&&revised>target){
+    alert("Revised amount cannot exceed the targeted "+money(target)+"."); return;
+  }
+
+  const cap=num(r.maxResubmissions||MAX_RESUBMISSIONS);
+  const from=r.status;
+  if(vendor) r.vendorName=vendor;
+
+  if(num(r.submissionCount)>=cap){
+    /* T12 — limit reached: lock and escalate with full history (FR-22) */
+    openVersion(r,ME,revised,note);
+    r.escalationFlag="Y";
+    r.status=ST.APPROVED;                      /* awaiting a human decision above */
+    r.step=Math.max(0,(r.chain||[]).length-1); /* jump to the final authority */
+    r.currentOwner=r.chain[r.step];
+    r.pendingSince=new Date().toISOString();
+    logAction(r,"ESCALATE",from,ST.APPROVED,target||"",revised,
+      "Resubmission limit of "+cap+" reached — escalated with full history");
+    queueMail("LIMIT",r,r.reworkManager||r.chain[0],note);
+    queueMail("LIMIT",r,APPROVER,note);
+  } else {
+    openVersion(r,ME,revised,note);
+    r.status=ST.REWORKED;
+    r.step=(r.chain||[]).indexOf(r.reworkManager);
+    if(r.step<0) r.step=0;
+    r.currentOwner=r.chain[r.step];
+    r.pendingSince=new Date().toISOString();
+    logAction(r,"RESUBMIT",from,ST.REWORKED,target||"",revised,note);
+    queueMail("RESUBMITTED",r,r.currentOwner,note);
+  }
+  
+  // UPDATED: Added success notification
+  await commit(r, id, "Successfully resubmitted to your manager.");
+}
+
+/* T11 — cancel with a mandatory reason */
+async function actCancel(id){
+  const list=await loadAll();
+  const r=list.find(x=>x.id===id);
+  if(!r) return guardFail();
+  if(r.by!==ME&&ADMINS.indexOf(ME)<0){ alert("Only the requester or an Admin may cancel."); return; }
+  if(isTerminal(r)){ alert("This requisition is already closed."); return; }
+
+  const why=prompt("Cancellation reason (mandatory):","");
+  if(why===null) return;
+  if(!why.trim()){ alert("A cancellation reason is mandatory."); return; }
+
+  const from=r.status;
+  closeVersion(r,"CANCELLED",ME,why.trim(),"","");
+  r.status=ST.CANCELLED;
+  r.cancelledAt=new Date().toISOString();
+  r.cancellationReason=why.trim();
+  r.currentOwner=""; r.pendingSince="";
+  logAction(r,"CANCEL",from,ST.CANCELLED,liveAmount(r),"",why.trim());
+  queueMail("CANCELLED",r,r.reworkManager||(r.chain&&r.chain[0])||ME,why.trim());
+  await commit(r,id);
+}
+
+/* T6 / T14 — recall while the manager has not opened it */
+async function actRecall(id){
+  const list=await loadAll();
+  const r=list.find(x=>x.id===id);
+  if(!r) return guardFail();
+  if(r.by!==ME){ alert("Only the requester may recall."); return; }
+  if(r.status!==ST.SUBMITTED&&r.status!==ST.REWORKED){
+    alert("This can only be recalled before the manager opens it."); return;
+  }
+  const from=r.status;
+  const v=currentVersion(r);
+  if(v){ v.outcome="RECALLED"; v.actionedBy=ME; v.actionDate=new Date().toISOString(); }
+  r.status=(num(r.submissionCount)>1)?ST.REJ_REWORK:ST.DRAFT;
+  r.currentOwner=r.by;
+  logAction(r,"RECALL",from,r.status,liveAmount(r),"","Recalled by requester");
+  await commit(r,id);
+}
+
+/* shared commit + guard */
+function guardFail(){ alert("This requisition has moved on. Refreshing."); refresh(); }
+async function commit(r, id, successMsg){
+  const cardEl=document.getElementById("rq-"+id);
+  if(cardEl){ cardEl.style.opacity="0.5"; cardEl.style.pointerEvents="none"; }
+  
+  const res=await pushToExcel(r,true);
+  
+  if(!res || res.success===false){
+    // Print the exact Power Automate schema failure message
+    alert("Flow blocked the save! Error details:\n\n" + (res ? res.error : "Unknown Error"));
+    if(cardEl){ cardEl.style.opacity="1"; cardEl.style.pointerEvents="auto"; }
+  } else {
+    if(successMsg) alert(successMsg); 
+  }
+  refresh();
+}
+
+/* ==========================================================
+   RENDERING
+   ========================================================== */
+function statusTag(r){
+  const s=r.status;
+  
+  // Safely get the current pending manager
+  let pendingWith = "";
+  if (r.chain && r.chain[r.step]) {
+      const currentOwnerCode = String(r.chain[r.step]).trim().toUpperCase();
+      
+      // If the request is sitting with the logged-in user, say "You"
+      if (currentOwnerCode === ME) {
+          pendingWith = "You";
+      } else {
+          // Otherwise, grab the person's first name
+          pendingWith = nameOf(r.chain[r.step]).split(" ")[0];
+      }
+  }
+
+  if(s===ST.FINAL)      return '<span class="st a">Final Approved</span>';
+  if(s===ST.APPROVED)   return '<span class="st a">'+(r.escalationFlag==="Y"?"Escalated · awaiting sanction":"Approved · with Final Authority")+'</span>';
+  if(s===ST.CANCELLED)  return '<span class="st x">Cancelled</span>';
+  if(s===ST.REJ_REWORK) return '<span class="st x">Rejected for Rework</span>';
+  
+  // Updated text string to include the dynamic "You" or "Name"
+  if(s===ST.REWORKED)   return '<span class="st r">Reworked &middot; v'+(r.currentVersion||1)+(pendingWith?' &middot; Pending with '+pendingWith:'')+'</span>';
+  if(s===ST.UNDER_REVIEW) return '<span class="st p">Under Review'+(pendingWith?' &middot; Pending with '+pendingWith:'')+'</span>';
+  if(s===ST.DRAFT)      return '<span class="st d">Draft</span>';
+  
+  return '<span class="st p">Submitted'+(pendingWith?' &middot; Pending with '+pendingWith:'')+'</span>';
+}
+
+function versionTable(r){
+  const vs=versionsOf(r);
+  if(!vs.length) return "";
+  let h='<div class="sub">Version history &mdash; nothing is overwritten</div>'+
+        '<div class="tblwrap"><table class="tbl"><thead><tr>'+
+        '<th>V</th><th>Submitted By</th><th>Submitted</th><th class="num">Proposed</th>'+
+        '<th class="num">Targeted</th><th>Manager Remarks</th><th>Branch Response</th>'+
+        '<th>Reason</th><th>Outcome</th><th>Action Date</th></tr></thead><tbody>';
+  vs.forEach(v=>{
+    const cls={APPROVED:"a",REJECTED:"x",CANCELLED:"x",RECALLED:"x",PENDING:"p"}[v.outcome]||"p";
+    h+="<tr><td><b>v"+v.v+"</b></td><td>"+nameOf(v.submittedBy)+"</td><td>"+dt(v.submissionDate)+"</td>"+
+       '<td class="num">'+money(v.proposedAmount)+"</td>"+
+       '<td class="num">'+(v.targetedAmount!==""&&v.targetedAmount!=null?money(v.targetedAmount):"—")+"</td>"+
+       "<td>"+(v.managerRemarks||"—")+"</td><td>"+(v.branchResponse||"—")+"</td>"+
+       "<td>"+(v.rejectionReason?reasonText(v.rejectionReason):"—")+"</td>"+
+       '<td><span class="st '+cls+'">'+(v.outcome==="PENDING"?"In review":v.outcome.charAt(0)+v.outcome.slice(1).toLowerCase())+"</span></td>"+
+       "<td>"+(v.actionDate?dt(v.actionDate):"—")+"</td></tr>";
+  });
+  return h+"</tbody></table></div>";
+}
+
+/* manager action panel */
+function managerPanel(r){
+  const onTable=liveAmount(r);
+  return '<div class="sub" style="margin-top:12px">Your decision</div>'+
+    '<div class="act">'+
+      '<div class="f" style="flex:0 0 150px"><label>Approve at (₹)</label>'+
+        '<input id="amt-'+r.id+'" type="number" min="1" step="0.01" value="'+onTable+'"></div>'+
+      '<button type="button" class="btn btn-go" onclick="actApprove(\''+r.id+'\')">'+
+        (ME===APPROVER?"Final Approve":"Approve &amp; forward")+'</button>'+
+    '</div>'+
+    '<div class="rework-box">'+
+      '<b>Not satisfied with the rate? Send it back for rework.</b>'+
+      '<div class="act" style="margin-top:8px">'+
+        '<div class="f" style="flex:0 0 150px"><label>Targeted Amount (₹) <span class="req">*</span></label>'+
+          '<input id="tgt-'+r.id+'" type="number" min="1" step="0.01" placeholder="What you will accept"></div>'+
+        '<div class="f" style="flex:0 0 210px"><label>Rejection Reason <span class="req">*</span></label>'+
+          '<select id="rsn-'+r.id+'"><option value="">— Select —</option>'+
+          REJECTION_REASONS.map(x=>'<option value="'+x[0]+'">'+x[1]+'</option>').join("")+'</select></div>'+
+        '<div class="f"><label>Remarks / Justification <span class="req">*</span></label>'+
+          '<input id="rem-'+r.id+'" placeholder="Why this rate is not acceptable"></div>'+
+        '<button type="button" class="btn btn-no" onclick="actRejectRework(\''+r.id+'\')">Reject for Rework</button>'+
+      '</div>'+
+    '</div>';
+}
+
+/* branch rework panel */
+function reworkPanel(r){
+  const target=targetOf(r);
+  const cap=num(r.maxResubmissions||MAX_RESUBMISSIONS);
+  const used=num(r.submissionCount);
+  const left=cap-used;
+  const v=versionsOf(r).slice(-1)[0]||{};
+  return '<div class="rework-box">'+
+    '<b>'+nameOf(r.reworkManager||r.chain[0])+' has returned this for rework.</b>'+
+    '<div class="mgr-say">'+
+      '<div><span>Targeted Amount</span><b>'+(target!=null?money(target):"—")+'</b></div>'+
+      '<div><span>Rejection Reason</span><b>'+reasonText(r.currentRejectionReason||v.rejectionReason)+'</b></div>'+
+      '<div style="flex:1 1 240px"><span>Manager Remarks</span><b>'+(r.managerRemarks||v.managerRemarks||"—")+'</b></div>'+
+    '</div>'+
+    (left<=0
+      ? '<div class="warnbar">Resubmission limit of '+cap+' reached. Submitting again will lock editing and escalate '+
+        'this requisition with its full history for a decision.</div>'
+      : '<div class="okbar">'+left+' resubmission'+(left>1?"s":"")+' left of '+cap+'.</div>')+
+    '<div class="act" style="margin-top:9px">'+
+      '<div class="f" style="flex:0 0 150px"><label>Revised Amount (₹) <span class="req">*</span></label>'+
+        '<input id="rev-'+r.id+'" type="number" min="1" step="0.01" value="'+(target!=null?target:liveAmount(r))+'"></div>'+
+      '<div class="f" style="flex:0 0 200px"><label>Vendor Name</label>'+
+        '<input id="ven-'+r.id+'" value="'+(r.vendorName||r.person||"")+'"></div>'+
+      '<div class="f"><label>Negotiation Remarks <span class="req">*</span></label>'+
+        '<input id="neg-'+r.id+'" placeholder="What you negotiated with the vendor"></div>'+
+      '<button type="button" class="btn btn-go" onclick="actResubmit(\''+r.id+'\')">'+
+        (left<=0?"Submit &amp; Escalate":"Resubmit to "+nameOf(r.reworkManager||r.chain[0]).split(" ")[0])+'</button>'+
+      '<button type="button" class="btn btn-no" onclick="actCancel(\''+r.id+'\')">Cancel Requisition</button>'+
+    '</div>'+
+    '<div class="locknote">Only the amount, vendor and your remarks can be changed. '+
+    'Branch, expense head and category are frozen after version 1.</div>'+
+  '</div>';
+}
+
+/* Missing-field-safe detail grid + audit trail shown when a card is expanded.
+   (This function was being called but never defined — the resulting
+   ReferenceError on every card render is what caused "Pending My
+   Recommendation" to show a count but an empty list body.) */
+function detailHtml(r){
+  const rows=[
+    ["Branch", r.branch], ["Zone", ZONE[r.branch]], ["Category", r.category],
+    ["Expense Type", r.expenseType], ["Division", r.division],
+    ["Date", r.date ? dt(r.date) : ""], ["Voucher", r.voucher],
+    ["Paid To", r.vendorName||r.person], ["Mobile", r.mobile],
+    ["Expense Group", r.expenseGroup], ["Engineer", r.engineer],
+    ["Expense Segment", r.bizCategory], ["Customer Name", r.customerName],
+    ["Ticket No", r.ticket], ["UID", r.uid], ["ATM / Site ID", r.atmSiteId],
+    ["Site Address", r.siteAddress], ["Material Movement", r.inOutMaterial],
+    ["Material Details", r.materialDetails], ["From", r.fromLoc], ["To", r.toLoc],
+    ["Distance / Place", r.distancePlace], ["Transporter Co", r.transporterCo],
+    ["Vehicle No", r.vehicleNo], ["Transporter Contact", r.transporterContact],
+    ["Invoice No", r.invoiceNo], ["Invoice Date", r.invoiceDate ? dt(r.invoiceDate) : ""],
+    ["Vendor GSTIN", r.vendorGstin], ["LR / POD No", r.lrPodNo],
+    ["HO Approval", r.hoApproval], ["Document", r.docImageName]
+  ].filter(x => x[1]);
+
+  let h = '<div class="sub">Requisition details</div><div class="dl">' +
+    rows.map(x => '<div><span>'+x[0]+'</span><b>'+x[1]+'</b></div>').join("") +
+    '</div>';
+
+  if (r.remark) {
+    h += '<div class="sub" style="margin-top:9px">Remark</div>' +
+         '<div style="font-size:11.5px">'+r.remark+'</div>';
+  }
+
+  const trail = r.trail || [];
+  if (trail.length) {
+    h += '<div class="sub" style="margin-top:12px">Audit trail</div><div class="trail">' +
+      trail.map(t => '<div><b>'+nameOf(t.code)+'</b> — '+(t.act||"") +
+        (t.remark ? " — "+t.remark : "") +
+        ' <span style="color:var(--muted)">('+(t.ts?dt(t.ts):"—")+')</span></div>').join("") +
+      '</div>';
+  }
+  return h;
+}
+
+/* ================= TRANSFER DATA PERSISTENCE ================= */
+const TRANSFER_MAP_KEY = "prostarm:pettycash:transferred";
+
+function getTransferredMap() {
+  try {
+    return JSON.parse(localStorage.getItem(TRANSFER_MAP_KEY) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function isTransferred(r) {
+  if (r.transferred) return true;
+  const map = getTransferredMap();
+  return !!(map[r.no] || map[r.id]);
+}
+
+function markAsTransferred(r) {
+  const map = getTransferredMap();
+  map[r.no] = { at: new Date().toISOString(), by: ME };
+  map[r.id] = { at: new Date().toISOString(), by: ME };
+  try {
+    localStorage.setItem(TRANSFER_MAP_KEY, JSON.stringify(map));
+  } catch (e) {}
+  r.transferred = true;
+}
+
+/* transferData() has been superseded by openTransferModal() — the branch now
+   chooses whether to submit with or without documents. Kept as a shim so any
+   stale cached markup still lands in the right place. */
+function transferData(id) { openTransferModal(id); }
+
+function card(r,actable){
+  const withMe   = ACTIONABLE.indexOf(r.status)>-1 && r.chain && r.chain[r.step]===ME;
+  const myRework = r.status===ST.REJ_REWORK && r.by===ME;
+  const canRecall= (r.status===ST.SUBMITTED||r.status===ST.REWORKED) && r.by===ME && !r.firstViewedAt;
+  const canPost  = (r.status===ST.FINAL)&&(r.by===ME||ADMINS.indexOf(ME)>-1);
+  const target   = targetOf(r);
+
+  const box=(actable&&withMe&&ME===APPROVER)
+    ? '<input type="checkbox" class="bx" value="'+r.id+'" onclick="event.stopPropagation();countSel()">' : "";
+
+  const postBtn=canPost
+    ? '<div class="act" style="margin-top:8px"><button type="button" class="btn btn-post" onclick="postToTracker(\''+r.no+'\')">'+
+      (isConverted(r)?"Open again in Expense Tracker":"Enter in Expense Tracker &rarr;")+"</button>"+
+      '<span class="posthint">Carries the approved '+money(r.approvedAmount||liveAmount(r))+' — the entry cannot exceed it</span></div>'
+    : "";
+
+  const recallBtn=canRecall
+    ? '<div class="act" style="margin-top:8px"><button type="button" class="btn" onclick="actRecall(\''+r.id+'\')">Recall</button>'+
+      '<span class="posthint">Available until '+nameOf(r.chain[r.step]).split(" ")[0]+' opens it</span></div>'
+    : "";
+
+  const cancelBtn=(!isTerminal(r)&&r.by===ME&&r.status!==ST.REJ_REWORK)
+    ? '<button type="button" class="btn btn-no" onclick="actCancel(\''+r.id+'\')">Cancel</button>' : "";
+  
+  const alreadyTransferred = isTransferred(r);
+  let transferBtn = "";
+  
+  /* Only a FINALLY approved requisition may become a petty cash expense.
+     ST.APPROVED still sits with the final authority awaiting sanction. */
+  if (r.status === ST.FINAL) {
+      if (alreadyTransferred) {
+        const landed = r.pettyCashStatus === 'PENDING_RM'
+          ? '<span class="pc-badge rm">With Regional Manager</span>'
+          : (r.pettyCashStatus === 'SUBMITTED' ? '<span class="pc-badge sub">Awaiting documents</span>' : '');
+        transferBtn = '<span style="margin-left:auto;display:flex;align-items:center;gap:4px">' +
+          '<button id="btn-trans-'+r.id+'" type="button" class="btn" style="opacity:0.45; pointer-events:none; cursor:not-allowed; background:#d2e0eb; color:#5d7c93; border:1px solid #b5cad9;" disabled>Transferred &#10003;</button>' +
+          landed + '</span>';
+      } else {
+        transferBtn = '<button id="btn-trans-'+r.id+'" type="button" class="btn btn-main" style="margin-left:auto;" onclick="openTransferModal(\''+r.id+'\')">Transfer to Petty Cash &rarr;</button>';
+      }
+  }
+
+  return '<div class="rq" id="rq-'+r.id+'">'+
+    '<div class="rq-top" onclick="toggleCard(\''+r.id+'\')">'+
+      box+'<span class="rq-no">'+r.no+'<small class="vtag">v'+(r.currentVersion||1)+
+        (num(r.submissionCount)>1?" · "+r.submissionCount+" submissions":"")+'</small></span>'+
+      '<div class="rq-main"><b>'+r.category+" · "+(r.vendorName||r.person)+'</b>'+
+        '<small>'+nameOf(r.by)+" · "+r.branch+" · raised "+dt(r.raised)+"</small></div>"+
+      (r.escalationFlag==="Y"?'<span class="excep">escalated</span>':"")+
+      (r.flagged?'<span class="excep">'+r.flagged+"</span>":"")+
+      '<span class="rq-amt">'+money(liveAmount(r))+
+        (target!=null&&r.status===ST.REJ_REWORK
+          ? '<small style="display:block;font-size:9px;font-weight:700;color:var(--red)">target '+money(target)+"</small>"
+          : (num(r.approvedAmount)&&num(r.approvedAmount)!==num(r.originalAmount||r.expenseAmount)
+             ? '<small style="display:block;font-size:9px;font-weight:600;color:var(--muted)">asked '+money(r.originalAmount||r.expenseAmount)+"</small>":""))+
+      "</span>"+statusTag(r)+
+    "</div>"+
+    '<div class="rq-body">'+detailHtml(r)+versionTable(r)+
+      (actable&&withMe?managerPanel(r):"")+
+      (myRework?reworkPanel(r):"")+
+      recallBtn+postBtn+
+      '<div class="act" style="margin-top:8px; width: 100%; display: flex;">'+
+        (cancelBtn ? cancelBtn : '') +
+        transferBtn +
+      '</div>'+
+    "</div></div>";
+}
+
+/* Cards the user has expanded — remembered across refresh() re-renders,
+   since refresh() rebuilds card HTML from scratch (losing the "open"
+   class) whenever markUnderReview()'s network round-trip finishes. */
+const OPEN_CARDS = new Set();
+
+/* opening a card is what sets Under Review, for the assigned manager only */
+function toggleCard(id){
+  const el=document.getElementById("rq-"+id);
+  if(!el) return;
+  const opening=!el.classList.contains("open");
+  el.classList.toggle("open");
+  if(opening){ OPEN_CARDS.add(id); markUnderReview(id); }
+  else { OPEN_CARDS.delete(id); }
+}
+
+/* Re-applies the "open" class to any cards that were expanded before the
+   last refresh() rebuilt the list HTML. Call after every innerHTML swap
+   that uses card(). */
+function restoreOpenCards(){
+  OPEN_CARDS.forEach(id=>{
+    const el=document.getElementById("rq-"+id);
+    if(el) el.classList.add("open");
+  });
+}
+
+
+function countSel(){
+  const n=document.querySelectorAll(".bx:checked").length;
+  $("bulkCount").textContent=n;
+  $("bulkbar").classList.toggle("on",document.querySelectorAll(".bx").length>0);
+}
+function selectAll(on){ document.querySelectorAll(".bx").forEach(b=>b.checked=on); countSel(); }
+async function bulkAct(){
+  const ids=[].slice.call(document.querySelectorAll(".bx:checked")).map(b=>b.value);
+  if(!ids.length){ alert("Select at least one request."); return; }
+  if(!confirm("Approve "+ids.length+" requisition(s)?")) return;
+  
+  const list = await loadAll();
+  for(let i=0; i<ids.length; i++) {
+    let id = ids[i];
+    let r = list.find(x => x.id === id);
+    if(r && r.status === "Pending" && r.chain[r.step] === ME){
+      r.trail.push({code: ME, act: "Approved", remark: "Approved in bulk", ts: new Date().toISOString()});
+      stampApproval(r, ME, (r.targetedAmount!==""&&r.targetedAmount!=null)?Number(r.targetedAmount):Number(r.requestedAmount||r.expenseAmount));
+      await pushToExcel(r, true);
+    }
+  }
+  refresh();
+}
+
+function kpi(rows){
+  return rows.map((x,i)=>'<div class="kpi'+(i===0?" total":"")+'" style="--accent:'+(x[2]||"var(--blue)")+'">'+
+    '<span class="lbl">'+x[0]+'</span><span class="val">'+x[1]+"</span></div>").join("");
+}
+
+async function refresh(){
+  if(!ME) return;
+  const list = await loadAll();
+
+  try {
+
+  /* --- Reporting Manager / Approver queue --- */
+  const inbox = list.filter(r =>
+    ACTIONABLE.indexOf(r.status)>-1 && !isTerminal(r) && r.chain && r.chain[r.step] &&
+    String(r.chain[r.step]).trim().toUpperCase() === ME);
+  $("inboxCount").textContent = inbox.length;
+  $("inboxList").innerHTML = inbox.length ? inbox.map(r=>card(r,true)).join("")
+    : '<div class="empty"><b>Nothing waiting</b>Requisitions routed to you will appear here.</div>';
+  countSel();
+
+  /* --- Branch rework queue --- */
+  const rework = list.filter(r => r.status===ST.REJ_REWORK && r.by===ME);
+  $("reworkCount").textContent = rework.length;
+  $("reworkCount").style.background = rework.length ? "var(--red)" : "var(--muted)";
+  $("reworkList").innerHTML = rework.length ? rework.map(r=>card(r,false)).join("")
+    : '<div class="empty"><b>Nothing to rework</b>Requisitions returned by your manager appear here.</div>';
+
+  /* --- My requisitions --- */
+  const mine = list.filter(r => r.by === ME);
+  $("mineList").innerHTML = mine.length ? mine.map(r=>card(r,false)).join("")
+    : '<div class="empty"><b>No requisitions yet</b>Raise one from the New Request tab.</div>';
+
+  /* Diagnostic: server had rows, but none matched you anywhere (not
+     raised by you, not in your approval chain). Usually means the "by"
+     or "chain" values saved in the sheet don't match your login code. */
+  if (list.length > 0 && inbox.length === 0 && rework.length === 0 && mine.length === 0) {
+    const sampleBy = [...new Set(list.slice(0,5).map(r=>r.by))].join(", ");
+    console.warn(`Server returned ${list.length} requisition(s), but none are linked to your code "${ME}" — as raiser or approver. Sample "by" values in the data: ${sampleBy || "(blank)"}. Check EmpCode/login matches the "by"/"chain" values saved by the flow.`);
+  }
+
+
+  /* --- KPI strip, role aware --- */
+  const isMgr = inbox.length>0 || list.some(r=>r.chain && r.chain.indexOf(ME)>-1 && r.by!==ME);
+  if(isMgr && !mine.length){
+    const seen  = list.filter(r=>r.chain && r.chain.indexOf(ME)>-1);
+    const rej   = seen.filter(r=>r.trail && r.trail.some(t=>t.code===ME && t.act==="REJECT_REWORK"));
+    const appr  = seen.filter(r=>r.trail && r.trail.some(t=>t.code===ME && (t.act==="APPROVE"||t.act==="FINAL_APPROVE")));
+    $("kpis").innerHTML = kpi([
+      ["Pending approval", inbox.filter(r=>r.status!==ST.REWORKED).length, "var(--teal)"],
+      ["Reworked & resubmitted", inbox.filter(r=>r.status===ST.REWORKED).length, "var(--violet)"],
+      ["Approved by me", appr.length, "var(--green)"],
+      ["Returned by me", rej.length, "var(--red)"],
+      ["Value pending", money(inbox.reduce((s,r)=>s+liveAmount(r),0)), "var(--navy)"]
+    ]);
+  } else {
+    $("kpis").innerHTML = kpi([
+      ["Pending submission", mine.filter(r=>r.status===ST.DRAFT||r.status===ST.REJ_REWORK).length, "var(--red)"],
+      ["Submitted", mine.filter(r=>ACTIONABLE.indexOf(r.status)>-1).length, "var(--blue)"],
+      ["Rejected for rework", rework.length, "var(--amber)"],
+      ["Approved", mine.filter(r=>r.status===ST.APPROVED||r.status===ST.FINAL).length, "var(--green)"],
+      ["Approved value", money(mine.filter(r=>r.status===ST.FINAL).reduce((s,r)=>s+num(r.approvedAmount||0),0)), "var(--navy)"]
+    ]);
+  }
+
+  $("tabAdmin").style.display = (ADMINS.indexOf(ME)>-1) ? "" : "none";
+  if(ADMINS.indexOf(ME)>-1){
+    renderAdmin();
+    const f=$("fltStatus").value;
+    const all=(f==="All status")?list:list.filter(r=>r.status===f);
+    $("allList").innerHTML=all.length?all.map(r=>card(r,false)).join("")
+      :'<div class="empty"><b>No requisitions</b>Nothing matches this filter.</div>';
+  }
+
+  restoreOpenCards();
+
+  } catch (renderErr) {
+    console.error("refresh() failed while rendering", renderErr);
+    showServerError("Rendering error: " + renderErr.message + " (data loaded fine — this is a display bug, check console for details)");
+  }
+}
+
+$("fltStatus").addEventListener("change",refresh);
+
+
+/* =========================================================
+   EXPENSE ENTRY SYNC — only the Approved Amount travels
+   ========================================================= */
+function toPayload(r){
+  const approved=(r.approvedAmount!==""&&r.approvedAmount!=null)?Number(r.approvedAmount):Number(r.expenseAmount);
+  return {
+    reqNo:r.no, branch:r.branch, date:r.date, expenseType:r.expenseType, category:r.category,
+    expenseAmount:approved, approvedAmount:approved, requestedAmount:Number(r.requestedAmount||r.expenseAmount),
+    division:r.division, expenseLimit:r.expenseLimit, bizCategory:r.bizCategory,
+    expenseGroup:r.expenseGroup, engineer:r.engineer, person:r.person, customerName:r.customerName,
+    voucher:r.voucher, ticket:r.ticket, uid:r.uid, atmSiteId:r.atmSiteId, siteAddress:r.siteAddress,
+    inOutMaterial:r.inOutMaterial, materialDetails:r.materialDetails, fromLoc:r.fromLoc, toLoc:r.toLoc,
+    distancePlace:r.distancePlace, transporterCo:r.transporterCo, vehicleNo:r.vehicleNo,
+    transporterContact:r.transporterContact, invoiceNo:r.invoiceNo, invoiceDate:r.invoiceDate,
+    vendorGstin:r.vendorGstin, lrPodNo:r.lrPodNo, hoApproval:r.hoApproval, remark:r.remark,
+    approvedBy:r.approvedBy, approvedOn:r.approvedOn, docImageName:r.docImageName
+  };
+}
+function b64(o){
+  const bytes=new TextEncoder().encode(JSON.stringify(o));
+  let s=""; for(let i=0;i<bytes.length;i++) s+=String.fromCharCode(bytes[i]);
+  return btoa(s).replace(/\+/g,"-").replace(/\//g,"_");
+}
+async function postToTracker(no){
+  const list=await loadAll(); let r=null;
+  for(let i=0;i<list.length;i++){ if(list[i].no===no){ r=list[i]; break; } }
+  if(!r){ alert("Requisition not found."); return; }
+  if(r.status!==ST.FINAL){ alert("Only finally approved requisitions can be posted."); return; }
+  if(isConverted(r)&&!confirm("This was already posted. Open it again?")) return;
+  const p=toPayload(r);
+  try{ sessionStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); localStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); }catch(e){}
+  window.open(TRACKER_URL+"?req="+b64(p),"_blank");
+}
+
+/* =========================================================
+   ADMIN OVERSIGHT + 3-HOUR SLA REMINDERS
+   ========================================================= */
+const SLA_HOURS=3;
+const SLA_KEY="prostarm:pettycash:reminders";
+const REMINDER_ENDPOINT="";        /* paste the Outlook "send reminder" flow URL here */
+
+function ageHours(iso){ return (Date.now()-new Date(iso).getTime())/3600000; }
+function ageLabel(x){
+  if(x<1) return Math.round(x*60)+" min";
+  if(x<48) return x.toFixed(1)+" hrs";
+  return Math.floor(x/24)+" days";
+}
+/* the clock restarts each time the request moves to a new desk */
+function pendingSince(r){
+  if(r.pendingSince) return r.pendingSince;
+  const t=(r.trail||[]);
+  return t.length?t[t.length-1].ts:r.raised;
+}
+/* the ledger page records conversions here when an expense is posted */
+function conversionMap(){
+  try{ return JSON.parse(localStorage.getItem("prostarm:pettycash:converted")||"{}"); }catch(e){ return {}; }
+}
+function isConverted(r){
+  if(r.entered) return true;
+  const m=conversionMap();
+  return !!m[r.no];
+}
+function convertedAt(r){
+  if(r.entered&&r.entered.at) return r.entered.at;
+  const m=conversionMap();
+  return m[r.no]?m[r.no].at:null;
+}
+function pendingWith(r){
+  if(isTerminal(r)||!r.chain) return null;
+  const c=(r.status===ST.REJ_REWORK)?r.by:r.chain[r.step];
+  if(!c||!EMP[c]) return null;
+  return {code:c,name:EMP[c].n,desig:EMP[c].d,
+          role:(r.status===ST.REJ_REWORK?"Branch Person (rework)":(c===APPROVER?"Final Approver":"Reporting Manager")),
+          email:(EMP[c].email||EMP[c].n.toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@prostarm.com")};
+}
+function readReminders(){ try{ return JSON.parse(localStorage.getItem(SLA_KEY)||"[]"); }catch(e){ return []; } }
+function writeReminders(l){ try{ localStorage.setItem(SLA_KEY,JSON.stringify(l)); }catch(e){} }
+
+async function slaSweep(silent){
+  const list=await loadAll();
+  const queue=readReminders(), seen={};
+  queue.forEach(q=>{ seen[q.reqNo+"|"+q.toUserId+"|"+q.cycle]=1; });
+  let added=0;
+  list.forEach(r=>{
+    if(isTerminal(r)||r.status===ST.DRAFT) return;
+    const hrs=ageHours(pendingSince(r));
+    if(hrs<SLA_HOURS) return;
+    const who=pendingWith(r);
+    if(!who) return;
+    const cycle=Math.floor(hrs/SLA_HOURS);
+    if(seen[r.no+"|"+who.code+"|"+cycle]) return;
+    queue.push({
+      id:"RM"+Date.now()+"-"+added, reqNo:r.no, cycle:cycle, queuedAt:new Date().toISOString(),
+      toUserId:who.code, toName:who.name, toEmail:who.email, toRole:who.role,
+      subject:"Reminder: petty cash requisition "+r.no+" awaiting your action",
+      requester:(EMP[r.by]?EMP[r.by].n:r.by)+" ("+r.by+")", branch:r.branch,
+      amount:liveAmount(r), category:r.category, raisedAt:r.raised,
+      pendingHours:Number(hrs.toFixed(1)), status:"queued"
+    });
+    added++;
+  });
+  if(added) writeReminders(queue);
+  if(added&&REMINDER_ENDPOINT) await flushReminders();
+  if(!silent) renderAdmin();
+  return added;
+}
+async function flushReminders(){
+  if(!REMINDER_ENDPOINT) return 0;
+  const queue=readReminders(), due=queue.filter(q=>q.status==="queued");
+  if(!due.length) return 0;
+  try{
+    const res=await fetch(REMINDER_ENDPOINT,{method:"POST",
+      headers:{"Content-Type":"application/json"},body:JSON.stringify({reminders:due})});
+    if(!res.ok) throw new Error(res.status);
+    due.forEach(q=>{ q.status="sent"; q.sentAt=new Date().toISOString(); });
+  }catch(e){
+    due.forEach(q=>{ q.status="failed"; q.error=String(e.message||e); });
+  }
+  writeReminders(queue);
+  return due.length;
+}
+let SLA_TIMER=null;
+function startSlaWatch(){
+  if(SLA_TIMER) clearInterval(SLA_TIMER);
+  slaSweep(true);
+  SLA_TIMER=setInterval(()=>slaSweep(true),5*60*1000);
+}
+async function runSlaNow(){
+  const n=await slaSweep(false);
+  alert(n?n+" reminder(s) raised.":"Nothing has breached the "+SLA_HOURS+"-hour SLA right now.");
+}
+function exportReminders(){
+  const q=readReminders();
+  if(!q.length){ alert("No reminders queued."); return; }
+  const cols=["id","queuedAt","reqNo","toUserId","toName","toEmail","toRole","subject","requester","branch","amount","category","raisedAt","pendingHours","status"];
+  const esc=v=>'"'+String(v==null?"":v).replace(/"/g,'""')+'"';
+  const rows=[cols.join(",")].concat(q.map(r=>cols.map(c=>esc(r[c])).join(",")));
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([rows.join("\n")],{type:"text/csv"}));
+  a.download="pending_reminders_"+new Date().toISOString().slice(0,10)+".csv";
+  a.click();
+}
+
+async function renderAdmin(){
+  if(ADMINS.indexOf(ME)<0) return;
+  const list=await loadAll();
+  const pend=list.filter(r=>!isTerminal(r)&&r.status!==ST.DRAFT);
+  const late=pend.filter(r=>ageHours(pendingSince(r))>=SLA_HOURS);
+  const appr=list.filter(r=>r.status===ST.FINAL);
+  const conv=appr.filter(isConverted);
+  $("adminKpis").innerHTML=kpi([
+    ["Open requisitions",pend.length,"var(--amber)"],
+    ["Breaching "+SLA_HOURS+"h SLA",late.length,"var(--red)"],
+    ["Approved",appr.length,"var(--green)"],
+    ["Converted to expense",conv.length+" / "+appr.length,"var(--blue)"],
+    ["Approved value",money(appr.reduce((s,r)=>s+liveAmount(r),0)),"var(--navy)"]
+  ]);
+
+  let t='<thead><tr><th>Requisition ID</th><th>Requester</th><th>Raised</th><th>Status</th>'+
+        '<th>Pending With</th><th>Role</th><th class="num">Amount</th><th class="num">Waiting</th></tr></thead><tbody>';
+  list.slice().sort((a,b)=>String(b.raised||"").localeCompare(String(a.raised||""))).forEach(r=>{
+    const w=pendingWith(r);
+    const hrs=(!isTerminal(r))?ageHours(pendingSince(r)):null;
+    const over=(hrs!=null&&hrs>=SLA_HOURS);
+    t+="<tr><td><b>"+r.no+"</b></td><td>"+((EMP[r.by]&&EMP[r.by].n)||r.by)+"<br><span style='color:var(--muted)'>"+r.branch+"</span></td>"+
+       "<td>"+dt(r.raised)+"</td><td>"+statusTag(r)+"</td><td>"+(w?w.name:"—")+"</td><td>"+(w?w.role:"—")+"</td>"+
+       '<td class="num">'+money(liveAmount(r))+"</td>"+
+       '<td class="num" style="color:'+(over?"var(--red)":"var(--muted)")+'">'+(hrs!=null?ageLabel(hrs)+(over?" &#9888;":""):"—")+"</td></tr>";
+  });
+  $("trackTbl").innerHTML=list.length?t+"</tbody>":'<tr><td><div class="empty"><b>No requisitions yet</b></div></td></tr>';
+
+  let c='<thead><tr><th>Requisition ID</th><th>Branch</th><th>Category</th><th class="num">Approved</th>'+
+        '<th>Conversion</th><th>Entered</th></tr></thead><tbody>';
+  appr.forEach(r=>{
+    const ok=isConverted(r);
+    c+="<tr><td><b>"+r.no+"</b></td><td>"+r.branch+"</td><td>"+r.category+"</td>"+
+       '<td class="num">'+money(liveAmount(r))+"</td>"+
+       "<td>"+(ok?'<span class="st a">Converted to Expense</span>':'<span class="st p">Pending Entry in Expense Tracker</span>')+"</td>"+
+       "<td>"+(ok&&convertedAt(r)?dt(convertedAt(r)):(ok?"yes":"—"))+"</td></tr>";
+  });
+  $("convTbl").innerHTML=appr.length?c+"</tbody>":'<tr><td><div class="empty"><b>Nothing approved yet</b></div></td></tr>';
+
+  const q=readReminders().slice().reverse();
+  let m='<thead><tr><th>Queued</th><th>Requisition</th><th>To</th><th>Email</th><th>Waiting</th><th>State</th></tr></thead><tbody>';
+  q.slice(0,80).forEach(x=>{
+    const cls=x.status==="sent"?"a":(x.status==="failed"?"x":"p");
+    m+="<tr><td>"+dt(x.queuedAt)+"</td><td>"+x.reqNo+"</td><td>"+x.toName+"<br><span style='color:var(--muted)'>"+x.toRole+"</span></td>"+
+       "<td>"+x.toEmail+"</td><td>"+x.pendingHours+" hrs</td>"+'<td><span class="st '+cls+'">'+x.status+"</span></td></tr>";
+  });
+  $("remTbl").innerHTML=q.length?m+"</tbody>":'<tr><td><div class="empty"><b>No reminders raised</b>Nothing has breached the '+SLA_HOURS+'-hour SLA.</div></td></tr>';
+  $("remNote").textContent=REMINDER_ENDPOINT
+    ? "Reminders are POSTed to the configured Outlook flow automatically."
+    : "No mail flow configured yet — reminders are queued here. Paste your flow URL into REMINDER_ENDPOINT.";
+}
+
+/* A branch user has exactly one branch, so the field stays read-only.
+   HO Admin and Finance Auditor span every branch and a regional manager
+   spans several, so for them it becomes a picker — otherwise the branch
+   would be blank and voucher numbering would have nothing to work from. */
+function setupBranchField(e) {
+  const su = SESSION || {};
+  let list = [];
+  if (su.role === 'admin' || su.role === 'auditor' || su.branch === 'ALL') {
+    list = Object.keys(BRANCH_REGION);
+  } else if (Array.isArray(su.branches) && su.branches.length > 1) {
+    list = su.branches.slice();
+  }
+  if (!list.length) return;                    // single-branch user: leave as-is
+
+  const old = $("fBranch");
+  if (!old || old.tagName === 'SELECT') return;
+  const sel = document.createElement('select');
+  sel.id = 'fBranch';
+  sel.className = old.className;
+  sel.innerHTML = list.map(c =>
+    '<option value="' + c + '">' + c.replace(/^[A-Z]{2}_/, '') + '</option>').join('');
+  sel.value = (e && e.b && list.indexOf(e.b) > -1) ? e.b : list[0];
+  sel.addEventListener('change', () => {
+    const b = sel.value;
+    $("aZone").value = ZONE[b] || (REGION_INFO[BRANCH_REGION[b]] ? REGION_INFO[BRANCH_REGION[b]].name : "—");
+    if (EMP[ME]) EMP[ME].b = b;
+    fillStaff(); route(); refreshVoucher();
+  });
+  old.parentNode.replaceChild(sel, old);
+  if (EMP[ME]) EMP[ME].b = sel.value;
+  $("aZone").value = ZONE[sel.value] ||
+    (REGION_INFO[BRANCH_REGION[sel.value]] ? REGION_INFO[BRANCH_REGION[sel.value]].name : "—");
+}
+
+/* ================= APP INITIALIZATION ================= */
+async function initializeApp() {
+  let SESSION_USER = null;
+  try { 
+    SESSION_USER = JSON.parse(sessionStorage.getItem('activeUser') || 'null'); 
+  } catch(e) { }
+
+  if (!SESSION_USER || !SESSION_USER.username) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  SESSION = SESSION_USER;
+  ME = String(SESSION_USER.username).trim().toUpperCase();
+
+  try {
+    // Call Configuration GET URL (20s timeout — a stalled Power Automate
+    // flow will no longer leave this screen stuck forever)
+    const rawResponse = await fetchJSON(EXCEL_GET_CONFIG_URL);
+
+    // Safely extract array based on Power Automate wrapper
+    const excelData = rawResponse.value ? rawResponse.value : rawResponse;
+
+    if (!Array.isArray(excelData)) {
+      throw new Error("Config response wasn't an array — check the flow's output shape: " + JSON.stringify(rawResponse).slice(0, 300));
+    }
+    if (!excelData.length) {
+      throw new Error("Config response was an empty array — check the Excel table has rows and the flow is pointed at it.");
+    }
+
+    excelData.forEach(row => {
+      const getVal = (key) => {
+        const foundKey = Object.keys(row).find(k => k.toLowerCase() === key.toLowerCase());
+        return foundKey ? row[foundKey] : undefined;
+      };
+
+      const code = getVal('EmpCode'); 
+      if(!code) return; // Skip blank rows
+      
+      EMP[code] = {
+        n: getVal('FullName'),
+        b: getVal('Branch'),
+        d: getVal('Designation'),
+        m: getVal('ManagerCode') || null,
+        email: getVal('Email') || getVal('EmailAddress') || ""   /* used by the SLA reminder */
+      };
+
+      if (getVal('Branch') && getVal('Zone')) {
+        ZONE[getVal('Branch')] = getVal('Zone');
+      }
+      const mx = getVal('MaxResubmissions');
+      if (mx && !isNaN(Number(mx))) MAX_RESUBMISSIONS = Number(mx);
+      const aat = getVal('AllowAboveTarget');
+      if (aat) ALLOW_ABOVE_TARGET = String(aat).toUpperCase() !== 'FALSE';
+
+      if (String(getVal('IsAdmin')).toUpperCase() === 'TRUE') {
+        ADMINS.push(code);
+      }
+      if (String(getVal('Designation')).trim().toLowerCase() === 'final approving authority') {
+         APPROVER = code;
+      }
+      
+      const branch = getVal('Branch');
+      const group = getVal('ExpenseGroup');
+      if (branch && group) {
+        if (!BRANCH_STAFF_MAP[branch]) BRANCH_STAFF_MAP[branch] = {};
+        if (!BRANCH_STAFF_MAP[branch][group]) BRANCH_STAFF_MAP[branch][group] = [];
+        BRANCH_STAFF_MAP[branch][group].push(`${code} - ${getVal('FullName')}`);
+      }
+    });
+
+  } catch(err) {
+    console.error("Failed to fetch config from Excel", err);
+    document.getElementById("loading").textContent = "Error loading employee data: " + err.message;
+    return;
+  }
+
+  document.getElementById("loading").style.display = "none";
+
+  /* Single sign-in: a valid Petty Cash session is sufficient. The old
+     employee-code gate rejected anyone missing from the master, which is
+     why a working login could still be told it was not authorised. */
+  ME = resolveSessionEmployee(SESSION);
+  {
+    try {
+      $("app").style.display = "block";
+      const e = EMP[ME] || {};
+      $("uName").textContent = (e.n || ME) + " · " + ME;
+      $("uSub").textContent = (e.d || "User") + " · " + (e.b || "—");
+      $("aEmp").value = ME + " — " + (e.n || ME);
+      $("fBranch").value = e.b || "";
+      $("aZone").value = ZONE[e.b] || "—";
+      setupBranchField(e);
+      $("aDesig").value = e.d || "";
+      $("aRM").value = (e.m && EMP[e.m]) ? (EMP[e.m].n + " — " + EMP[e.m].d) : (e.m || "—");
+      $("tabAll").style.display = ADMINS.indexOf(ME) > -1 ? "block" : "none";
+
+      const isApp = ME === APPROVER;
+      $("inboxLabel").textContent = isApp ? "Pending My Approval" : "Pending My Recommendation";
+      $("inboxTitle").textContent = isApp ? "Waiting For Your Approval" : "Waiting For Your Recommendation";
+
+      setToday();
+      fillStaff();
+      stampHeader();
+      route();
+      refresh();
+      refreshVoucher();
+      startSlaWatch();
+    } catch (renderErr) {
+      console.error("Failed to render app after config load", renderErr);
+      showServerError("App loaded config but failed to render: " + renderErr.message);
+    }
+  }
+}
+
+document.addEventListener("DOMContentLoaded", initializeApp);
+
+/* ================================================================
+   TRANSFER TO PETTY CASH SHEET  (Release 4.0 integration)
+   A finally-approved requisition becomes a petty cash expense entry.
+   The branch chooses one of two routes:
+     A) Save only            -> lands as "Expense Submitted", NOT sent
+                                to the Regional Manager. Documents are
+                                attached later from the Petty Cash app.
+     B) Attach + submit      -> lands as "Pending RM Verification".
+   From there the existing chain runs unchanged:
+     Pending RM -> Regional Manager -> Pending FA -> Finance Auditor.
+   ================================================================ */
+
+/* The petty cash ledger the tracker reads. Writing here is what makes
+   the entry appear in dashboard.html. */
+const PETTY_CASH_ADD_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/42c17ce44a3947458f3b837bf6a823db/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=EqmQYo67GkiuIdzxawvG_vuZGhNFWwChcg_VifsIisg";
+
+/* The original transfer flow. It writes to whatever sheet it was built
+   against, which may or may not be the ledger the tracker reads. Left
+   off by default to avoid creating the entry twice — turn it on only
+   if that flow targets a different downstream sheet you still need. */
+const ALSO_PUSH_LEGACY_TRANSFER = false;
+
+const PC_HANDOFF_KEY = "prostarm:pettycash:handoff";
+const PC_MAX_DOC_BYTES = 3 * 1024 * 1024;
+const PC_MAX_DOCS = 10;
+
+let pcTransferReq = null;
+let pcStagedDocs = [];
+
+/* ---------- map a requisition onto a petty cash expense record ---------- */
+function buildPettyCashRecord(r, wfStatus, docs) {
+  const now = new Date().toISOString();
+  const who = ME;
+
+  /* After final approval stampApproval() overwrites expenseAmount with the
+     sanctioned figure. Fall back through the negotiation fields so a
+     reworked requisition never transfers at its originally requested value. */
+  const amount = Number(
+    (r.approvedAmount !== null && r.approvedAmount !== undefined && r.approvedAmount !== "")
+      ? r.approvedAmount
+      : (r.expenseAmount || r.currentRevisedAmount || r.requestedAmount || 0)
+  );
+
+  /* Carry the approval history across so the petty cash audit trail opens
+     with the requisition, not with the transfer. */
+  const trail = [];
+  trail.push({ action: 'REQ_RAISED', from: '', to: 'SUBMITTED',
+    remark: 'Requisition ' + (r.no || r.id) + ' raised for ' + money(amount),
+    actor: r.by || who, role: 'branch', at: r.raised || now });
+
+  (r.trail || []).forEach(t => {
+    trail.push({ action: 'REQ_' + String(t.act || '').toUpperCase().replace(/[^A-Z]/g, '_'),
+      from: '', to: '', remark: (t.act || '') + (t.remark ? ' — ' + t.remark : ''),
+      actor: t.code || '', role: 'approver', at: t.ts || now });
+  });
+
+  trail.push({ action: 'REQ_TRANSFERRED', from: '', to: wfStatus,
+    remark: 'Transferred to petty cash sheet' +
+            (wfStatus === 'PENDING_RM'
+              ? ' with ' + docs.length + ' supporting document(s) and submitted for Regional Manager verification.'
+              : ' without documents. Awaiting supporting documents before submission.'),
+    actor: who, role: 'branch', at: now });
+
+  const rec = {
+    id: 'PC' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    uid: r.uid || '',
+    branch: r.branch || '',
+    date: (r.date || '').split('T')[0] || now.slice(0, 10),
+    direction: 'out',
+    division: r.division || '',
+    expenseType: r.expenseType || '',
+    category: r.category || '',
+    expenseGroup: r.expenseGroup || '',
+    receivedAmount: 0,
+    expenseAmount: amount,
+    voucher: r.voucher || r.no || '',
+    person: r.person || r.vendorName || '',
+    engineer: r.engineer || '',
+    bizCategory: r.bizCategory || '',
+    customerName: r.customerName || '',
+    ticket: r.ticket || '',
+    atmSiteId: r.atmSiteId || '',
+    siteAddress: r.siteAddress || '',
+    materialDetails: r.materialDetails || '',
+    inOutMaterial: r.inOutMaterial || '',
+    distancePlace: r.distancePlace || '',
+    fromLoc: r.fromLoc || '',
+    toLoc: r.toLoc || '',
+    transporterCo: r.transporterCo || '',
+    vehicleNo: r.vehicleNo || '',
+    transporterContact: r.transporterContact || '',
+    invoiceNo: r.invoiceNo || '',
+    invoiceDate: (r.invoiceDate || '').split('T')[0] || '',
+    vendorGstin: r.vendorGstin || '',
+    lrPodNo: r.lrPodNo || '',
+    hoApproval: r.approvedBy ? (nameOf(r.approvedBy) + ' on ' + (r.approvedOn || '').slice(0, 10)) : (r.hoApproval || ''),
+    remark: r.remark || '',
+
+    /* --- requisition linkage --- */
+    reqNo: r.no || '',
+    reqId: r.id || '',
+    reqApprovedBy: r.approvedBy || '',
+    reqApprovedOn: r.approvedOn || '',
+    reqOriginalAmount: Number(r.originalAmount || r.requestedAmount || amount),
+    sourceType: 'REQUISITION',
+
+    /* --- petty cash workflow state --- */
+    wfStatus: wfStatus,
+    supportingDocs: docs,
+    auditTrail: trail
+  };
+
+  if (wfStatus === 'PENDING_RM') rec.docsSubmittedOn = now;
+  return rec;
+}
+
+/* ---------- transfer dialog ---------- */
+function openTransferModal(id) {
+  const r = MEM.find(x => x.id === id);
+  if (!r) { alert('Requisition not found. Refreshing.'); refresh(); return; }
+  if (r.status !== ST.FINAL) { alert('Only a finally approved requisition can be transferred.'); return; }
+  if (isTransferred(r)) { alert('This requisition has already been transferred.'); return; }
+
+  pcTransferReq = r;
+  pcStagedDocs = [];
+  const amount = Number((r.approvedAmount !== null && r.approvedAmount !== undefined && r.approvedAmount !== "")
+    ? r.approvedAmount : (r.expenseAmount || 0));
+  const orig = Number(r.originalAmount || r.requestedAmount || amount);
+
+  $("pcModalBody").innerHTML =
+    '<div class="pc-sum">' +
+      '<div><span>Requisition</span><b>' + (r.no || r.id) + '</b></div>' +
+      '<div><span>Branch</span><b>' + (r.branch || '—') + '</b></div>' +
+      '<div><span>Expense</span><b>' + (r.expenseType || '—') + ' · ' + (r.category || '—') + '</b></div>' +
+      '<div><span>Sanctioned Amount</span><b class="pc-amt">' + money(amount) + '</b></div>' +
+      (orig !== amount ? '<div><span>Originally Requested</span><b style="color:#9a6b12">' + money(orig) + '</b></div>' : '') +
+      '<div><span>Approved By</span><b>' + (r.approvedBy ? nameOf(r.approvedBy) : '—') + '</b></div>' +
+    '</div>' +
+
+    '<div class="pc-opts">' +
+      '<button type="button" class="pc-opt" data-k="A" onclick="pcPick(\'A\')">' +
+        '<b>A · Save to Petty Cash Sheet only</b>' +
+        '<small>Creates the ledger entry now and leaves it at <i>Expense Submitted</i>. ' +
+        'It is <b>not</b> sent to the Regional Manager. Upload documents later from the Petty Cash app and submit then.</small>' +
+      '</button>' +
+      '<button type="button" class="pc-opt" data-k="B" onclick="pcPick(\'B\')">' +
+        '<b>B · Attach documents and submit for approval</b>' +
+        '<small>Creates the ledger entry with the documents attached and sends it straight to the ' +
+        'Regional Manager as <i>Pending Verification</i>.</small>' +
+      '</button>' +
+    '</div>' +
+
+    '<div id="pcDocWrap" style="display:none">' +
+      '<label class="pc-lbl">Supporting Documents <span style="color:#c0392b">*</span></label>' +
+      '<div class="drop" onclick="document.getElementById(\'pcFiles\').click()">' +
+        '<b>Tap to attach bills, invoices or approvals</b>' +
+        'PDF, JPG, PNG, XLSX or CSV · up to 3 MB each · maximum ' + PC_MAX_DOCS +
+      '</div>' +
+      '<input type="file" id="pcFiles" multiple accept=".pdf,.jpg,.jpeg,.png,.xlsx,.csv" style="display:none" onchange="pcStage(this)">' +
+      '<div id="pcStaged"></div>' +
+    '</div>';
+
+  $("pcConfirmBtn").disabled = true;
+  $("pcConfirmBtn").textContent = "Select an option";
+  $("pcModal").classList.add("on");
+}
+
+function pcPick(k) {
+  pcTransferChoice = k;
+  Array.prototype.forEach.call(document.querySelectorAll('#pcModalBody .pc-opt'),
+    b => b.classList.toggle('on', b.getAttribute('data-k') === k));
+  $("pcDocWrap").style.display = (k === 'B') ? 'block' : 'none';
+  $("pcConfirmBtn").disabled = false;
+  $("pcConfirmBtn").textContent = (k === 'A')
+    ? 'Save to Petty Cash Sheet'
+    : 'Attach & Submit for RM Approval';
+  pcRenderStaged();
+}
+let pcTransferChoice = '';
+
+function pcStage(input) {
+  const files = Array.prototype.slice.call(input.files || []);
+  input.value = '';
+  files.forEach(f => {
+    if (pcStagedDocs.length >= PC_MAX_DOCS) { alert('Maximum ' + PC_MAX_DOCS + ' documents.'); return; }
+    if (!/\.(pdf|jpe?g|png|xlsx|csv)$/i.test(f.name)) { alert('Rejected "' + f.name + '" — only PDF, JPG, PNG, XLSX and CSV are accepted.'); return; }
+    if (f.size > PC_MAX_DOC_BYTES) { alert('Rejected "' + f.name + '" — exceeds the 3 MB limit.'); return; }
+    const fr = new FileReader();
+    fr.onload = () => {
+      pcStagedDocs.push({
+        id: 'D' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+        name: f.name, mime: f.type || 'application/octet-stream', size: f.size,
+        data: String(fr.result).split(',')[1] || '',
+        uploadedBy: ME, uploadedOn: new Date().toISOString()
+      });
+      pcRenderStaged();
+    };
+    fr.onerror = () => alert('Could not read "' + f.name + '".');
+    fr.readAsDataURL(f);
+  });
+}
+function pcRenderStaged() {
+  const el = $("pcStaged"); if (!el) return;
+  if (!pcStagedDocs.length) { el.innerHTML = ''; return; }
+  el.innerHTML = pcStagedDocs.map((d, i) =>
+    '<div class="pc-file"><span>📎</span><span class="pf-n">' + d.name + '</span>' +
+    '<span class="pf-s">' + Math.round(d.size / 1024) + ' KB</span>' +
+    '<button type="button" onclick="pcUnstage(' + i + ')">&#10005;</button></div>').join('');
+}
+function pcUnstage(i) { pcStagedDocs.splice(i, 1); pcRenderStaged(); }
+function closeTransferModal() {
+  $("pcModal").classList.remove("on");
+  pcTransferReq = null; pcStagedDocs = []; pcTransferChoice = '';
+}
+
+/* ---------- commit ---------- */
+async function confirmTransfer() {
+  const r = pcTransferReq;
+  if (!r) return;
+  if (!pcTransferChoice) { alert('Choose option A or B.'); return; }
+  if (pcTransferChoice === 'B' && !pcStagedDocs.length) {
+    alert('Attach at least one supporting document, or choose option A to save without documents.');
+    return;
+  }
+
+  const wfStatus = (pcTransferChoice === 'B') ? 'PENDING_RM' : 'SUBMITTED';
+  const rec = buildPettyCashRecord(r, wfStatus, pcStagedDocs.slice());
+
+  const btn = $("pcConfirmBtn");
+  btn.disabled = true; btn.textContent = 'Transferring…';
+
+  /* Queue locally first so the entry is never lost if the flow is down.
+     dashboard.html drains this on load. */
+  try {
+    const q = JSON.parse(localStorage.getItem(PC_HANDOFF_KEY) || '[]');
+    q.push(rec);
+    localStorage.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
+  } catch (e) { /* quota — the server write below still carries it */ }
+
+  let serverOk = false, errMsg = '';
+  try {
+    if (PETTY_CASH_ADD_URL.indexOf('http') === 0) {
+      const res = await fetch(PETTY_CASH_ADD_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(rec)
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + (await res.text()).slice(0, 200));
+      serverOk = true;
+    }
+  } catch (e) { errMsg = e.message; }
+
+  if (ALSO_PUSH_LEGACY_TRANSFER) {
+    try {
+      const legacy = { ...r };
+      legacy.chain = JSON.stringify(r.chain || []);
+      legacy.trail = JSON.stringify(r.trail || []);
+      legacy.versions = JSON.stringify(r.versions || []);
+      Object.keys(legacy).forEach(k => { if (legacy[k] == null) legacy[k] = ''; });
+      await fetch(EXCEL_TRANSFER_DATA_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(legacy)
+      });
+    } catch (e) { /* secondary — never blocks */ }
+  }
+
+  /* Stamp the requisition so it cannot be transferred twice. */
+  markAsTransferred(r);
+  r.entered = new Date().toISOString();
+  r.pettyCashId = rec.id;
+  r.pettyCashStatus = wfStatus;
+  logAction(r, 'TRANSFER', ST.FINAL, ST.FINAL, '', rec.expenseAmount,
+    'Transferred to petty cash sheet as ' + (wfStatus === 'PENDING_RM'
+      ? 'Pending RM Verification with ' + rec.supportingDocs.length + ' document(s)'
+      : 'Expense Submitted (documents pending)'));
+  try { await pushToExcel(r, true); } catch (e) { /* trail only */ }
+
+  closeTransferModal();
+
+  const where = serverOk ? '' :
+    '\n\nThe petty cash flow could not be reached' + (errMsg ? ' (' + errMsg + ')' : '') +
+    '.\nThe entry is queued in this browser and will appear when you open the Petty Cash tracker.';
+
+  alert(wfStatus === 'PENDING_RM'
+    ? 'Transferred. The voucher is now with the Regional Manager for verification.' + where
+    : 'Saved to the petty cash sheet as "Expense Submitted".\nIt has NOT gone to the Regional Manager — upload documents from the Petty Cash tracker and submit when ready.' + where);
+
+  refresh();
+}
+
+</script>
+</body>
+</html>
