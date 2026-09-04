@@ -292,7 +292,7 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
               <div class="f"><label>Zone <span class="auto">auto</span></label><input id="aZone" readonly></div>
               <div class="f"><label>Designation <span class="auto">auto</span></label><input id="aDesig" readonly></div>
               <div class="f"><label>Reporting Manager <span class="auto">auto</span></label><input id="aRM" readonly></div>
-              <div class="f"><label>Mobile No <span class="req">*</span></label><input id="aMobile" maxlength="10" inputmode="numeric" placeholder="10 digits"></div>
+              <div class="f"><label>Mobile No</label><input id="aMobile" maxlength="10" inputmode="numeric" placeholder="10 digits"></div>
             </div>
           </div>
         </div>
@@ -385,7 +385,7 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
             <div class="frow">
               <div class="f"><label>Invoice No</label><input id="fInvoiceNo" placeholder="Bill / Tax Invoice No"></div>
               <div class="f"><label>Invoice Date</label><input type="date" id="fInvoiceDate"></div>
-              <div class="f"><label>Vendor GSTIN No <span id="gstReq" class="hint">above ₹5,000</span></label><input id="fVendorGstin" maxlength="15" style="text-transform:uppercase" placeholder="GSTIN Number"></div>
+              <div class="f"><label>Vendor GSTIN No</label><input id="fVendorGstin" maxlength="15" style="text-transform:uppercase" placeholder="GSTIN Number"></div>
               <div class="f"><label>LR / POD Number</label><input id="fLrPodNo" placeholder="Docket / POD / LR No"></div>
               <div class="f wide"><label>Approval Taken from Person Name <span class="auto">auto on approval</span></label>
                 <input id="fHOApproval" readonly value="— filled automatically when final authority approves —"></div>
@@ -734,7 +734,7 @@ async function pushToExcel(rq, isUpdate = false) {
     payload.trail    = JSON.stringify(rq.trail || []);
     payload.versions = JSON.stringify(rq.versions || []);
 
-    const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered'];
+    const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered', 'firstViewedAt', 'approvalDate', 'cancelledAt'];
     dateFields.forEach(f => {
         if (!payload[f] || payload[f] === "") {
             delete payload[f];
@@ -1021,8 +1021,6 @@ function route(){
         ? "This request goes straight to the <b>Final Approver</b> for approval — no recommendation stage."
         : "<b>"+recs+"</b> recommendation"+(recs>1?"s":"")+" in the reporting line, then <b>Final Approver</b> approves. On approval it can be posted straight into the Expenses Entry Tracker."));
   $("logisticsCard").classList.toggle("on",MOVEMENT_HEADS.indexOf(typeSel.value)>-1);
-  $("gstReq").className=amt>5000?"req":"hint";
-  $("gstReq").textContent=amt>5000?"*":"above ₹5,000";
   const own=$("fBizCategory").value==="Branch";
   $("custReq").style.display=own?"none":"inline";
   $("tktReq").style.display=own?"none":"inline";
@@ -1045,7 +1043,7 @@ function employeeName(){
 function validate(){
   const own=$("fBizCategory").value==="Branch", amt=parseFloat($("fAmount").value)||0;
   const need=[
-    ["aMobile","Mobile no"],["fDate","Date"],["fDivision","Division"],
+    ["fDate","Date"],["fDivision","Division"],
     ["fExpenseLimit","Expense limit"],["fExpenseType","Expense type"],
     ["fCategory","Category"],["fExpenseGroup","Expense group"],
     ["fBizCategory","Expense segment"],["fPerson","Paid to"],["fRemark","Detailed remark"]
@@ -1055,7 +1053,6 @@ function validate(){
     need.push(["fMaterialDetails","Material details"]); need.push(["fInOutMaterial","Inward / Outward"]);
     need.push(["fFromLoc","From location"]); need.push(["fToLoc","To location"]);
   }
-  if(amt>5000) need.push(["fVendorGstin","Vendor GSTIN"]);
   const miss=[];
   need.forEach(p=>{ const el=$(p[0]),empty=!el.value.trim(); el.classList.toggle("flag",empty); if(empty) miss.push(p[1]); });
   if(amt<=0){ $("fAmount").classList.add("flag"); miss.unshift("Amount"); } else $("fAmount").classList.remove("flag");
