@@ -1,8 +1,0 @@
-{
-  "name": "Enterprise Petty Cash",
-  "description": "Vanilla HTML Petty Cash and Requisition Portal.",
-  "requestFramePermissions": [],
-  "majorCapabilities": [
-    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
-  ]
-}
