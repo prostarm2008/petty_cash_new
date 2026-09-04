@@ -6,7 +6,7 @@
 <title>Enterprise Petty Cash Ledger Portal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
 <style>
 /* ==========================================================================
    PROSTARM CORPORATE THEME  —  visual language ported from
@@ -790,7 +790,7 @@
 <header>
   <div class="header-container">
     <div class="brand-group">
-      <img class="brand-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAlgAAAB7CAMAAACfHw5fAAAB/lBMVEVsH2x0dCpdXl7SGx0/fz8Am+IAoOBgYmRcXmBVVaq/PwD/f3///wAAAAAAZrMAndoAVarvHSQAZLEApeYAZbJVVlYAf39ZWlwBZbIBZbEBZbF/f38AAP8BZLAAZ7FhYmRVV1gAf/8Afr4A//9XWFpXWFpWWFn+AABXWFpXWFoAqqo+Pj4AbcAAndoAnNtdXmAAqfwAndkAnNoAndkAndoAoN0AP79eYGLsHCMAnNkAv/8AaJZMSk7///8Ec8VlZWXsHCMAAH/sHCPpGyIAP3/pGCOvAADrHBzsHCPsHCM+Pn1LS2YAXp0AZsx/AAABXqw/f38Ae84AmuwA/wAASZMAiM3yJSUAVVUAo9QAoNm/AD/pGR4AVf8AcrwApONOZGT/ADX/AFUASLYAV38AickAs/gzZmZeYGKqAFUAoNw/P19SY1LVBQrRAC3/ICcApeUAv78Atto/Xz8/X19WVmFcXmBkZE3cFyLMMzP/AH8AP58AVcYAcrsAf8YAesAAiMwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8dxprAAAAgHRSTlMEBAkdBCTWf4EDBAIBAP79A/wv/owJAvXScrACAVER/iwCBAGy0E4Bb5ADBP7KFf4DM2yNpv0E/tFPBAULAf4GsQKPLwQaAxFPcAQKCAUCKAQIDAEH/g0DDjAEIwP9iw0FAwcGDf8FfgOJCA8JBf84BAcICBd+CxYFAggJMTaoz852vMcAACSuSURBVHja7Z2Je9s2lsAzM3vvwqYlkaJIihZJUYdlW/Il27Ed24lzpzma3se0nXY6nXNndu49//UFwAsAH3iIdOp2hO9L4lgUCQI/vgsPj7fQ961teOj4bbRs33K79X26GcuZzfA/u1szZBX9jqa4ihYe7eGfnSUT9YClFGqOpuVMlVK0OZpnVUBnAzfPwc3bEJpHmdje2W+u7qAifFgKg1HSJ0dRZB30lIoNOKcDHJY/QGWGO1fGz2RtY+Yt9jWnjMRSXMeqCWf3SlvgVN7G7ewD3t453ttaba6uHhcAS3PJ35eNbqfTMgxDx39arU63QSff1d6YlL3+S3iJTH6DEqtRsNknKGvEtUbhZivh7Za6Wcv1QnZ29/ZJ29vb2909jtou/u0WhqqJsVpt7qJZztmuyL00Ooa+srKyuRK1TfyjbnQoXJB0sRsVGzB64BDlPuQlhtsOVb78cZS3f9/ZkH1tlvW1D9GtlYJN141W16aiG7qMzUxP7qmMVoeOnVNYLjjk/raP9/ZXD5oZ7WCVNgyWm60DyZPQ0uU9bL3A5ItST0GtOytV2ubKiShMwIHb7GT3X0ONssP9ivRfA881W80Y0dUPYOG/gY6zJmKrOFhBw08znhegg7ZedpQppkohqeXNCFUBVKsFWo7EwiOldPL6a3RTvcNgrVRrugiWizrgcYqXB1bZK7e6+Gn6xALOtb11kDGUxwiUWbfRXsZUlAeLjHgDUhPlwSJsNWCNI8gXDMnO7lYsj/LbwXEWWAo66eiL3Og1gIWQAR7YyDQSFwCLXLxjA8ONwVrNQmQPBMvyvP26wQpG3KkDLIyWgpwcrwXf1/beQTFRFbUMrxCbsY2ifW3Z3ETUD5aUkFbmA7cYWLhhtEQdkQfWFvJAob+9elA7WPi+n4k3viBYKytY41xmi6vt3dXiwooKLGwYWNI5UUrQoTfQ/DrBmsvOqGd6NguDtaJ3S0qsA/yQarCJtXoNYK0YtkDWwmARsaBlmUPHW+WwouJbk3NllOReuT6wLPmwdVmi6wMLD/el5ZUAixhZLgTW3vWARawApR6wNg1FygHm6ufllCB5yA52ZIpEK9/PTjLDtYOloK70yc0KcFUBa8WYW6XA2oPMCg1tXRdYmCytFrDwcNsItrOwGtwvi5XU3gyce30BXa1cH1hy8WmjawJrxdhgfc5csLY2oA7sZJlY1cDSORVWBawVwwHDDi7a+YcmKJLYoFXqpvZdD44GWkpJPSh4aHWDRYJYGZLy6prA4j2DPLCIJ+SlZybTxKoGFpbW79cEFh5FBZJXO+ItN/lA1kGKL/zx3gdkICwwzrAQGHq0IFI3WHM4iBVd1bKuCSzOcMwFC4o2O9kmVkWwOByqgbXyIq3IMVcHTV5OrW7t7+0ef7izPdv2vNk2Xd3ZWmUDx6t7H5LbnncBs81ZdDpa4cnqBstCRnEjtk6wdDuBNh+sfcB6d7auEyxsB1g1gdVKgbXBcXWA5dK7//s/X6UH+XezHQIYbbs7b5M1SIQBAGSgtpAiZJRhzWDl4NG6PrDY0ckHa+ttURd6OSZWZbA6iZVcESzBFaARuPihwFS9e+eO/oL8+rY7i/JuPGd2+7ao/p1tJ4hUdcV5UeSzscn8DSt95RrA2sg+HRYr3nWBxdjH+TZWc0d0hmZoN+crFcHSlVhkVQVLWHb1NmJ/ED8aZOm3c4JmUJDe8xxnYzZzcdvGf/BvukFXFEEISl0w3eh0ut1up2XkiKx6wbKQoudYQu51gcU8dgXA2hXBcnNMrMpgMf0DwdosMeRvcfZ2/ExgYfVpcCWLk0DD4fDzIZRl0Y3wMFxFCEZKYtE28GVQNNcLVkYQKy+UJQGrxHAbZcDaF8DyGG1SCiyj2+GaPL/EyARL7wotXygkBlYzUIIBVlh0z2Oior/wP+TPg3imhPPzZpYLz2MLn1c7cRXlikq7SNyJd5KkzWymG6xegXZn5ctiQazIhPXKgIWnjR/tjOHWY/O4AFhbH/BKGZtYOWshErBa6WS0lrR/r+VgGaBE0fNdYG9jRh+JA6oE8YmU6MOAKPzXo7sXj39EyUJf0L89zdY3M+y2GWptQrdqMSE0S1EkOt0OQhjdFtigkQEP7CiMEWmXNA9ywNrsQMMty+OIfU4QrAMxkjXj/SrBxDooCpaQNk3COJKMgLh/IFjpBGx8pmet3NiFEvT84N3YlIu4Qujeo2+Gw19drOF2dB+Ddu9HgeQCFt4MVnvCvr0thlJPYC3TzUpjUcDbycuMzgpixYrTKgFWKzXcZOJsI3stMl9ipSJZGyhvPUQqsURHV5tLnuT4oYIlVtphtk4QbKkwF/VoTkYkrhKung/Rn++uHWGOHhOu1n5zF/94d+3uxwFa6TgVFwpSwB46qFDqXXifjptu2y6EYufEBo6d52diFQllySQWMNwu0qDrJDmqEFjNPe5X2MjiNeEHnInV3EpxVhgsEiWGhm+zlSmxwHHRHJBR5mDqdBysfioML1GAR2trF/iHo7WgvYcwWGtrjx9Qsq5EM8pgM3KeAVdtpfOsFQ+UBuhEmt4KjkwnJ4OxULS2VRkshN4HVW5yMAjWLkfOwerbrOgkKyI8hnsVwJLYmkZkXxYHS7KSkRzseNskdCUumj1AgQJkwbofgLV28TElKyVt2EfeXSnUQ08i2pR6wdIAua3LTezFwSLGZdYcw2AJqHC7njzBxEodXQ6sudVdybDPS4AFO/7JwUGuT/L7eSiv7gc4QWCtrd2jZIn0syLLho1yN9W7L3UgtQd5tYLlobdSVzE6gCU0qwyWAk3cZjZYx/wac3MPcRvvBNW3XQksGAfdKw8WygbLs17hOxXDEDFXErACsjRN6AfjGP4nqICfobm4qnjZTbdGFiMLgAXNdtcuGsoqBZbs4Cwba5dPPG7uO95rRgbyFtgWqgQWsiwoVOUsAtY7esZFaUrGp8mv50GY4WEEkwSsgCwx6sik6b0Peh8kf9+7qrKdcyGwHMCwaCA9azX2jYKFBCNrO3lAnZSJZe1XAktB1wpWPCwelrR3xJEdoouQn9+IYP0m/PnoIQlyubxFkQT0pakErUawZT3Rdcpc9NvnTr1gaYDQNhTU2UyfZnYtYCVhQwlYvBBiN4HdFk2sY3QdYFl12ViRne2hr1bfFbsSBRgIP/eGzxmw/vpxRNzaXWzfp2zv2HyfAdMWGzd2wJajvSGJBfkvHQScSLcrSyx48T22ESRg7TQlSbmvNV5ANbE0qwaWhvR6jHcHdAOi9fYZ2l0VuXg+/Dii5+Ih0XgJWENGGT4iZAnKMB7teebSnNEJlgwt13kjqhAYywa6dPXsla6FwAIDc3qc+C4Ba1sIVXHZEAdCkGu/mvEOu+FWabBcyP81opUVB+29KwYwH8TwXPyawMOCNRzGHx7RBR+Fm544BJqTTLBJazYE69GKcs1gQWAY8CI3OBclVaGRNcUSsHhYDpKdmuLGr9SxpeNYViMrQa84WHPJRLjRff6faAkM0b0InfeC5RtWYg0T++sRYL/HW4AK5SZEkkspXlhnAbCg7YTYmgKDptBKdBmwYEndzQUrZUjdhjd+HexUBQual+RmioLlnKATI0MTOujvPxUVwTexhRVEqwRV+GD4MJJnw7+SElpciCg2sgpnJmPJRfrietcFFig8G6RmBzCKXeBEhcGylDkoqJl9UTKw+BxRbGR54Mav5tZ2NbDmcICxW3atEFuoBnhJLZr+/xYTCYfoL0eMeZ4CizHtP06LrCRdrnA6FVaLLVLJyFKuBywoE0vXHLiHRkXjHcweYLYAScCaaQI/TrK3vskT92pxsCzNlewgjp0LGKzLVNq5JAHnRWSrcYPeolAkmvDeEAQLxUGuRwF5Njfcs/x9x1Dol9TV0ZzrAAsKYtHjwdw/O12CQAaWeKBid1uSbCeUA9Y2r/Hinfa3RROL1F8pDJbLrcyfKDI5w+xRgheWxaZLM4+STaEd0fCKBdJFlOCXAiuy3wORdsk++C02tNctle9Ji59YtYN1CQl/qrHBQAyQlQWHpvTCw523/YuClQJIC+52TwydeiUklki+LNEvO4O0uHR4Fpcy5LRBMACfR9g8jjRhCqzho9C4D9eiu7AqUfJzoNJoKXWDNQN6ET6h4NL0T1IbDCvmvBuWkyuxXqVVXiD5PTEOUUJi6UJmspT8vJz3oq2RCHFuGZkqWuz3XfCmOyCx3gt/QaNc3LjrShWySMmSDatu410HnmVXmj+dzsqqBha7q1AK1m1BDhEj3QOiWLtoY6MwWGljVp6VrdUAFhsE5MCivssQRRZUiBFKIu8PUZT8fsSwx5Vo0JWCZThk09CtWWKBVIRDAG66b9ULFl8aQQqWmH98QCNZGmBiLQ5WkUS0xcHS+TxPFqzQKYzAijB6wBhdKPzNES/UmN48ExPsyteb0eoEC3L9Yvohuz69El0FLMyVg1ARifXhQXoTmLDxq7k6Q941gMWosIXBMsSqeflgDYcPg5z3exKwPDlY2M9+p7Q6RFnVrEuCpQGBpSRSACZPpTYYVgCrdSKsEcnBElZ1yCYwD83Sv6wfrBabRrcYWETRaNJEVTsA672QmmHE0RB9/vji4u7D2ObiVSH+lg661uFIlirql5UivAhYIDpMFNfOSNOtDFZquOVgYZucF05bX3kkZSYtxuoHy9a0imB13hfrjxcz3oOwKDa2ov8+ZK15i83LAerJKmQ/m15OGyp1gQUpO/2tZJ49A+LOqgWsDkqnNWaAdSwaWRupCpHE8KodLG6xYUGJZaQlVks0ab+I1gIfDz+KN0Ljnz6Kd0LHIdRgGZrLdtIBLUZC6tJdzxKl/349YGk55jm4K0wMZS0Klk7CJ0UllpV2AN0NyFWsGyy+QEx9NhYQx4pt9X9l99gnP3+RHPFAXBU04PmlQd9OYbZ0RasHLCiIxQYULtGLldysrCo2lliXUwqWmNuO7SnH+x1vYv2cEF8zWAb/fpZKXqEjiTSJSzr3h0Nwtoa/OmJDqC6/LAQvywQLgY2uoReqedCVKsOyXqGetSQs2W8ohLKqeIWGwq/8yMESasqQjD70ISfEDmhiab1gtYR4cIU4ls5uhVd4aeNQsIbiIjTfHqBHa/xenWQ3fdbbQzz6yU8KCS5dWjS8FFhgikWLLbqxAYm0Vn1gYYw5iSAHCxtUB4JBxaNG1nOsmsHqiNXZqwRIWeHHjXz4KA+ZrTjfAPJqGG/g+ZfnQ/Ghz6xrjVViUPkqH66GLJpVCixwk19XeStJr39LgU6nIKu2yDtPqRys12LAYRd5+8AO6RrBIjJGsIkrLekws8CnIDSERL+LB2llOEzySx+FwQalCBBMJRB6LzbxFKVaUS75yoAFlm3W85WlEMqquFbYzStuG9pYGykj6+3VZrqmQ21g6Z2T9KhVK7zGRIO5eEP4cD2Pc0TvIjQU5VWcjXX03jC1U0G/LJSvpwWvy2t0Mio21aAKwRUlQ9zEaEBXr09i8XVzs8CyjnnN98GOWIVmoz6wjK6LAHu4SH2sjlTfdNjCDSwWthfAcy/eivNrzh8kCVqP1ziBhRwnjSaygBIdgntEa4JfyaIQ+nYtYC1eBtXKA8soXI2sQNrMbRSUGuVrRu4KwQarBlVIlIQevLEQfEVksfpYdke2gAUPWmghfZFsxbkgtWU+onA9J3/fTz4J0gAd4QRldkYQi0uTrPgokppCJcCqIGk4TVy4PpZkuI1i4QbPEo2s/SawJ6w4WFDRsE6nG+xhkbyps0h9rCuytwqu18TZEHpqNWM4jJZ1SEzhYRLHuv84+f39IBLPL/IG5j+e/PQtGQ04t18y+zJjrQRY5bN2WPXl5YAl1sean+BvvNBz7iUrjiW8lPBgi+fsuCxYLak5Id/SWTDn3XLhXVhMtInfB9cNOp/Y71QfPrp3H6HP7z26m2CFFeE3Qa2aRtqTBzdt3umADqN1AqfW1AAWlIlVXBcq5XPeNUkdOUb+ZYE1EwIOB6vQlrASYGknmtAcZT5XstyrwpspXDitVpGEevS5Y6XJIpb6Ef//0MASBFaoCeEdOi1JCRkXtISqg1XJ5m4tAhapUAgXCXKKgOVlvZWwue8EQnSj4k7o7FZ8lw68WYYTzlCJ2hRZMq44LN2MFTpwGVGusaqDtVGp6jITni+zS2fDgbd/aQXAgtLZWRPrt+hGgeXBRSocSbGBaEIxWUcyrOLMLI+vYxRtc5Jsg25Yl8XBktUwLgxWbmH3vOjTfBGwZqDIShbVM8H6bdabAqJCITcFLMt6pWdqfcvjymYab3lRDsNf7sJc3b0frfXwe4wTixesaLICG1lSsCp6heXTomWhrDJgWWDt3dyd0LdDZnbkr179KuzQTQELrN2w2WLcQmEG4o9IzeSLNFYXj+KoqVAAo5PzqkFdAe3GK8jG0q+qxrEWD2KJurhU7QawflOnGFjIeyV7VUBzP5LgNwYsOPzMvglOqGMRSzMSYrh39yiN1RCsUxCGVzOkRQvNLcDebVxH5N2p/mYld8FqM5sZU5wNlvwVvUmN7hsDFjgs+jMGLHEOkiEjCD28d/eC+IRHRxd3H/2ZyczSBHoYu002qySnUsh1giuPb0rzYIqCpS0exIotbmshsLpZU5MHluSNlwerH0Y5GTcGLLAGKZ+TJE5CJ9nsHmD0/OHDh+/9mkv408Rq3FwRd+sTQ5b4hjxSa580Za5I35XQqAoWciq+x4p9m0QJsMBnqihYjizg0NyaaejGgQV5R9xuN08Rzte6TM41HEYpyl98lKwb4o87GWd0ZfJC7/C7LSSbvnXFq6YKK2tCroR2qfpY0HNcLNyAP57BAQemxt8NAgvePKdlTYNhc0vfGK7h8yG7gozsVlbOp5Xx6hqj0200bFtpNLrS7IZW1QzS6q8OSxzTksb7W3pGCC8HrNuSgANTlfTmgOVBYyzUREy7/B3pOiVSnPRru1pCKMHJmFhq3Oo5asipBJYG16lqSJuRsaJaCizccT3TXssEy4EDDmwd5ZsDlgaDpeQ84WSLCVLEDENLIyGD1DwYYk0+zbIrBZGcal4huJ1QviqLUNbrGsqBpWQqiBywEPwOp+Z+UuHp5oAF1Z1O5bdYSnqHnUHrKLjziBkMlQvbRUKBgoqpBZl5qEUlFrj+yCYls81VbLgblzWB1SgKFvzCevaImwOWWwQsYhUBWzujArTJjNlA+qBYoICez7laOECZVb6hEFiw6a5nZIaBIIahrLJgtTI9zGywbsMBhx10AyUWWG8VCvyAuVt6C8NFlnmsud3oglmSOmgReWhRZWh8qXjVwJpJXlY3k4IFqk7dpUGZsmB1MhLg8sDSoDfWN7desWvrN0cVdgtd1IHJCkxt3OL/pOVV8YhOschkRsZQMVUIZmI15AOtwbsIgiemOli5rzy5zfQkvarT3GOe3JsDVk7Ijh3dqwV8dMOW9f+ThZaB9UbW61ULgeVIVom0LF0ofxtcWbC6mTGxHLCgVZ3mMbO0e3PAAmNK+tyygCPLW9ypTeTc8nJ5maW/yHtDXD5YcCZWZi14yeqmHdTVKwdWI2PpswBYKSOrGZW6vWkBUgtKYgEdL0spWShN72JfUd7NT0rXXTMUlF06uQBYHqzX7KwzW+gnuiwrqxxYcOj9pChYwKoO8waUG7akA7k8XVlyVJlqVi07Z3+qgp6VkoEdlMNVEbBg6WNYOW+ea8lCWeXAghMMo+c4FyzkpV4bF1T3u5FgdaCMLNkDJ6kFDoqr3K6XOB195ZyXV4+7AFhwECt787/srVIEiHJgwS8vYt4xkwNWelWnucNmDNwosBolgjrkwe4WUGB65woVeDEcPZ1REKsCI5EPlmQThWyjYpxpq8iyXkuCBb6E20gk1lY2WKlVHVIWy0FZ1j0M1p2FwEo7/nfkNpan6HdSh8ttWYe8T9fIk1Y2KthvxwtK+m1mY0o2rxZ4gSEBazNzDD9BrTvQKOecXAG/RlaitdxLppylzVTMJsxWoxJLaD/d5d8BPdviP97n4m9YYv1UPAEGC9ic2pWW7JE3t1PmPA7qAntiM32kzMIKOn1NavHHgQg2Da4wsxnGYOm6ZLGzKbljCAxOq5FnvF1Cu2xbLbp8bHfKTVsXOjwUmNu7P9/j2493hI0jxz/mPj7mPtaEj8kRu+gWujnNylRgeBrmmIU0XEaLLPN4SqkXOztR+aKWoTMFS3WjFW751hQNfW+a9eYveSu9AOp4i5zISZ8oa2a09OFeIRbsRpfCQJqBn7tG+Nrd8j2OvoO7YgepKrYdhv08Vyt3ppwxBO5WKTDKFvA1R3bJzBMCs8Nkgm8IzfNSxgP3eapArieewLlREiu/adCbdS13YdlC0iOELATXVTy0bNUl1netw54TPZ7hT5U1luVpmkOapnnWkoi/VbCWbQnWsi3BWrZlW4K1bEuwlm0J1rIt2xKsZVuCtWxLsJZt2ZZgLdsSrGVbgvWtNzVupnkDOrFQL0y12FHxudV6bvVbHLHvmMRSv7+9UNH3u900sNRB0nrqDejEoHcLlRUE+EsFLtLDhwUZOr0ix+e308FAXYIFy3I0mrbXD9dJO5y2/cG30YknaHDYXo/atN0v24vT9nSQI5FMNPCn03X/5RmRXeP1PppU7fYEDdrt0yVYkvHuH7b7YfPb69PxyzdvNuCJTjpBetEelZFZKuq122reMYP21B/3R4Q/E/nrozrAGmE+l2BBzUIqGeNYV4zb09G3YYz018fJf3r9drtXohdY4K37BS7RP48eJpVcoIYHaIy7rS7BAgVWD2uRyemENDJE/Wn7Wxgptb0+mvxiErRb6NTHE2aWuIkxyyXUzrC2JLBOzPAJ6k3q6LZ/OMBYL8ECNcSUeXjPPaxUGGvFnIQyn/nGefLpefLBhOUg+BofAjDPTeKdmxK6WRFFQPEnbCgCDBAwV+lzmi04nu3RRH0ymPqqOok5Y+4HH6eeQSGL4AyTdGQk+rAuwfe9BAvPocpMscqawSYdRjX8qYQECb9mAh/AtsqU6QS1Xdoqf7bT1OnC35N7OGW5JL8//+yziXB8hjkE95f857PPUjcfHPxL/PtzbLb5NyiGccNUYZ/VOgJYqDfCprTfH6nRr87QYDQIjj/Dn+IPgof/F6NR9OziX/TG2EryxwNWFfXGPXK+cT/9jE+ok6ZyYPk/SCZyMPbJ6cQAQXIV1nZXmeOjC00Go5E/7Y9If+kx5Acz9BVxx9GA3uaAf+ROyXnYmxe7Y/LdXoLFWzdTRouYVqKUsFkyxv5ZGztp634IU+ion4UWxno7+L3KiBgT/ZJ8zSe+Xf8pazsPyPnWDwHlMfE5I9ikF4k9vv40PN1YZZ+A+CpjKo3MxPQnx7cT15Jo2nV8I4frUSd7iQozcb/IjYRnMtnoxDo5z2F0k5HWjrszoBr4bx4sC6iyFjjqzEyfk6hW+DCj0z6emx62qQb+NDK8CEL+1+FP7dAeOzNP/cNwiE3KG/6a2hu11/tqdNGn+Dr9dX88HkkciGSGJsQojk+HofAH5HTj9mEchDhDatC5P+HOrQ8S54xEFdb7A1UNHdzwcRgNxu02FliDyK4MVRj1Dwf4o95TlfiicS/I3R32e+Q8/WlCFtMdfPc9/xByXsGR/m6CZZHmeV701l+H3YZ7NXevZFutqTVzSpbQSFPPiXsWPrbmLzAHvdj78U/PzoJJOfQJeWdnT7FUaFNpR2kLXHnCGMYp+NqA8DIJNSFWHu3RqSzE1O5FK4UT6sX76tnrcCIPx+HpRvEzcKY+ZTvXxmwlHE7HIQVj1sFlAhJ/l2he/GBN/chQ+o/EF6VdCh+Br/uxFcp1Z9Dut+OHUGye4rrzK3Y7NdlESRueJzpfNwgsi2z01AJoXNxOTk5cxdGKdVF5x7ZAR521aXt+5CNS7dbDvo+F/TlEfcVJOBN0NPHQr/fHoTNG3W41duhU6jKZk+TkgXjrwW4h5ZLtRH89Isg875NT4NOdYeOaTPyEuYppesSVG7QTqatSOLDKPJuYT2O5h61tLNS800CVvjZjFUb7Rc8UdKPPWQgqPt5Ug5uPTx90h97dFLbdFWVebDo9Rwkm0XWvAvjIBl6rTrCskBkKzZUbXqnwhSzXdm3FJo1WROji1iGN1DgxcAvqLvxXulSFiSeiF7XBuB0ZFGYwnOdsAFNNIgMmsYumvRH+7XkAhsoGDsIghTmIZIZJZoE5nQBW/xDryLD1/SnWQUwwRI2lSDTxYeduJRD4aoJopH1VGt2ahN9IIKMOSi8Cqx/3V01MNZP1JtQ4mIGPOIy7g+8OC0dAYGnhaJNGS/rgRiYkrFWBG5mpIkUKGEESIYGhoFIPouIWxxKGqdCOdU35kr7UKMSmG2FDuQkrduSVSUvVHaMmRnsaNWys9uMRxzLhXE1FIIkJRWZlglViH40C3fHUj0ykQEidqkG8dZJ4a1TyyGKSp8TUjlubuH9mDPQoOR1WZz9MPAg1djj9+H/EODOj45/EEuiMjTiFC0CMCPpnBsSXiLw8lhw+Cc9zao7p8xOYj7GnQ+mG1oW03Ip1PHiUPA69d5RCWshzIsgsqcQ6eZWIGx6cmJvKL7ICwcJqxI9bn5lSRo9EYx6ZNNSg+QHRfgPyiE9Yp+yU2LOJUgvBEqMY6fDoeBS2cZ8shKvCCWI7SYWCbdF0m8Lxo0QTM6vFVDL9gBV9agRo6CC/xJLJFxZuzkP5+QfWjgfDo1oNU7USoceKvJA88tY0WwFKSN1CJzalJ0Anxc2dpK3U2tJgPSGq4/RWaDafJzFMYVk3kFhmHDegNnyfmlmX2ArxE82Cv+b3meXkdmwjS+3cCZkvxqofTds9xgLqM6eb+r8XFWRgvQf6mwRaueOxUH3Na9H4KTHjS09SC4gquzCPWzsCa8yENei9Qs5ILWCt5PDAgEepa7ywn90itXwc8q4gxiIKbSJRu10zWHRlll0jMZNl3UPOMI3XTAhjWJSd96ckMEkPGiWaiBrSXDuNJ9Y8k6/0+eEy4YQ4hbFzdk4sM671E0zO2AmOLt/nj5/GCpOLOPmRsxqc6XXEd7sdGoHnvnAX1FYLRKOZPA9wLL9msCC9yQowLL9cVyHKs5hXqLnKM6oe7RegOV7QrsoBiwaMJnAYos+HUQcJWFgrYoE1IVPqn6Nf+vF6Cp2oHtdi+3csMd1Dz8AEHNUJ+URlz6YmIuc8meBEb4HH0/uM+i+osAS4RKpZdFi485wmojEx7cZweLQUWHrCjZGyt4L5t58pxcqR3RJ8wcAVnNPwgUvflVzM4dTeUah/0WhwnmCL8wT1LLDExV8+AtDnjwt1D/GMsD7oYwvr60B5MBaWKluRm/gZiXinJPL5BAAr8McgLzK0skUuL8HjeZaoZHoaPzAMKhFkJvqMsxSZx4sNwp/GD1sGWAk4rZSHiMlRiL3kFqs/a2maQsMTsuhE0TiWFbbQd1TiSASNXhWrgacorEugQakNoOnzhCOENS5MEramf6iX1O7RBWCNAUul0SoSbz0dDE6Z+D6S2+6MEXyWgEWlo3l+Rk52ho3AASD/aMwylLr/Rtgwz+nF8Zfi9OMJDbWfpeAPL21F+m8a5cCQuFxwDyY5CJ/njDPmInsOTm1osFb2VaF5IhEtAkwcU4j9vRKh1Loi7xFzmsOXu3TCWnlabmVrCsxEalCr8RgyvhOZDB/1g4Ao9hBpLCvxHrFaOj9j1ellNLHn0k7wqQ2M3feSMd9CnC6FaMPZhNhVPTbYobLOopqobxUJkolKX591YSNQrERDmuZ54oISw+Fl2BusXQulNljRYoiTmieNixZ8x9YKGW2rpIWFLKHODEPPJMT8hKx19JOIudr2B23/yVnoIfqMzGMCATRcH/6sZuWsTDhfK4zZJqvHITTmOV33CZ02KmjPaUQ9DJ0nEvg0+GDCSuOXrO2e2FsscMwCIu2Sr9J0L3WS5BWFmfJEIr+kGZGS1IY4jul5b3TV8MZkN5hCaoPoqkXaS+2zKVvE0ggtJuKF+VMxLyFZw8NqkbGRn0jDo3x+76mfUKAmC4895iHAqioKq43aPjPBT0mEIVrKY9bFmWwGVjJ9nQDHp+6QyFp8gTazENkeRGPSZgN9y7SZ9OIvHF06M1WSd4LBIOkD3FEmyUb6vRmHA1QmH5MGp32yJao38gliocEcLTVK6B6kwJrEoYTDPjbUJjRV4mkYsaAdH/eeotNBnyxYjhP1N2hP++SD3rgdY01Xmv+QLC9PfZONXIm2Owq3Lo2xT0lzKhihPiYpFYiOyai/3luCJU9tkA9Nz58ehmlVPH399ZAE8pQLLjd+qn2yi4zs9+knOQGH0vAoibLydJuMaDojWVHtKBuLucooSMaaHo4ncWpDSBb5gDteZR1Xk01tGKy344Q//CD1GGNxFJ+H3TD0p36UBDbKCPn+rYOF1cXPBlmKctRvhyma3AAO/jiKpE8vyslkvnZKv8btDcSHyTvR++Poh9JeYaEx8ttCOir9FknjJBdRuS6Y4Qd8vungH5kwweBn8Uc99kpj/laS83CB3QG9Ofzb3j+NJuhGtf8HYT2Ara6nZD8AAAAASUVORK5CYII=" alt="ProstarM — Power Redefined">
+      <img class="brand-logo" src="logo.png" alt="ProstarM — Power Redefined">
       <div class="brand-text">
         <h1>Petty Cash System</h1>
         <p>Enterprise Branch-Wise Accounting</p>
@@ -1127,13 +1127,15 @@
   </div>
 </div>
 
+<script src="rbac.js"></script>
 <script>
 /* ============================================================
    BACKEND CONFIG (POWER AUTOMATE)
    Paste your Power Automate HTTP-trigger flow URLs here.
    See POWER_AUTOMATE_SETUP.md for exact flow steps + schema.
 ============================================================ */
-const PROSTARM_LOGO_B64 = "data:image/png;base64,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";
+const PROSTARM_LOGO_B64 = "logo.png";   // shared cached asset — was a second
+                                        // inline copy of the same 13 KB image
 
 const API_ENDPOINTS = {
   GET_RECORDS: "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/13/workflows/2c7ae011f4964e57b7b0835de6a0d6d1/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=okU1wqx0iAmNYQVTqWeVlRmw76q7Jy387I9Po2HmFvU",
@@ -1141,6 +1143,8 @@ const API_ENDPOINTS = {
   UPDATE_RECORD: "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/30/workflows/c5fd8a7d58754041b987859213decd3e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=b81qJgKABrqE-oUlbZ7oDB5GcGkKCCXyqU7w-MCpJWk",
   DELETE_RECORD: "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/09/workflows/7c84030d99c548968d176ca8766ded32/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SA3wCeE2UxphoiklHYwiv0vcWX7zUhrJUwUrjudHYmQ"
 };
+const EXCEL_GET_CONFIG_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3d8c890bdd85458eb4af7f65b3a49577/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jBQBA8EMi2xs9QMwg9Cpcb1f2GtFGrCxDJPXRwIvHUw";   // access directory (shared with index.html)
+
 const NOTIFY_ENDPOINT = "REPLACE_WITH_NOTIFY_FLOW_URL"; // Release 2.0 — email dispatch flow (NT-01..NT-09)
 API_ENDPOINTS.NOTIFY = NOTIFY_ENDPOINT;
 
@@ -1672,7 +1676,7 @@ $('confirmActionBtn').addEventListener('click', () => {
   if (fn) fn();
 });
 
-/* --- BRANCH SCOPE HELPERS ---------------------------------------
+/* --- BRANCH SCOPE HELPERS (From dashboard.html) -----------------
    admin    -> every branch
    regional -> the branch list returned at login (multi-branch RM)
    branch   -> the single assigned branch
@@ -1680,7 +1684,15 @@ $('confirmActionBtn').addEventListener('click', () => {
 function resolveAllowedBranches(user) {
   const all = BRANCH_CONFIG.map(b => b.code);
   if (!user) return [];
-  if (user.role === 'admin' || user.role === 'auditor') return all;   // Release 2.0: auditor sees all branches (FR-AUD-01)
+  // An auditor must never inherit a single branch from an older login session.
+  // This check runs before rbac.js has refreshed its in-memory directory.
+  const roles = ([]).concat(user.roles || [], user.role || []).join(' ').toLowerCase();
+  if (/audit/.test(roles)) return all;
+  if (window.ProstarmRBAC) {
+    const mapped = ProstarmRBAC.allowedBranches(user);
+    if (mapped.length) return mapped;
+  }
+  if (user.role === 'admin' || user.role === 'auditor') return all; // Auditor sees all branches
 
   let list = user.branches;
   if (!Array.isArray(list) || !list.length) {
@@ -1701,9 +1713,23 @@ function canAccessBranch(code) {
   return code === 'ALL' || ALLOWED_BRANCHES.indexOf(code) !== -1;
 }
 
+/* Accept both new multi-role sessions and existing sessions created before
+   rbac.js was introduced. This prevents an Auditor label from falling back to
+   the Ledger merely because the browser still holds an older session shape. */
+function normalizeSessionRoles(user) {
+  const raw = ([]).concat(user && user.roles || [], user && user.role || []).join(' ').toLowerCase();
+  const roles = new Set(Array.isArray(user && user.roles) ? user.roles : []);
+  if (/audit/.test(raw)) roles.add('auditor');
+  if (/regional|\brm\b/.test(raw)) roles.add('regional');
+  if (/admin/.test(raw)) roles.add('admin');
+  if (/branch/.test(raw)) roles.add('branch');
+  user.roles = Array.from(roles);
+  return user;
+}
+
 function isMultiBranchUser() { return ALLOWED_BRANCHES.length > 1; }
-function canEditRecords()    { return activeUser && activeUser.role === 'admin'; }
-function canCreateRecords()  { return activeUser && (activeUser.role === 'admin' || activeUser.role === 'branch'); }
+function canEditRecords()    { return activeUser && ProstarmRBAC.can(activeUser, 'ledger.admin'); }
+function canCreateRecords()  { return activeUser && ProstarmRBAC.can(activeUser, 'expense.create'); }
 
 function branchName(code) {
   const b = BRANCH_CONFIG.find(x => x.code === code);
@@ -1751,11 +1777,14 @@ function startHeaderClock() {
 
 /* --- INITIALIZATION & AUTH CHECK --- */
 window.addEventListener('DOMContentLoaded', () => {
+  // The login session already contains the resolved branch scope and
+  // permissions.  Do not block first paint on a second directory download.
+  // A later page refresh/login receives any changed mappings.
   const session = sessionStorage.getItem('activeUser');
   if (!session) { window.location.href = 'index.html'; return; }
 
   try {
-    activeUser = JSON.parse(session);
+    activeUser = normalizeSessionRoles(JSON.parse(session));
   } catch (e) { window.location.href = 'index.html'; return; }
 
   if (activeUser.loginAt && Date.now() - activeUser.loginAt > SESSION_MAX_AGE_MS) {
@@ -1773,11 +1802,10 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   SCOPED_BRANCHES = BRANCH_CONFIG.filter(b => ALLOWED_BRANCHES.indexOf(b.code) !== -1);
   loadConfig();
-  if (activeUser.role === 'auditor')  currentView = 'audit';
-  /* Runs before STORED_ENTRIES is loaded, so the queue depth is not yet
-     known — land the Regional Manager on verification unconditionally.
-     It is their primary task queue; the Ledger tab remains one click away. */
-  if (activeUser.role === 'regional') currentView = 'verify';
+  /* The Finance Auditor's workspace is the audit queue. Every other role,
+     including the Regional Manager, starts on the Ledger — Pending
+     Verification stays one click away on the nav, with its own count badge. */
+  if (hasRole('auditor')) currentView = 'audit';
 
   // Admin and multi-branch regional managers land on the roll-up view;
   // a single-branch user lands straight in their own ledger.
@@ -1791,11 +1819,40 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Analytics is open to HO Admin and Regional Managers (scoped to their branches)
   const analyticsBtn = $('analyticsBtn');
-  const canSeeAnalytics = ['admin', 'regional', 'auditor'].indexOf(activeUser.role) !== -1;
+  const canSeeAnalytics = ProstarmRBAC.can(activeUser, 'analytics.view');
   if (analyticsBtn) analyticsBtn.style.display = canSeeAnalytics ? '' : 'none';
+
+  /* Requisitions sit outside the audit function — an auditor neither raises
+     nor approves them, and approval.html already turns them away. Hiding the
+     button stops it offering a link that only bounces them back. */
+  const reqBtn = $('reqBtn');
+  const canUseRequisitions = ProstarmRBAC.can(activeUser, 'approval.request')
+                          || ProstarmRBAC.can(activeUser, 'approval.recommend')
+                          || ProstarmRBAC.can(activeUser, 'approval.final');
+  if (reqBtn) reqBtn.style.display = canUseRequisitions ? '' : 'none';
 
   checkConfigBanner();
   fetchBackendData();
+  // Refresh mappings in the background. This keeps first paint fast while
+  // allowing a Branches/Role change in Excel to take effect on page refresh.
+  /* Wrapped: an unreachable directory previously aborted the rest of
+     session start-up, so the sync timer and key handlers never bound. */
+  try {
+    ProstarmRBAC.configure(EXCEL_GET_CONFIG_URL);
+    ProstarmRBAC.loadDirectory().then(() => {
+      const refreshed = ProstarmRBAC.refreshSession(activeUser);
+      if (!refreshed) return;
+      activeUser = normalizeSessionRoles(refreshed);
+      sessionStorage.setItem('activeUser', JSON.stringify(activeUser));
+      ALLOWED_BRANCHES = resolveAllowedBranches(activeUser);
+      SCOPED_BRANCHES = BRANCH_CONFIG.filter(b => ALLOWED_BRANCHES.indexOf(b.code) !== -1);
+      if (hasRole('auditor')) currentView = 'audit';
+      activeTab = isMultiBranchUser() ? 'ALL' : (ALLOWED_BRANCHES[0] || 'ALL');
+      bootstrapApp();
+    }).catch(err => console.warn('Using the branch mapping saved at login; directory refresh failed.', err));
+  } catch (err) {
+    console.warn('Access directory unavailable — continuing with the session from login.', err);
+  }
   setInterval(() => { flushPendingQueue(true); }, AUTO_SYNC_INTERVAL_MS);
   setInterval(() => {
     if (activeUser.loginAt && Date.now() - activeUser.loginAt > SESSION_MAX_AGE_MS) { logout(); }
@@ -1924,8 +1981,27 @@ async function fetchBackendData() {
     return;
   }
 
-  setSyncState('busy', 'Loading…');
-  $('mainApp').innerHTML = "<div style='text-align:center; padding: 40px; color:var(--text-secondary);'>Loading data from cloud…</div>";
+  // Show what we already have instantly instead of blanking the screen —
+  // the GET_RECORDS flow (Power Automate → Excel/SharePoint) can take
+  // several seconds, and there's no reason to make the user stare at a
+  // spinner for data that's likely still accurate from last time.
+  let cached = [];
+  try { cached = JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY)) || []; } catch (e) { cached = []; }
+
+  if (cached.length) {
+    STORED_ENTRIES = cached;
+    drainRequisitionHandoff();
+    setSyncState('busy', 'Syncing…');
+    renderApp();
+  } else {
+    // Render the complete workspace immediately, even on a first visit with
+    // no local cache. The cloud request updates it when it completes.
+    STORED_ENTRIES = [];
+    drainRequisitionHandoff();
+    setSyncState('busy', 'Loading…');
+    renderApp();
+  }
+
   try {
     const res = await apiRequest(API_ENDPOINTS.GET_RECORDS, { method: 'GET' }, 1);
     const data = await res.json();
@@ -1937,7 +2013,7 @@ async function fetchBackendData() {
     flushPendingQueue(false);
   } catch (error) {
     console.warn("API Error. Loading local data fallback.", error);
-    STORED_ENTRIES = JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY)) || [];
+    STORED_ENTRIES = cached.length ? cached : (JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY)) || []);
     drainRequisitionHandoff();
     setSyncState('error', 'Offline — showing cached data');
     showToast('Could not reach the backend. Showing locally cached data.', 'error');
@@ -2745,8 +2821,23 @@ function matchDateFilter(dateStr) {
   return true;
 }
 
+// Search blobs are expensive to build (JSON.stringify of the whole record), so cache
+// them per entry object. Entries are always replaced wholesale on edit/reload (never
+// mutated in place — see saveEntry / loadEntries), so a WeakMap keyed by reference
+// can never return a stale blob for a record that has actually changed.
+const __searchBlobCache = new WeakMap();
+function getEntrySearchBlob(e) {
+  let blob = __searchBlobCache.get(e);
+  if (blob === undefined) {
+    blob = JSON.stringify(e).toLowerCase();
+    __searchBlobCache.set(e, blob);
+  }
+  return blob;
+}
+
 function getVisibleEntries() {
-  let list = STORED_ENTRIES.filter(e => matchDateFilter(e.date) && (!searchKeyword || JSON.stringify(e).toLowerCase().includes(searchKeyword.toLowerCase())));
+  const kw = searchKeyword ? searchKeyword.toLowerCase() : '';
+  let list = STORED_ENTRIES.filter(e => matchDateFilter(e.date) && (!kw || getEntrySearchBlob(e).includes(kw)));
   if (activeUser.role !== 'admin') list = list.filter(e => ALLOWED_BRANCHES.indexOf(e.branch) !== -1);
   return list;
 }
@@ -2964,6 +3055,9 @@ function renderBranchLedgerView(branchCode) {
 }
 
 function renderApp() {
+  // Guard against a stale/default ledger selection: Finance Auditors always
+  // enter their audit workspace after login.
+  if (isAuditor() && currentView === 'ledger') currentView = 'audit';
   const nav = renderViewNav();
   let body;
   switch (currentView) {
@@ -3199,7 +3293,12 @@ function printVoucher(id) {
    Supersedes the Release 2.0 audit status model.
    ================================================================ */
 
-/* --- REGION MASTER (OP-01, derived from REGIONAL_SCOPE) ---------- */
+/* --- REGION MASTER -----------------------------------------------
+   The directory (Zone / Region column) is authoritative when it is
+   loaded, so Excel can drive regions without a code change. The static
+   map below is the fallback for first paint — before the directory
+   fetch resolves — and for any branch the sheet leaves blank.
+------------------------------------------------------------------ */
 const REGION_CONFIG = [
   { code: 'R_EAST',   name: 'East',      manager: 'bachhank' },
   { code: 'R_HO',     name: 'HO',        manager: '' },
@@ -3211,17 +3310,39 @@ const REGION_CONFIG = [
   { code: 'R_WEST',   name: 'West',      manager: 'rahulm' }
 ];
 const BRANCH_REGION = {
-  AS_Guwahati:'R_EAST', BH_Patna:'R_EAST', JH_Ranchi:'R_EAST', OD_Bhubaneswar:'R_EAST', WB_Kolkata:'R_EAST',
+  AS_Guwahati:'R_EAST', BH_Patna:'R_EAST', JH_Ranchi:'R_EAST',
+  OD_Bhubaneswar:'R_EAST', WB_Kolkata:'R_EAST',
   MH_HO:'R_HO',
   RJ_Jaipur:'R_NORTH1', UP_Lucknow:'R_NORTH1', UP_Noida:'R_NORTH1',
   JK_Jammu:'R_NORTH2', PN_Mohali:'R_NORTH2',
   KL_Kerala:'R_SOUTH1', KN_Bangalore:'R_SOUTH1',
   TN_Chennai:'R_SOUTH2', TN_Coimbatore:'R_SOUTH2',
   TL_Hyderabad:'R_SOUTH3',
-  CG_Chhattisgarh:'R_WEST', GJ_Ahmedabad:'R_WEST', MH_Mumbai:'R_WEST', MH_Nagpur:'R_WEST', MH_Pune:'R_WEST', MP_Bhopal:'R_WEST'
+  CG_Chhattisgarh:'R_WEST', GJ_Ahmedabad:'R_WEST', MH_Mumbai:'R_WEST',
+  MH_Nagpur:'R_WEST', MH_Pune:'R_WEST', MP_Bhopal:'R_WEST'
 };
-function regionOf(code) { return BRANCH_REGION[code] || ''; }
-function regionName(code) { const r = REGION_CONFIG.find(x => x.code === code); return r ? r.name : '—'; }
+const REGION_BY_NAME = {};
+REGION_CONFIG.forEach(r => { REGION_BY_NAME[r.name.toLowerCase()] = r.code; });
+
+function regionOf(code) {
+  if (!code) return '';
+  /* Prefer the Zone the directory holds for this branch. */
+  try {
+    if (window.ProstarmRBAC && ProstarmRBAC.snapshot) {
+      const b = ProstarmRBAC.snapshot().branches.find(x => x.code === code);
+      if (b && b.zone) {
+        const mapped = REGION_BY_NAME[String(b.zone).trim().toLowerCase()];
+        return mapped || b.zone;
+      }
+    }
+  } catch (e) { /* directory not loaded yet — fall through */ }
+  return BRANCH_REGION[code] || '';
+}
+function regionName(code) {
+  if (!code) return '—';
+  const r = REGION_CONFIG.find(x => x.code === code);
+  return r ? r.name : (code || '—');
+}
 
 /* --- CONFIG ------------------------------------------------------ */
 const CONFIG_KEY = 'petty_cash_config_v1';
@@ -3334,15 +3455,16 @@ function docListHtml(rec, allowDelete) {
 }
 
 /* --- PERMISSIONS -------------------------------------------------- */
-function isAuditor()  { return activeUser && activeUser.role === 'auditor'; }
-function isRegional() { return activeUser && activeUser.role === 'regional'; }
-function isBranch()   { return activeUser && activeUser.role === 'branch'; }
+function hasRole(role) { return !!activeUser && Array.isArray(activeUser.roles) ? activeUser.roles.indexOf(role) !== -1 : activeUser && activeUser.role === role; }
+function isAuditor()  { return hasRole('auditor'); }
+function isRegional() { return hasRole('regional'); }
+function isBranch()   { return hasRole('branch'); }
 function canAudit()         { return isAuditor(); }
 function canVerify()        { return isRegional(); }
-function canUploadDocs()    { return isBranch() || (activeUser && activeUser.role === 'admin'); }
-function canRespondQueries(){ return isBranch(); }
-function canSeeCritical()   { return activeUser && ['admin','regional','auditor'].indexOf(activeUser.role) !== -1; }
-function canConfigure()     { return activeUser && activeUser.role === 'admin'; }
+function canUploadDocs()    { return activeUser && ProstarmRBAC.can(activeUser, 'expense.upload'); }
+function canRespondQueries(){ return activeUser && ProstarmRBAC.can(activeUser, 'expense.create'); }
+function canSeeCritical()   { return activeUser && ProstarmRBAC.can(activeUser, 'analytics.view'); }
+function canConfigure()     { return activeUser && ProstarmRBAC.can(activeUser, 'ledger.admin'); }
 
 /* Expense details are frozen once submitted. HO Admin keeps a
    correction path, but using it resets the record to Submitted and
@@ -3823,7 +3945,9 @@ function renderAuditQueueView() {
     (byBranch[r.branch] = byBranch[r.branch] || []).push(r);
   });
   const branchKeys = Object.keys(byBranch).sort((a, b) => branchName(a).localeCompare(branchName(b)));
-  const regions = REGION_CONFIG.filter(rg => SCOPED_BRANCHES.some(b => regionOf(b.code) === rg.code));
+  // Dynamically extract unique regions from the user's available scope
+  const uniqueRegions = [...new Set(SCOPED_BRANCHES.map(b => regionOf(b.code)))].filter(Boolean);
+  const regions = uniqueRegions.map(r => ({ code: r, name: r }));
 
   let h = `<div class="metrics-grid">
       <div class="kpi-card" style="cursor:pointer;" onclick="setFaFilter('status','PENDING_FA')">
@@ -4063,7 +4187,9 @@ function renderCriticalView() {
   const crit = rows.filter(r => r.status === 'CRITICAL'), warn = rows.filter(r => r.status === 'WARNING');
   const shortfall = crit.reduce((s, r) => s + r.shortfall, 0);
   const stale = !lastSyncedAt || (Date.now() - lastSyncedAt > 300000);
-  const regions = REGION_CONFIG.filter(rg => SCOPED_BRANCHES.some(b => regionOf(b.code) === rg.code));
+  // Dynamically extract unique regions from the user's available scope
+  const uniqueRegions = [...new Set(SCOPED_BRANCHES.map(b => regionOf(b.code)))].filter(Boolean);
+  const regions = uniqueRegions.map(r => ({ code: r, name: r }));
 
   let h = '';
   if (stale) h += `<div class="stale-banner"><span>⚠</span><span>Showing cached figures — last synchronised ${lastSyncedAt?fmtStamp(new Date(lastSyncedAt).toISOString()):'never'}.</span>

@@ -7,16 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-/* ==========================================================================
-   PROSTARM CORPORATE THEME  —  visual language ported from
-   "Petty-Cash-Dashboard.html" (Branchwise Expense Dashboard).
-   LOOK & FEEL ONLY. Every selector, class name, id and behavioural rule
-   from the original stylesheet is preserved 1:1 — only colours,
-   typography, borders, radii, gradients and shadows have changed.
-   ========================================================================== */
-
   :root {
-    /* ---- Petty-Cash-Dashboard core palette (source of truth) ---- */
     --navy:    #0b3f7a;
     --blue:    #1e5fa8;
     --blue-lt: #2f80d2;
@@ -28,8 +19,6 @@
     --panel:   #ffffff;
     --page:    #dfeaf2;
     --tile:    #f2f8fb;
-
-    /* ---- mapped onto this portal's existing variable names ---- */
     --bg-main: var(--page);
     --bg-surface: var(--panel);
     --bg-card: var(--tile);
@@ -66,10 +55,7 @@
     animation: rise .35s ease;
   }
   @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .brand-logo {
-    width: 190px; max-width: 68%; height: auto; display: block;
-    margin: 2px auto 16px;
-  }
+  .brand-logo { width: 190px; max-width: 68%; height: auto; display: block; margin: 2px auto 16px; }
   .login-card h2 { color: var(--navy); font-weight: 800; letter-spacing: .2px; }
   .form-group { margin-bottom: 12px; text-align: left; }
   .form-group label { display: block; font-size: 9.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 800; letter-spacing: .5px; }
@@ -84,31 +70,26 @@
   .pwd-toggle {
     position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
     background: none; border: none; color: var(--blue); cursor: pointer; font-size: 10.5px;
-    font-weight: 800; text-transform: uppercase; letter-spacing: .4px;
-    padding: 4px 6px; border-radius: 4px;
+    font-weight: 800; text-transform: uppercase; letter-spacing: .4px; padding: 4px 6px; border-radius: 4px;
   }
   .pwd-toggle:hover { color: var(--navy); background: #eef7fb; }
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
     background: linear-gradient(180deg, var(--blue-lt), var(--blue)); color: #fff;
-    border: 1px solid var(--blue); padding: 10px;
-    border-radius: var(--radius-sm); font-weight: 700; font-size: 12.5px; letter-spacing: .3px;
-    cursor: pointer; margin-top: 8px; box-shadow: var(--shadow);
-    transition: filter .15s ease, background .15s ease, opacity .15s ease;
+    border: 1px solid var(--blue); padding: 10px; border-radius: var(--radius-sm); font-weight: 700; font-size: 12.5px; letter-spacing: .3px;
+    cursor: pointer; margin-top: 8px; box-shadow: var(--shadow); transition: filter .15s ease, background .15s ease, opacity .15s ease;
   }
   .btn:hover:not(:disabled) { filter: brightness(1.08); }
   .btn:disabled { opacity: .55; cursor: not-allowed; }
   .spinner {
-    width: 14px; height: 14px; border-radius: 50%;
-    border: 2px solid rgba(255,255,255,.45); border-top-color: #fff;
+    width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff;
     animation: spin .7s linear infinite; display: none;
   }
   .btn.loading .spinner { display: inline-block; }
   .btn.loading .btn-label { display: none; }
   @keyframes spin { to { transform: rotate(360deg); } }
   .error-banner {
-    display: none; align-items: center; gap: 8px; text-align: left;
-    background: #fdefed; border: 1px solid #f0c9c3; color: #a5301f;
+    display: none; align-items: center; gap: 8px; text-align: left; background: #fdefed; border: 1px solid #f0c9c3; color: #a5301f;
     padding: 8px 12px; border-radius: var(--radius-sm); font-size: 11.5px; font-weight: 600; margin-bottom: 12px;
   }
   .error-banner.show { display: flex; }
@@ -120,56 +101,33 @@
   .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
   .status-pill.online { color: #0a7d4f; border-color: #bfe6d3; background: #eafbf3; }
   .status-pill.online .status-dot { background: #0a7d4f; }
-  .status-pill.offline { color: #9a6b12; border-color: #f0dfb8; background: #fdf6e6; }
-  .status-pill.offline .status-dot { background: #9a6b12; }
   .scope-note { font-size: 11px; color: var(--ink); text-align: left; line-height: 1.5; font-weight: 500;
-    background: #eef7fb; border: 1px solid #bfdcec; border-left: 3px solid var(--teal);
-    border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 12px; }
-  .demo-box { font-size: 10.5px; color: var(--muted); margin-top: 16px; line-height: 1.6; text-align: left; background: var(--tile); border: 1px dashed var(--line); border-radius: var(--radius-sm); padding: 10px 12px; }
-  .demo-box code { color: var(--navy); font-weight: 700; background: #e2edf4; padding: 1px 5px; border-radius: 3px; font-family: Consolas, "Courier New", monospace; }
+    background: #eef7fb; border: 1px solid #bfdcec; border-left: 3px solid var(--teal); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 12px; }
   footer { margin-top: 16px; font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: .2px; }
 </style>
 </head>
 <body>
 
 <div class="login-card">
-  <img class="brand-logo" src="data:image/png;base64,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" alt="ProstarM — Power Redefined">
+  <img class="brand-logo" src="logo.png" alt="ProstarM - Power Redefined">
   <h2 style="font-size: 20px; margin-bottom: 6px;">Petty Cash Portal</h2>
-  <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">Select access level and enter credentials</p>
+  <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">Enter your credentials to continue</p>
 
-  <span class="status-pill" id="authModePill"><span class="status-dot"></span><span id="authModeLabel">Checking auth mode…</span></span>
+  <span class="status-pill online" id="authModePill">
+    <span class="status-dot"></span>
+    <span id="authModeLabel">Connecting to server...</span>
+  </span>
 
   <div class="error-banner" id="loginError"><span>⚠</span><span id="loginErrorText">Invalid credentials.</span></div>
 
   <form id="loginForm" autocomplete="off">
+    <div class="scope-note" id="autoScopeNote">
+      Your role, branch and reporting line are read automatically from the employee
+      master &mdash; no need to pick an access level.
+    </div>
     <div class="form-group">
-      <label for="loginRole">Portal Role</label>
-      <select class="form-ctrl" id="loginRole" onchange="toggleLoginBranch()">
-        <option value="admin">Head Office (HO Admin)</option>
-		<option value="regional">Regional</option>
-        <option value="branch">Branch User</option>
-        <option value="auditor">Finance Auditor</option>
-      </select>
-    </div>
-
-    <div class="form-group" id="loginBranchGroup" style="display:none;">
-      <label for="loginBranch">Assigned Branch</label>
-      <select class="form-ctrl" id="loginBranch"></select>
-    </div>
-
-    <div class="scope-note" id="auditorNote" style="display:none;">
-      Finance Auditor logins carry read access to expense entries across all branches
-      for voucher verification. Auditors cannot create, amend or delete records.
-    </div>
-
-    <div class="scope-note" id="regionalNote" style="display:none;">
-      Regional logins cover multiple branches. Your branch list is pulled from the
-      user master after sign-in &mdash; no branch selection needed here.
-    </div>
-
-    <div class="form-group">
-      <label for="loginUsername" id="lblUsername" style="display:none;">Username</label>
-      <input type="text" class="form-ctrl" id="loginUsername" placeholder="Username" style="display:none; margin-bottom:10px;" autocomplete="username">
+      <label for="loginUsername" id="lblUsername">Username</label>
+      <input type="text" class="form-ctrl" id="loginUsername" placeholder="Username" style="margin-bottom:10px;" autocomplete="username">
       <label for="loginPassword">Access Key / Password</label>
       <div class="pwd-wrap">
         <input type="password" class="form-ctrl" id="loginPassword" placeholder="Enter password" autocomplete="current-password">
@@ -183,113 +141,98 @@
     </button>
   </form>
 
-  <div class="demo-box" id="demoBox">
-    Demo Access (used only when no Power Automate login endpoint is configured):<br>
-    • HO Admin: <code>admin</code> / <code>admin</code><br>
-    • Regional: e.g. <code>shyamr</code> / <code>1234</code><br>
-    • Branch User: Select branch / <code>1234</code><br>
-    • Finance Auditor: <code>prasenjitd</code> / <code>1234</code>
-  </div>
-
   <footer>Enterprise Petty Cash Ledger · Session auto-expires after 8 hours</footer>
 </div>
 
+<script src="rbac.js"></script>
 <script>
-  /* ============================================================
-     BACKEND CONFIG
-     Paste your Power Automate "When an HTTP request is received"
-     URL below to enable real server-side authentication against
-     a SharePoint / Dataverse Users list. Leave as-is to keep using
-     the local demo credentials below (fine for testing only).
-     See POWER_AUTOMATE_SETUP.md for the exact flow to build.
-  ============================================================ */
-  const AUTH_ENDPOINT = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/a42501404f4440d7a65689627cd9724e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=vM6EQBRklNJZXvu2-LagkNiTpSfSfy9SfZGPAVt8oFA";
-  const API_KEY = ""; // optional shared secret sent as X-API-Key header, must match the flow's check
+  // Primary Power Automate Endpoints
+  const AUTH_ENDPOINT = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/28/workflows/eb3f3e2aa2994a83bf2753725fd30d61/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=VuZB3qWaEMiR8eFeU9k9SztSHoK981HOHlHMZikK4Nw";
+  const EXCEL_GET_CONFIG_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3d8c890bdd85458eb4af7f65b3a49577/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jBQBA8EMi2xs9QMwg9Cpcb1f2GtFGrCxDJPXRwIvHUw";
+  const API_KEY = ""; 
 
-  const BRANCH_CONFIG = [
-    {code:"AS_Guwahati", name:"Guwahati"}, {code:"BH_Patna", name:"Patna"},
-    {code:"CG_Chhattisgarh", name:"Chhattisgarh"}, {code:"GJ_Ahmedabad", name:"Ahmedabad"},
-    {code:"JK_Jammu", name:"Jammu"}, {code:"JH_Ranchi", name:"Ranchi"},
-    {code:"KL_Kerala", name:"Kerala"}, {code:"KN_Bangalore", name:"Bangalore"},
-    {code:"MH_HO", name:"Head Office"},
-    {code:"MH_Mumbai", name:"Mumbai"}, {code:"MH_Nagpur", name:"Nagpur"},
-    {code:"MH_Pune", name:"Pune"}, {code:"MP_Bhopal", name:"Bhopal"},
-    {code:"OD_Bhubaneswar", name:"Bhubaneswar"}, {code:"PN_Mohali", name:"Mohali"},
-    {code:"RJ_Jaipur", name:"Jaipur"}, {code:"TL_Hyderabad", name:"Hyderabad"},
-    {code:"TN_Chennai", name:"Chennai"}, {code:"TN_Coimbatore", name:"Coimbatore"},
-    {code:"UP_Lucknow", name:"Lucknow"}, {code:"UP_Noida", name:"Noida"},
-    {code:"WB_Kolkata", name:"Kolkata"}
-  ];
-
-  /* ============================================================
-     REGIONAL MANAGER SCOPE
-     Mirrors the "Branch" column of User_Details.xlsx for the 7
-     regional logins. The Power Automate flow remains the source of
-     truth: whatever branch list it returns wins. This map is the
-     fallback used in demo mode, and a safety net if the flow
-     authenticates a regional user but returns no branch list.
-  ============================================================ */
-  const REGIONAL_SCOPE = {
-    shyamr:         ["KL_Kerala", "KN_Bangalore"],
-    ankitt:         ["PN_Mohali", "JK_Jammu"],
-    gabrielr:       ["TL_Hyderabad"],
-    pethuramasamyn: ["TN_Chennai", "TN_Coimbatore"],
-    anjanik:        ["RJ_Jaipur", "UP_Lucknow", "UP_Noida"],
-    bachhank:       ["AS_Guwahati", "BH_Patna", "JH_Ranchi", "OD_Bhubaneswar", "WB_Kolkata"],
-    rahulm:         ["CG_Chhattisgarh", "GJ_Ahmedabad", "MH_Mumbai", "MH_Nagpur", "MH_Pune", "MP_Bhopal"]
-  };
-
-  /* ============================================================
-     FINANCE AUDITOR MASTER
-     Named auditors only. The audit trail stamps the acting user
-     against every status change, so a shared/generic auditor login
-     would make the trail worthless for attribution — which is the
-     one thing the control exists to provide.
-     The Power Automate flow remains the source of truth; this map
-     is the demo-mode fallback.
-  ============================================================ */
-  const AUDITOR_USERS = {
-    prasenjitd: { name: "Prasenjit D" }
-  };
-
-  const VALID_BRANCH_CODES = BRANCH_CONFIG.map(b => b.code);
-
-  /* Accepts "KL_Kerala, KN_Bangalore", ["KL_Kerala","KN_Bangalore"],
-     semicolon or pipe separated — returns a clean, de-duplicated array
-     of codes that actually exist in BRANCH_CONFIG. */
-  function normalizeBranchList(value) {
-    if (!value) return [];
-    const raw = Array.isArray(value) ? value : String(value).split(/[,;|\n]+/);
-    const seen = {};
-    const out = [];
-    raw.forEach(item => {
-      const code = String(item).trim();
-      if (!code || seen[code]) return;
-      seen[code] = true;
-      if (VALID_BRANCH_CODES.indexOf(code) !== -1) out.push(code);
-    });
-    return out;
-  }
-
-  /* Configured means "looks like a real URL". The previous test treated an
-     empty string as configured, so blanking the endpoint to fall back to
-     demo mode produced a "Failed to fetch" instead. */
-  const isAuthConfigured = /^https?:\/\//i.test(String(AUTH_ENDPOINT).trim());
+  let DYNAMIC_BRANCHES = [];
   const $ = (id) => document.getElementById(id);
 
-  function initAuthModePill() {
-    const pill = $('authModePill');
-    if (isAuthConfigured) {
-      pill.classList.add('online');
-      $('authModeLabel').textContent = 'Server authentication active';
-      $('demoBox').style.display = 'none';
-      $('lblUsername').style.display = 'block';
-      $('loginUsername').style.display = 'block';
-    } else {
-      pill.classList.add('offline');
-      $('authModeLabel').textContent = 'Demo mode (no login endpoint configured)';
+  // Employee master lookup, keyed by EmpCode (uppercased). Built once from the
+  // same Excel config the rest of the suite reads, so role/branch/hierarchy
+  // are always sourced from one place.
+  let EMP_CONFIG = {};
+
+  function normalizeBranchCode(b) {
+    if (!b) return b;
+    b = String(b);
+    if (b.includes('-')) {
+      const p = b.split('-');
+      return p[0].trim() + '_' + p[1].trim();
+    }
+    return b;
+  }
+
+  // A row's key is matched case-insensitively against any of these header names.
+  function rowVal(row, key) {
+    const foundKey = Object.keys(row).find(k => k.toLowerCase() === key.toLowerCase());
+    return foundKey ? row[foundKey] : undefined;
+  }
+
+  // IsHOAdmin / IsAdmin (either column) -> admin. Otherwise Role / Access Level
+  // text decides: contains "audit" -> auditor, "regional" -> regional, else branch.
+  function deriveRole(row) {
+    const isAdmin = String(rowVal(row, 'IsHOAdmin') || '').toUpperCase() === 'TRUE'
+                  || String(rowVal(row, 'IsAdmin') || '').toUpperCase() === 'TRUE';
+    if (isAdmin) return 'admin';
+    const raw = String(rowVal(row, 'Role') || rowVal(row, 'Access Level') || '').toLowerCase();
+    if (raw.includes('admin')) return 'admin';
+    if (raw.includes('audit')) return 'auditor';
+    if (raw.includes('regional')) return 'regional';
+    return 'branch';
+  }
+
+  // Load the employee master + branch list dynamically from Excel on startup.
+  async function loadConfig() {
+    try {
+      ProstarmRBAC.configure(EXCEL_GET_CONFIG_URL);
+      await ProstarmRBAC.loadDirectory();
+      const res = await fetch(EXCEL_GET_CONFIG_URL);
+      const data = await res.json();
+      const rows = data.value ? data.value : data;
+      const branchSet = new Set();
+
+      rows.forEach(r => {
+        let b = normalizeBranchCode(rowVal(r, 'Branch') || rowVal(r, 'BranchCode'));
+        if (b && !branchSet.has(b)) {
+          branchSet.add(b);
+          const bName = rowVal(r, 'BranchName') || b.split('_')[1] || b;
+          DYNAMIC_BRANCHES.push({ code: b, name: bName });
+        }
+
+        const code = rowVal(r, 'EmpCode');
+        if (code) {
+          EMP_CONFIG[String(code).trim().toUpperCase()] = {
+            n: rowVal(r, 'FullName'),
+            b: b,
+            email: rowVal(r, 'Email') || rowVal(r, 'EmailAddress') || rowVal(r, 'Email ID') || '',
+            regionalManagerCode: rowVal(r, 'RegionalManagerCode') || null,
+            role: deriveRole(r)
+          };
+        }
+      });
+
+      if (DYNAMIC_BRANCHES.length === 0) throw new Error("No branches found in config.");
+      if (Object.keys(EMP_CONFIG).length === 0) throw new Error("No employees found in config.");
+
+      $('authModeLabel').textContent = "Server authentication active";
+    } catch (err) {
+      console.error("Failed to load employee master dynamically", err);
+      $('authModeLabel').textContent = "Error connecting to server";
+      $('authModePill').className = "status-pill error";
+      showLoginError("Could not load the employee master from the server. Please try again shortly.");
     }
   }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadConfig();
+  });
 
   function togglePwd() {
     const input = $('loginPassword');
@@ -298,21 +241,6 @@
     input.type = showing ? 'password' : 'text';
     btn.textContent = showing ? 'Show' : 'Hide';
     btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
-  }
-
-  function toggleLoginBranch() {
-    const role = $('loginRole').value;
-    const isBranch = role === 'branch';
-    $('loginBranchGroup').style.display = isBranch ? 'block' : 'none';
-    $('regionalNote').style.display = (role === 'regional') ? 'block' : 'none';
-    $('auditorNote').style.display = (role === 'auditor') ? 'block' : 'none';
-    if (isBranch && $('loginBranch').children.length === 0) {
-      $('loginBranch').innerHTML = BRANCH_CONFIG.map(b => `<option value="${b.code}">${b.name}</option>`).join('');
-    }
-    // Regional logins are always username-based, even in demo mode
-    const needsUsername = isAuthConfigured || role === 'regional' || role === 'auditor';
-    $('lblUsername').style.display = needsUsername ? 'block' : 'none';
-    $('loginUsername').style.display = needsUsername ? 'block' : 'none';
   }
 
   function showLoginError(msg) {
@@ -342,11 +270,53 @@
     window.location.href = 'dashboard.html';
   }
 
-  async function handleServerLogin(role, branch, username, pwd) {
+  // Determine every branch this EmpCode has visibility over, per their derived role.
+  function resolveBranchesForUser(empCode, role, ownBranch) {
+    if (role === 'admin' || role === 'auditor') {
+      return DYNAMIC_BRANCHES.length > 0 ? DYNAMIC_BRANCHES.map(b => b.code) : ["ALL"];
+    }
+    if (role === 'regional') {
+      const covered = Object.values(EMP_CONFIG)
+        .filter(r => String(r.regionalManagerCode || '').trim().toUpperCase() === empCode)
+        .map(r => r.b)
+        .filter(Boolean);
+      const unique = Array.from(new Set(covered));
+      if (unique.length) return unique;
+      // No branches list this person as their RM yet — fall back to their own branch.
+      return ownBranch ? [ownBranch] : [];
+    }
+    return ownBranch ? [ownBranch] : [];
+  }
+
+  // Find this person's row in the Excel master. The login username won't always
+  // equal EmpCode (e.g. AD usernames like "chandans" vs EmpCode "E004"), so try
+  // several identity fields the auth backend might hand back before giving up.
+  function findEmployeeRow(uname, data) {
+    const candidates = [uname, data && data.username, data && data.empCode, data && data.EmpCode]
+      .filter(Boolean).map(c => String(c).trim().toUpperCase());
+    for (const c of candidates) {
+      if (EMP_CONFIG[c]) return { key: c, row: EMP_CONFIG[c] };
+    }
+    const emailToMatch = (data && data.email) || '';
+    if (emailToMatch) {
+      const hitKey = Object.keys(EMP_CONFIG).find(k =>
+        EMP_CONFIG[k].email && String(EMP_CONFIG[k].email).toLowerCase() === emailToMatch.toLowerCase());
+      if (hitKey) return { key: hitKey, row: EMP_CONFIG[hitKey] };
+    }
+    return null;
+  }
+
+  // Authenticate against the backend first (password check), then prefer the
+  // Excel employee master for role/branch/name/email. If this person's login
+  // username doesn't match anything in Excel, fall back to whatever the
+  // backend itself returned rather than blocking their sign-in.
+  async function handleServerLogin(username, pwd) {
+    const uname = username.trim();
+
     const res = await fetchWithTimeout(AUTH_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(API_KEY ? { 'X-API-Key': API_KEY } : {}) },
-      body: JSON.stringify({ role, branch, username, password: pwd })
+      body: JSON.stringify({ username: uname, password: pwd })
     }, 12000);
 
     if (!res.ok) {
@@ -358,89 +328,49 @@
       throw new Error(data && data.message ? data.message : 'Invalid credentials.');
     }
 
-    const resolvedRole = data.role || role;
-    const uname = (username || data.username || '').trim();
-    return buildActiveUser(resolvedRole, data.branches || data.branch || branch, uname, {
-      name: data.name || data.displayName || '',
-      email: data.email || '',
-      token: data.token || ''
-    });
-  }
+    // Authentication verifies the password; all authorization attributes come
+    // from rbac.js/the employee directory, never from this response or UI.
+    return ProstarmRBAC.createSession(data, uname);
 
-  /* Single place where role -> branch scope is decided, so the demo path
-     and the server path can never drift apart. */
-  function buildActiveUser(role, branchValue, username, extra) {
-    extra = extra || {};
-    const key = String(username || '').toLowerCase();
+    const match = findEmployeeRow(uname, data);
 
-    if (role === 'admin') {
-      return { role: 'admin', branch: 'ALL', branches: VALID_BRANCH_CODES.slice(),
-               username: username, name: extra.name || '', email: extra.email || '', token: extra.token || '' };
-    }
-
-    if (role === 'auditor') {
-      // Finance Auditor reviews expenses across every branch (FR-AUD-01).
-      const akey = String(username || '').toLowerCase();
-      return { role: 'auditor', branch: 'ALL', branches: VALID_BRANCH_CODES.slice(),
-               username: username,
-               name: extra.name || (AUDITOR_USERS[akey] ? AUDITOR_USERS[akey].name : ''),
-               email: extra.email || '', token: extra.token || '' };
-    }
-
-    if (role === 'regional') {
-      let branches = normalizeBranchList(branchValue);
-      if (!branches.length) branches = normalizeBranchList(REGIONAL_SCOPE[key]);
-      if (!branches.length) {
-        throw new Error('No branches are mapped to this regional login. Please contact Head Office.');
+    let role, branches;
+    if (match) {
+      role = match.row.role || 'branch';
+      branches = resolveBranchesForUser(match.key, role, match.row.b);
+    } else {
+      console.warn('No Excel master row matched "' + uname + '" — using role/branch from the auth server instead.');
+      role = data.role || 'branch';
+      branches = data.branches && data.branches.length ? data.branches : (data.branch ? [data.branch] : []);
+      if (role === 'admin' || role === 'auditor') {
+        branches = DYNAMIC_BRANCHES.length > 0 ? DYNAMIC_BRANCHES.map(b => b.code) : ["ALL"];
       }
-      return { role: 'regional', branch: branches[0], branches: branches,
-               username: username, name: extra.name || '', email: extra.email || '', token: extra.token || '' };
     }
 
-    const one = normalizeBranchList(branchValue);
-    if (!one.length) throw new Error('No branch is mapped to this login. Please contact Head Office.');
-    return { role: 'branch', branch: one[0], branches: [one[0]],
-             username: username, name: extra.name || '', email: extra.email || '', token: extra.token || '' };
-  }
-
-  function handleDemoLogin(role, branch, username, pwd) {
-    if (role === 'admin' && pwd === 'admin') return buildActiveUser('admin', 'ALL', username || 'admin', {});
-    if (role === 'regional' && pwd === '1234') {
-      const scope = REGIONAL_SCOPE[String(username || '').toLowerCase()];
-      if (!scope) throw new Error('Unknown regional username.');
-      return buildActiveUser('regional', scope, username, {});
-    }
-    if (role === 'auditor' && pwd === '1234') {
-      const akey = String(username || '').toLowerCase();
-      if (!AUDITOR_USERS[akey]) throw new Error('Unknown Finance Auditor username.');
-      return buildActiveUser('auditor', 'ALL', username, { name: AUDITOR_USERS[akey].name });
-    }
-    if (role === 'branch' && pwd === '1234') return buildActiveUser('branch', branch, username, {});
-    return null;
+    return {
+      role: role,
+      branch: branches[0] || 'ALL',
+      branches: branches,
+      username: uname,
+      name: (match && match.row.n) || data.name || data.displayName || uname,
+      email: (match && match.row.email) || data.email || '',
+      token: data.token || ''
+    };
   }
 
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     hideLoginError();
 
-    const role = $('loginRole').value;
-    const branch = $('loginBranch').value;
     const username = $('loginUsername').value.trim();
     const pwd = $('loginPassword').value.trim();
 
-    if (role === 'branch' && !branch) { showLoginError('Please select your assigned branch.'); return; }
+    if (!username) { showLoginError('Please enter your username.'); return; }
     if (!pwd) { showLoginError('Please enter your password.'); return; }
-    if ((isAuthConfigured || role === 'regional' || role === 'auditor') && !username) { showLoginError('Please enter your username.'); return; }
 
     setLoginLoading(true);
     try {
-      let activeUser;
-      if (isAuthConfigured) {
-        activeUser = await handleServerLogin(role, branch, username, pwd);
-      } else {
-        activeUser = handleDemoLogin(role, branch, username, pwd);
-        if (!activeUser) throw new Error('Invalid credentials.');
-      }
+      const activeUser = await handleServerLogin(username, pwd);
       startSession(activeUser);
     } catch (err) {
       showLoginError(err.name === 'AbortError' ? 'Login request timed out. Check your connection and try again.' : (err.message || 'Login failed.'));
@@ -455,14 +385,11 @@
       if (s && s.loginAt && Date.now() - s.loginAt > 8 * 60 * 60 * 1000) {
         sessionStorage.removeItem('activeUser');
       } else if (s) {
-        // already logged in and session still valid — skip straight to dashboard
         window.location.href = 'dashboard.html';
       }
     } catch (e) { /* ignore malformed session */ }
   })();
 
-  initAuthModePill();
-  toggleLoginBranch();
 </script>
 </body>
 </html>

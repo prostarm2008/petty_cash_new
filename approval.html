@@ -179,8 +179,6 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
 .tbl tr:hover td{background:#f7fbfd}
 .tbl .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
 .tblwrap{overflow-x:auto}
-.btn-post{background:linear-gradient(180deg,#12a768,#0a8a53);color:#fff;border-color:#0a8a53;font-size:12px;padding:7px 14px}
-.posthint{font-size:10.5px;color:var(--muted);font-weight:600;flex:1 1 200px}
 
 /* ---- rework workflow ---- */
 .st.d{background:#eef4f9;color:#5d7c93}
@@ -252,7 +250,7 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
 <div class="wrap">
 
   <div class="topbar">
-    <img class="logo" src="data:image/png;base64,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" alt="Prostarm - Power Redefined">
+    <img class="logo" src="logo.png" alt="Prostarm - Power Redefined">
     <div class="title">Petty Cash Requisition &amp; Approval</div>
     <div class="userbox">
       <b id="uName">—</b><span id="uSub">—</span>
@@ -454,7 +452,7 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
       <h3>All Requests</h3>
       <div class="body"><div id="allList"></div></div>
     </div>
-  </div> <!-- This closing tag fixes the bug! -->
+  </div> 
 
   <!-- ---------- ADMIN ---------- -->
   <div class="view" id="v-admin">
@@ -502,59 +500,39 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
   </div>
 </div>
 
+<script src="rbac.js"></script>
 <script>
 /* ================= POWER AUTOMATE ENDPOINTS ================= */
-// 1. Fetch Config (Employee Master)
 const EXCEL_GET_CONFIG_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3d8c890bdd85458eb4af7f65b3a49577/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jBQBA8EMi2xs9QMwg9Cpcb1f2GtFGrCxDJPXRwIvHUw";
-
-// 2. Fetch Requests (Inbox Data)
 const EXCEL_GET_REQUESTS_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/20/workflows/ce49d00feb0c4c17b1355b9ace5811c6/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=ud9s9XYUjZ9jhpZ4ENValYbZWPf9VIAzAxacXwpGL4c"; 
-
-// 3. Save NEW Request (ADD)
 const EXCEL_ADD_REQUEST_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/07/workflows/8b0f2746772643e6bc72f891fdb61b74/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=OkfWZ51wK-v29yQXlYJQFzlsJiPPfD3DZBdBJszBjRQ";
-
-// 4. Save ACTION (UPDATE)
 const EXCEL_UPDATE_REQUEST_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/08/workflows/51c5cffdd2ec4a9ba9eb7eaa1cff6374/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=Vg-lFD26cugqXacXFpaajdmteupXY2YBZQCq98RbeFg";
-
-// 5. Transfer Data URL
 const EXCEL_TRANSFER_DATA_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/19/workflows/a4e7b67a42fc47e59e6ec804a3237678/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=2NEZ1dYXpyG4ch_XV229JxmhdHwZVYRPPXIZ0CdjYtE";
 
 /* ================= EMPLOYEE MASTER DATA & VARIABLES ================= */
 let EMP = {};
 let BRANCH_STAFF_MAP = {};
 let ZONE = {};
-/* ----------------------------------------------------------------
-   SINGLE SIGN-IN
-   Identity comes from the Petty Cash session (index.html) and nowhere
-   else. The employee master is still used for the reporting hierarchy
-   where it has the person, but it is no longer an authorisation gate —
-   a valid Petty Cash login is always allowed in.
-   ---------------------------------------------------------------- */
-const BRANCH_REGION = {
-  AS_Guwahati:'R_EAST', BH_Patna:'R_EAST', JH_Ranchi:'R_EAST', OD_Bhubaneswar:'R_EAST', WB_Kolkata:'R_EAST',
-  MH_HO:'R_HO',
-  RJ_Jaipur:'R_NORTH1', UP_Lucknow:'R_NORTH1', UP_Noida:'R_NORTH1',
-  JK_Jammu:'R_NORTH2', PN_Mohali:'R_NORTH2',
-  KL_Kerala:'R_SOUTH1', KN_Bangalore:'R_SOUTH1',
-  TN_Chennai:'R_SOUTH2', TN_Coimbatore:'R_SOUTH2',
-  TL_Hyderabad:'R_SOUTH3',
-  CG_Chhattisgarh:'R_WEST', GJ_Ahmedabad:'R_WEST', MH_Mumbai:'R_WEST', MH_Nagpur:'R_WEST', MH_Pune:'R_WEST', MP_Bhopal:'R_WEST'
-};
-const REGION_INFO = {
-  R_EAST:   { name:'East', manager:'BACHHANK' },
-  R_HO:     { name:'HO', manager:'' },
-  R_NORTH1: { name:'North - 1', manager:'ANJANIK' },
-  R_NORTH2: { name:'North - 2', manager:'ANKITT' },
-  R_SOUTH1: { name:'South - 1', manager:'SHYAMR' },
-  R_SOUTH2: { name:'South - 2', manager:'PETHURAMASAMYN' },
-  R_SOUTH3: { name:'South - 3', manager:'GABRIELR' },
-  R_WEST:   { name:'West', manager:'RAHULM' }
-};
+
+const BRANCH_CONFIG = [
+  {code:"AS_Guwahati", name:"Guwahati"}, {code:"BH_Patna", name:"Patna"},
+  {code:"CG_Chhattisgarh", name:"Chhattisgarh"}, {code:"GJ_Ahmedabad", name:"Ahmedabad"},
+  {code:"JK_Jammu", name:"Jammu"}, {code:"JH_Ranchi", name:"Ranchi"},
+  {code:"KL_Kerala", name:"Kerala"}, {code:"KN_Bangalore", name:"Bangalore"},
+  {code:"MH_HO", name:"Head Office"},
+  {code:"MH_Mumbai", name:"Mumbai"}, {code:"MH_Nagpur", name:"Nagpur"},
+  {code:"MH_Pune", name:"Pune"}, {code:"MP_Bhopal", name:"Bhopal"},
+  {code:"OD_Bhubaneswar", name:"Bhubaneswar"}, {code:"PN_Mohali", name:"Mohali"},
+  {code:"RJ_Jaipur", name:"Jaipur"}, {code:"TL_Hyderabad", name:"Hyderabad"},
+  {code:"TN_Chennai", name:"Chennai"}, {code:"TN_Coimbatore", name:"Coimbatore"},
+  {code:"UP_Lucknow", name:"Lucknow"}, {code:"UP_Noida", name:"Noida"},
+  {code:"WB_Kolkata", name:"Kolkata"}
+];
+
 const ROLE_TITLE = { admin:'HO Admin', regional:'Regional Manager',
                      branch:'Branch User', auditor:'Finance Auditor' };
 
 let SESSION = null;
-
 let APPROVER = "";
 let ADMINS = [];
 
@@ -590,10 +568,6 @@ const HANDOFF_KEY="prostarm:pettycash:handoff";
 /* ================= SERVER STORAGE (Power Automate) ================= */
 let MEM = [];
 
-/* Wraps fetch with a hard timeout so a stalled Power Automate call
-   (cold start, throttling, CORS preflight hang) fails fast instead of
-   leaving the UI stuck forever. Also treats non-2xx responses as errors
-   and reports the real HTTP status / body back to the caller. */
 async function fetchJSON(url, opts = {}, timeoutMs = 20000) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -618,11 +592,27 @@ async function fetchJSON(url, opts = {}, timeoutMs = 20000) {
   }
 }
 
-async function loadAll() {
+/* loadAll() is called from thirteen places, and start-up alone triggers it
+   several times in a row — each with a cache-buster, so each was a fresh
+   round-trip to the Flow for identical data. Concurrent callers now share
+   one request, and a result is reused for a couple of seconds. Any write
+   path calls invalidateRequisitions() so an approval still shows instantly. */
+let _reqInFlight = null, _reqAt = 0;
+const REQ_TTL_MS = 2500;
+function invalidateRequisitions() { _reqInFlight = null; _reqAt = 0; }
+
+async function loadAll(force) {
+  if (!force && _reqInFlight && (Date.now() - _reqAt) < REQ_TTL_MS) return _reqInFlight;
+  if (force) invalidateRequisitions();
+  _reqAt = Date.now();
+  _reqInFlight = _loadAllUncached().catch(err => { invalidateRequisitions(); throw err; });
+  return _reqInFlight;
+}
+
+async function _loadAllUncached() {
   try {
     if(EXCEL_GET_REQUESTS_URL.includes("PLACE_YOUR_GET")) return MEM; 
     
-    // Cache buster guarantees fresh data
     const urlWithCacheBuster = EXCEL_GET_REQUESTS_URL + "&t=" + Date.now();
     const rawData = await fetchJSON(urlWithCacheBuster);
     const dataArray = rawData.value ? rawData.value : rawData;
@@ -675,7 +665,6 @@ async function loadAll() {
       r.approvalDate           = getVal('approvaldate') || "";
       r.cancellationReason     = getVal('cancellationreason') || "";
 
-      /* legacy rows saved before the rework build */
       if(!r.status || r.status === "Pending") r.status = ST.SUBMITTED;
       if(!r.versions.length){
         r.versions=[{v:1,submittedBy:r.by,submissionDate:r.raised,resubmissionDate:null,
@@ -688,14 +677,6 @@ async function loadAll() {
       return r;
     });
 
-    console.log(`loadAll(): fetched ${dataArray.length} row(s) from EXCEL_GET_REQUESTS_URL, mapped to ${MEM.length} requisition(s).`, MEM);
-
-    if (dataArray.length === 0) {
-      console.warn("Server returned 0 requisition rows. Check that the flow's underlying Excel table actually has rows, and that the flow isn't filtering them out before returning.");
-    } else if (MEM.every(r => !r.no)) {
-      console.warn(`Server returned ${dataArray.length} row(s), but none had a recognizable "no" (requisition number) field — check the column name in your Excel table matches what the flow returns (case-insensitive "no" expected). First raw row:`, dataArray[0]);
-    }
-
     return MEM;
   } catch (e) {
     console.error("Error loading requests from server", e);
@@ -704,17 +685,10 @@ async function loadAll() {
   }
 }
 
-/* Same idea as showServerError but neutral/blue — for informational
-   diagnostics (e.g. "server returned 0 rows") rather than hard failures.
-   Renders as a normal block at the very top of <body> (not a fixed
-   overlay), so it pushes the header down instead of covering it, and
-   includes a manual dismiss button since diagnostic text can be long. */
 function showServerInfo(msg) {
   renderBanner("serverInfoBanner", "ℹ", msg, "#e7f1f7", "#0b3f7a", "#c9dae6", 20000);
 }
 
-/* Small non-blocking banner so server errors are visible on-screen,
-   not just in the console. */
 function showServerError(msg) {
   renderBanner("serverErrBanner", "⚠", msg, "#fdeceb", "#c0392b", "#eab9b3", 15000);
 }
@@ -741,7 +715,6 @@ function renderBanner(id, icon, msg, bg, fg, border, autoHideMs) {
     el.appendChild(closeBtn);
     document.body.prepend(el);
   }
-  // keep the close button, replace the text content before it
   const closeBtn = el.querySelector("span");
   el.textContent = icon + " " + msg + " ";
   if (closeBtn) el.appendChild(closeBtn);
@@ -751,29 +724,25 @@ function renderBanner(id, icon, msg, bg, fg, border, autoHideMs) {
 }
 
 async function pushToExcel(rq, isUpdate = false) {
+  invalidateRequisitions();   // a write makes any cached list stale
   try {
     const targetURL = isUpdate ? EXCEL_UPDATE_REQUEST_URL : EXCEL_ADD_REQUEST_URL;
 
     const payload = { ...rq };
     
-    // 1. Convert Arrays to Strings
     payload.chain    = JSON.stringify(rq.chain || []);
     payload.trail    = JSON.stringify(rq.trail || []);
     payload.versions = JSON.stringify(rq.versions || []);
 
-    // 2. Scrub Empty Dates & Fix Strict Date Formats
     const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered'];
     dateFields.forEach(f => {
         if (!payload[f] || payload[f] === "") {
             delete payload[f];
         } else if ((f === 'date' || f === 'invoiceDate') && payload[f].includes('T')) {
-            // CRITICAL FIX: The schema strictly requires YYYY-MM-DD.
-            // We must chop off the "T00:00:00.000Z" part returned by Excel.
             payload[f] = payload[f].split('T')[0];
         }
     });
 
-    // 3. Clean up Numbers
     const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step'];
     numFields.forEach(f => {
         if (payload[f] === "" || payload[f] === null || payload[f] === undefined) {
@@ -783,7 +752,6 @@ async function pushToExcel(rq, isUpdate = false) {
         }
     });
 
-    // 4. Convert any stray Excel nulls into empty strings
     Object.keys(payload).forEach(k => {
         if (payload[k] === null) {
             payload[k] = "";
@@ -796,7 +764,6 @@ async function pushToExcel(rq, isUpdate = false) {
       body: JSON.stringify(payload)
     });
     
-    // CRITICAL: If the server rejects the data, grab the exact reason why!
     if (!res.ok) {
       const errText = await res.text();
       throw new Error(`HTTP ${res.status}: ${errText}`);
@@ -808,7 +775,7 @@ async function pushToExcel(rq, isUpdate = false) {
   } catch(e) {
     console.error("Error saving to server", e);
     showServerError("Server rejected the save: " + e.message);
-    return { success: false, error: e.message }; // Pass the detailed error out
+    return { success: false, error: e.message };
   }
 }
 
@@ -919,8 +886,33 @@ async function refreshVoucher(){
 $("fDate").addEventListener("change",refreshVoucher);
 
 /* ================= ROUTE ================= */
-/* Find this person in the employee master under any reasonable key,
-   then fill the gaps from the Petty Cash session. Never rejects. */
+
+function isFinalApprover(code) {
+  const directoryUser = window.ProstarmRBAC && ProstarmRBAC.userFor(code);
+  return !!(directoryUser && directoryUser.roles.indexOf('final_approver') !== -1) || code === APPROVER;
+}
+
+function getManagerForBranch(branchCode) {
+  if (!branchCode) return null;
+  const keys = Object.keys(EMP);
+
+  for (let i = 0; i < keys.length; i++) {
+    let k = keys[i];
+    if (EMP[k].b === branchCode && !EMP[k].synthetic) {
+      let isBP = EMP[k].d && String(EMP[k].d).toLowerCase().includes('branch');
+      if (isBP && EMP[k].m) return EMP[k].m; 
+    }
+  }
+
+  for (let i = 0; i < keys.length; i++) {
+    let k = keys[i];
+    if (EMP[k].b === branchCode && !EMP[k].synthetic && EMP[k].m) {
+      return EMP[k].m;
+    }
+  }
+  return null;
+}
+
 function resolveSessionEmployee(su) {
   const uname = String(su.username || '').trim();
   const UP = uname.toUpperCase();
@@ -938,83 +930,96 @@ function resolveSessionEmployee(su) {
   const branch = su.branch && su.branch !== 'ALL'
     ? su.branch
     : ((su.branches && su.branches.length === 1) ? su.branches[0] : (key && EMP[key] ? EMP[key].b : ''));
-  const region = BRANCH_REGION[branch] || '';
-  const rmCode = region && REGION_INFO[region] ? REGION_INFO[region].manager : '';
 
   if (key) {
-    /* Known to the master — keep its hierarchy, only fill blanks. */
     if (!EMP[key].b && branch) EMP[key].b = branch;
-    if (!EMP[key].m && rmCode && rmCode !== key) EMP[key].m = rmCode;
     if (!EMP[key].n) EMP[key].n = su.name || uname;
   } else {
-    /* Not in the master — build the record from the session. */
     key = UP;
     EMP[key] = {
       n: su.name || uname,
       b: branch,
       d: ROLE_TITLE[su.role] || 'User',
-      m: (su.role === 'branch' && rmCode && rmCode !== key) ? rmCode : (APPROVER && APPROVER !== key ? APPROVER : null),
+      m: null, 
       email: su.email || '',
+      role: su.role || 'branch',
       synthetic: true
     };
   }
 
-  /* Make sure the regional manager on the chain has a record, otherwise
-     buildChain() stops at an unknown code and the route renders blank. */
-  if (rmCode && !EMP[rmCode]) {
-    EMP[rmCode] = { n: rmCode, b: branch, d: 'Regional Manager',
-                    m: (APPROVER && APPROVER !== rmCode) ? APPROVER : null,
-                    email: '', synthetic: true };
-  }
-  if (branch && !ZONE[branch] && region) ZONE[branch] = REGION_INFO[region].name;
-
-  /* Petty Cash HO Admin carries admin rights here too. */
   if (su.role === 'admin' && ADMINS.indexOf(key) < 0) ADMINS.push(key);
 
   return key;
 }
 
 function buildChain(start){
+  // Preserve the original Excel ManagerCode hierarchy as the primary route.
+  // The shared RBAC directory is only a fallback for a newly mapped user
+  // whose manager chain has not yet been returned in the legacy shape.
   const path=[];
-  if(!EMP[start]) return path;
+  if(!EMP[start]) {
+    return window.ProstarmRBAC
+      ? ProstarmRBAC.approvalRoute(start, $("fBranch").value || '')
+      : path;
+  }
   let cur=EMP[start].m; const seen={}; seen[start]=1;
+  const namesSeen = {}; if (EMP[start].n) namesSeen[String(EMP[start].n).trim().toLowerCase()] = start;
   while(cur&&!seen[cur]){
     seen[cur]=1;
     path.push(cur);
     if(!EMP[cur]){
-      // Broken hierarchy link (manager code not found in employee master).
-      // Stop the chain here instead of crashing — a crash here happens
-      // BEFORE the submit handler ever reaches pushToExcel(), which means
-      // the ADD flow never gets called at all.
       console.warn('buildChain: manager code "'+cur+'" not found in employee master — approval chain stops here.');
       break;
     }
+    const nKey = EMP[cur].n ? String(EMP[cur].n).trim().toLowerCase() : null;
+    if (nKey && namesSeen[nKey]) {
+      console.warn('buildChain: "'+EMP[cur].n+'" appears under both EmpCode "'+namesSeen[nKey]+'" and "'+cur+'" — likely a duplicate row in the Excel master.');
+    } else if (nKey) {
+      namesSeen[nKey] = cur;
+    }
     cur=EMP[cur].m;
   }
-  return path;
+  if (path.length) return path;
+  return window.ProstarmRBAC
+    ? ProstarmRBAC.approvalRoute(start, $("fBranch").value || (EMP[start] || {}).b)
+    : path;
 }
 
 function route(){
   if(!ME) return;
   const chain=buildChain(ME), amt=parseFloat($("fAmount").value)||0, cat=catSel.value;
-  const recs=chain.length-1;
+  const recs=Math.max(0, chain.length-1);
   const meRec = EMP[ME] || { n: ME, d: '' };
   let html='<li class="origin"><div class="nd">&#10003;</div><div class="rl">'+meRec.n+
     '<small>'+meRec.d+'</small><span class="cd">'+ME+' · raises the request</span></div></li>';
+
+  // Flag when the same person's name shows up twice under different EmpCodes —
+  // almost always a duplicate row in the Excel master with a stray ManagerCode
+  // link, not a real loop (buildChain only de-dupes on exact EmpCode match).
+  const namesSeen = {};
+  let dupName = null;
+  [meRec.n, ...chain.map(c => (EMP[c]||{}).n)].forEach(n=>{
+    if(!n) return;
+    const key = String(n).trim().toLowerCase();
+    if(namesSeen[key] && !dupName) dupName = n;
+    namesSeen[key] = true;
+  });
+
   chain.forEach((c,i)=>{
     const e=EMP[c] || {n: "Unknown", d: "Unknown"}; 
-    const isApp=c===APPROVER;
+    const isApp=isFinalApprover(c);
     html+='<li class="'+(isApp?"fin":"rec")+'"><div class="nd">'+(isApp?"OK":"R"+(i+1))+'</div>'+
       '<div class="rl">'+e.n+'<small>'+e.d+'</small><span class="cd">'+c+'</span>'+
       '<span class="tag '+(isApp?"g":"v")+'">'+(isApp?"approves · "+TAT.app:"recommends · "+TAT.rec)+'</span></div></li>';
   });
   $("chain").innerHTML=html;
   $("slabTag").textContent=recs>0?recs+" recommendation"+(recs>1?"s":"")+" → approval":"Straight to approval";
-  $("why").innerHTML = FLAGGED[cat]
+  $("why").innerHTML = (dupName ? "<b>⚠ Data check:</b> \""+dupName+"\" appears more than once in this chain under different employee codes — likely a duplicate row in the Excel master with a ManagerCode pointing at the wrong one. " : "")
+    + (FLAGGED[cat]
     ? "<b>"+cat+"</b> is a flagged head ("+FLAGGED[cat]+") — it reaches Final Approver marked for extra scrutiny."
     : (recs===0
         ? "This request goes straight to the <b>Final Approver</b> for approval — no recommendation stage."
-        : "<b>"+recs+"</b> recommendation"+(recs>1?"s":"")+" in the reporting line, then <b>Final Approver</b> approves. On approval it can be posted straight into the Expenses Entry Tracker.");
+        : "<b>"+recs+"</b> recommendation"+(recs>1?"s":"")+" in the reporting line, then <b>Final Approver</b> approves. On approval it can be posted straight into the Expenses Entry Tracker."));
   $("logisticsCard").classList.toggle("on",MOVEMENT_HEADS.indexOf(typeSel.value)>-1);
   $("gstReq").className=amt>5000?"req":"hint";
   $("gstReq").textContent=amt>5000?"*":"above ₹5,000";
@@ -1055,7 +1060,6 @@ function validate(){
   need.forEach(p=>{ const el=$(p[0]),empty=!el.value.trim(); el.classList.toggle("flag",empty); if(empty) miss.push(p[1]); });
   if(amt<=0){ $("fAmount").classList.add("flag"); miss.unshift("Amount"); } else $("fAmount").classList.remove("flag");
   if(!employeeName()) miss.push("Employee / party name");
-  /* Document / invoice image is OPTIONAL — never blocks submission */
   return miss;
 }
 
@@ -1081,23 +1085,23 @@ $("submitBtn").addEventListener("click", async function(){
     branch:$("fBranch").value, zone:ZONE[(EMP[ME]&&EMP[ME].b)||$("fBranch").value]||"",
     date:V("fDate"), voucher:V("fVoucher"), division:V("fDivision"), 
     
-    expenseLimit: V("fExpenseLimit"), // Schema expects a string
+    expenseLimit: V("fExpenseLimit"),
     
     expenseType:typeSel.value, category:catSel.value, expenseAmount:parseFloat($("fAmount").value),
     originalAmount:parseFloat($("fAmount").value),
     requestedAmount:parseFloat($("fAmount").value),
     
-    currentTargetedAmount: null, // Schema allows number or null
+    currentTargetedAmount: null, 
     currentRevisedAmount:parseFloat($("fAmount").value),
     approvedAmount: null, 
     targetedAmount: null, 
     
     vendorName:V("fPerson"),
-    currentVersion: 1, // Schema minimum is 1
+    currentVersion: 1, 
     submissionCount: 1, 
     maxResubmissions:MAX_RESUBMISSIONS,
     
-    escalationFlag: "N", // Schema expects a string, not boolean
+    escalationFlag: "N", 
     
     currentRejectionReason: "", managerRemarks: "",
     reworkManager: "", currentOwner: chain.length ? chain[0] : ME, pendingSince:new Date().toISOString(),
@@ -1123,37 +1127,19 @@ $("submitBtn").addEventListener("click", async function(){
   rq.currentOwner = chain.length ? chain[0] : ME;
   logAction(rq,"SUBMIT",ST.DRAFT,rq.status,"",rq.originalAmount,V("fRemark").slice(0,150));
   if(chain.length) queueMail("RESUBMITTED", rq, chain[0], "Initial submission");
-  // Submit to Server via Power Automate POST (ADD)
-  console.log("Submitting new requisition — payload sent to EXCEL_ADD_REQUEST_URL:", rq);
+  
   const saveResult = await pushToExcel(rq, false);
-  console.log("EXCEL_ADD_REQUEST_URL response:", saveResult);
 
   if (!saveResult || saveResult.success === false) {
     t.className = "msg no on";
     t.innerHTML = "<b>Server Error:</b> Could not save the request. Please check connection.";
-    return; // Stop here, do not show success message
+    return; 
   }
-
-  // Self-check: re-fetch and confirm the row we just added actually has
-  // real data in it, not just an empty placeholder row. If the flow's
-  // "Add a row" step isn't mapping fields correctly, this catches it
-  // immediately instead of you discovering it later on refresh.
-  setTimeout(async () => {
-    const check = await loadAll();
-    const saved = check.find(x => x.no === rq.no);
-    if (!saved) {
-      showServerError(`Submitted requisition ${rq.no}, but it isn't showing up when re-fetched from the server. Check the Add flow's run history in Power Automate.`);
-    } else if (!saved.by || !saved.branch || !saved.expenseAmount) {
-      showServerError(`Requisition ${rq.no} was added to the table, but came back with blank fields (by="${saved.by}", branch="${saved.branch}", amount="${saved.expenseAmount}"). Your Add flow is creating the row but not writing the field values — check its field mapping in Power Automate. See the browser console for the exact payload that was sent.`);
-    } else {
-      console.log(`Self-check passed: requisition ${rq.no} was saved correctly.`, saved);
-    }
-  }, 2000);
 
   const nx=chain[0];
   t.className="msg ok on";
   t.innerHTML=chain.length
-    ? "<b>Sent.</b> Requisition "+rq.no+" is with <b>"+((EMP[nx]&&EMP[nx].n)||nx)+" ("+nx+")</b> for "+(nx===APPROVER?"approval":"recommendation")+"."
+    ? "<b>Sent.</b> Requisition "+rq.no+" is with <b>"+((EMP[nx]&&EMP[nx].n)||nx)+" ("+nx+")</b> for "+(isFinalApprover(nx)?"approval":"recommendation")+"."
     : "<b>Approved.</b> Requisition "+rq.no+" is ready to post into the Expenses Entry Tracker.";
   t.scrollIntoView({behavior:"smooth",block:"center"});
   
@@ -1175,7 +1161,6 @@ function stampApproval(r,code,amount){
   r.expenseAmount=r.approvedAmount;          
   r.approvedBy=EMP[code].n+" ("+code+")";
   
-  // CRITICAL: Must be a strict ISO date-time string to pass Schema validation
   r.approvedOn = d.toISOString(); 
   
   r.hoApproval=EMP[code].n+" ("+code+") · "+EMP[code].d+" · approved "+pad(d.getDate())+"-"+MON[d.getMonth()]+"-"+d.getFullYear()+" · "+r.no;
@@ -1209,8 +1194,6 @@ function recsDone(r){return r.trail.filter(t=>t.act==="Recommended").length;}
 
 /* ==========================================================
    REWORK & RESUBMISSION WORKFLOW ENGINE
-   Implements the 8-status model, version control and the
-   Branch <-> Reporting Manager negotiation loop.
    ========================================================== */
 
 const ST = {
@@ -1220,8 +1203,6 @@ const ST = {
 };
 const TERMINAL = [ST.CANCELLED, ST.FINAL];
 const OPEN_WITH_MANAGER = [ST.SUBMITTED, ST.UNDER_REVIEW, ST.REWORKED];
-/* states in which the person holding the requisition may act; ST.APPROVED means it is
-   sitting with the Final Approving Authority awaiting sanction */
 const ACTIONABLE = [ST.SUBMITTED, ST.UNDER_REVIEW, ST.REWORKED, ST.APPROVED];
 
 const REJECTION_REASONS = [
@@ -1232,7 +1213,7 @@ const REJECTION_REASONS = [
   ["BUDGET",        "Outside branch budget"],
   ["OTHER",         "Other (see remarks)"]
 ];
-let MAX_RESUBMISSIONS = 3;          /* overridden by the config sheet if a MaxResubmissions row exists */
+let MAX_RESUBMISSIONS = 3;          
 let ALLOW_ABOVE_TARGET = true;
 
 /* ---------- helpers ---------- */
@@ -1247,7 +1228,6 @@ function currentVersion(r){
   const v=versionsOf(r);
   return v.length?v[v.length-1]:null;
 }
-/* the amount currently on the table */
 function liveAmount(r){
   if(r.approvedAmount!==""&&r.approvedAmount!=null) return num(r.approvedAmount);
   if(r.currentRevisedAmount!==""&&r.currentRevisedAmount!=null) return num(r.currentRevisedAmount);
@@ -1311,7 +1291,7 @@ function closeVersion(r, outcome, actor, remarks, targeted, reasonCode){
 function logAction(r, code, from, to, before, after, comments){
   r.trail = r.trail || [];
   r.trail.push({
-    code:ME, act:code, actorRole:(ME===APPROVER?"Final Approver":(r.by===ME?"Branch Person":"Reporting Manager")),
+    code:ME, act:code, actorRole:(isFinalApprover(ME)?"Final Approver":(r.by===ME?"Branch Person":"Reporting Manager")),
     statusFrom:from, statusTo:to,
     amountBefore:(before===""||before==null)?"":num(before),
     amountAfter:(after===""||after==null)?"":num(after),
@@ -1367,7 +1347,6 @@ async function flushOutbox(){
    MANAGER ACTIONS
    ========================================================== */
 
-/* T5 / T13 — Under Review is set when the assigned manager opens it (FR-07) */
 async function markUnderReview(id){
   const list=await loadAll();
   const r=list.find(x=>x.id===id);
@@ -1382,8 +1361,6 @@ async function markUnderReview(id){
   refresh();
 }
 
-/* T7 — approve / recommend onward */
-/* T7 — approve / recommend onward */
 async function actApprove(id){
   const list=await loadAll();
   const r=list.find(x=>x.id===id);
@@ -1402,13 +1379,13 @@ async function actApprove(id){
   if(amount!==onTable&&!rem){ alert("A comment is mandatory when you change the amount."); return; }
 
   const from=r.status;
-  const isFinal=(ME===APPROVER);
+  const isFinal=isFinalApprover(ME);
 
   if(isFinal){
     closeVersion(r,"APPROVED",ME,rem,"","");
     r.status=ST.FINAL;
     r.approvedAmount=amount;
-    r.expenseAmount=amount;          /* only this figure goes downstream */
+    r.expenseAmount=amount;          
     r.approvalDate=new Date().toISOString();
     r.hoApproval=nameOf(ME)+" ("+ME+") · Final Approving Authority · approved "+
                  pad(new Date().getDate())+"-"+MON[new Date().getMonth()]+"-"+new Date().getFullYear()+" · "+r.no;
@@ -1418,7 +1395,7 @@ async function actApprove(id){
   } else {
     r.step+=1;
     r.currentRevisedAmount=amount;
-    const nextIsFinal=(r.chain[r.step]===APPROVER);
+    const nextIsFinal=isFinalApprover(r.chain[r.step]);
     r.status=nextIsFinal?ST.APPROVED:ST.SUBMITTED;
     r.currentOwner=r.chain[r.step];
     r.pendingSince=new Date().toISOString();
@@ -1426,10 +1403,9 @@ async function actApprove(id){
     if(nextIsFinal) queueMail("APPROVED",r,r.by,rem);
   }
   
-  // UPDATED: Added success notification
   await commit(r, id, isFinal ? "Final Approval successful." : "Approved and forwarded to the next manager.");
 }
-/* T8 — reject for rework: targeted amount + reason + remarks all mandatory (FR-10) */
+
 async function actRejectRework(id){
   const list=await loadAll();
   const r=list.find(x=>x.id===id);
@@ -1454,13 +1430,12 @@ async function actRejectRework(id){
   r.currentRejectionReason=reason;
   r.managerRemarks=rem;
   r.status=ST.REJ_REWORK;
-  r.currentOwner=r.by;                       /* returns to the branch person (FR-14) */
+  r.currentOwner=r.by;                       
   r.pendingSince=new Date().toISOString();
-  r.reworkManager=ME;                        /* same manager gets it back (FR-19) */
+  r.reworkManager=ME;                        
   logAction(r,"REJECT_REWORK",from,ST.REJ_REWORK,onTable,tgt,reasonText(reason)+" — "+rem);
   queueMail("REJECTED",r,r.by,rem);
   
-  // UPDATED: Added success notification
   await commit(r, id, "Request has been successfully returned to the branch for rework.");
 }
 
@@ -1468,7 +1443,6 @@ async function actRejectRework(id){
    BRANCH ACTIONS
    ========================================================== */
 
-/* T10 / T12 — resubmit, or escalate when the limit is reached */
 async function actResubmit(id){
   const list=await loadAll();
   const r=list.find(x=>x.id===id);
@@ -1491,11 +1465,10 @@ async function actResubmit(id){
   if(vendor) r.vendorName=vendor;
 
   if(num(r.submissionCount)>=cap){
-    /* T12 — limit reached: lock and escalate with full history (FR-22) */
     openVersion(r,ME,revised,note);
     r.escalationFlag="Y";
-    r.status=ST.APPROVED;                      /* awaiting a human decision above */
-    r.step=Math.max(0,(r.chain||[]).length-1); /* jump to the final authority */
+    r.status=ST.APPROVED;                      
+    r.step=Math.max(0,(r.chain||[]).length-1); 
     r.currentOwner=r.chain[r.step];
     r.pendingSince=new Date().toISOString();
     logAction(r,"ESCALATE",from,ST.APPROVED,target||"",revised,
@@ -1513,11 +1486,9 @@ async function actResubmit(id){
     queueMail("RESUBMITTED",r,r.currentOwner,note);
   }
   
-  // UPDATED: Added success notification
   await commit(r, id, "Successfully resubmitted to your manager.");
 }
 
-/* T11 — cancel with a mandatory reason */
 async function actCancel(id){
   const list=await loadAll();
   const r=list.find(x=>x.id===id);
@@ -1540,7 +1511,6 @@ async function actCancel(id){
   await commit(r,id);
 }
 
-/* T6 / T14 — recall while the manager has not opened it */
 async function actRecall(id){
   const list=await loadAll();
   const r=list.find(x=>x.id===id);
@@ -1558,7 +1528,6 @@ async function actRecall(id){
   await commit(r,id);
 }
 
-/* shared commit + guard */
 function guardFail(){ alert("This requisition has moved on. Refreshing."); refresh(); }
 async function commit(r, id, successMsg){
   const cardEl=document.getElementById("rq-"+id);
@@ -1567,7 +1536,6 @@ async function commit(r, id, successMsg){
   const res=await pushToExcel(r,true);
   
   if(!res || res.success===false){
-    // Print the exact Power Automate schema failure message
     alert("Flow blocked the save! Error details:\n\n" + (res ? res.error : "Unknown Error"));
     if(cardEl){ cardEl.style.opacity="1"; cardEl.style.pointerEvents="auto"; }
   } else {
@@ -1582,16 +1550,13 @@ async function commit(r, id, successMsg){
 function statusTag(r){
   const s=r.status;
   
-  // Safely get the current pending manager
   let pendingWith = "";
   if (r.chain && r.chain[r.step]) {
       const currentOwnerCode = String(r.chain[r.step]).trim().toUpperCase();
       
-      // If the request is sitting with the logged-in user, say "You"
       if (currentOwnerCode === ME) {
           pendingWith = "You";
       } else {
-          // Otherwise, grab the person's first name
           pendingWith = nameOf(r.chain[r.step]).split(" ")[0];
       }
   }
@@ -1601,7 +1566,6 @@ function statusTag(r){
   if(s===ST.CANCELLED)  return '<span class="st x">Cancelled</span>';
   if(s===ST.REJ_REWORK) return '<span class="st x">Rejected for Rework</span>';
   
-  // Updated text string to include the dynamic "You" or "Name"
   if(s===ST.REWORKED)   return '<span class="st r">Reworked &middot; v'+(r.currentVersion||1)+(pendingWith?' &middot; Pending with '+pendingWith:'')+'</span>';
   if(s===ST.UNDER_REVIEW) return '<span class="st p">Under Review'+(pendingWith?' &middot; Pending with '+pendingWith:'')+'</span>';
   if(s===ST.DRAFT)      return '<span class="st d">Draft</span>';
@@ -1630,7 +1594,6 @@ function versionTable(r){
   return h+"</tbody></table></div>";
 }
 
-/* manager action panel */
 function managerPanel(r){
   const onTable=liveAmount(r);
   return '<div class="sub" style="margin-top:12px">Your decision</div>'+
@@ -1638,7 +1601,7 @@ function managerPanel(r){
       '<div class="f" style="flex:0 0 150px"><label>Approve at (₹)</label>'+
         '<input id="amt-'+r.id+'" type="number" min="1" step="0.01" value="'+onTable+'"></div>'+
       '<button type="button" class="btn btn-go" onclick="actApprove(\''+r.id+'\')">'+
-        (ME===APPROVER?"Final Approve":"Approve &amp; forward")+'</button>'+
+        (isFinalApprover(ME)?"Final Approve":"Approve &amp; forward")+'</button>'+
     '</div>'+
     '<div class="rework-box">'+
       '<b>Not satisfied with the rate? Send it back for rework.</b>'+
@@ -1655,7 +1618,6 @@ function managerPanel(r){
     '</div>';
 }
 
-/* branch rework panel */
 function reworkPanel(r){
   const target=targetOf(r);
   const cap=num(r.maxResubmissions||MAX_RESUBMISSIONS);
@@ -1689,10 +1651,6 @@ function reworkPanel(r){
   '</div>';
 }
 
-/* Missing-field-safe detail grid + audit trail shown when a card is expanded.
-   (This function was being called but never defined — the resulting
-   ReferenceError on every card render is what caused "Pending My
-   Recommendation" to show a count but an empty list body.) */
 function detailHtml(r){
   const rows=[
     ["Branch", r.branch], ["Zone", ZONE[r.branch]], ["Category", r.category],
@@ -1758,9 +1716,6 @@ function markAsTransferred(r) {
   r.transferred = true;
 }
 
-/* transferData() has been superseded by openTransferModal() — the branch now
-   chooses whether to submit with or without documents. Kept as a shim so any
-   stale cached markup still lands in the right place. */
 function transferData(id) { openTransferModal(id); }
 
 function card(r,actable){
@@ -1770,14 +1725,10 @@ function card(r,actable){
   const canPost  = (r.status===ST.FINAL)&&(r.by===ME||ADMINS.indexOf(ME)>-1);
   const target   = targetOf(r);
 
-  const box=(actable&&withMe&&ME===APPROVER)
+  const box=(actable&&withMe&&isFinalApprover(ME))
     ? '<input type="checkbox" class="bx" value="'+r.id+'" onclick="event.stopPropagation();countSel()">' : "";
 
-  const postBtn=canPost
-    ? '<div class="act" style="margin-top:8px"><button type="button" class="btn btn-post" onclick="postToTracker(\''+r.no+'\')">'+
-      (isConverted(r)?"Open again in Expense Tracker":"Enter in Expense Tracker &rarr;")+"</button>"+
-      '<span class="posthint">Carries the approved '+money(r.approvedAmount||liveAmount(r))+' — the entry cannot exceed it</span></div>'
-    : "";
+  const postBtn=""
 
   const recallBtn=canRecall
     ? '<div class="act" style="margin-top:8px"><button type="button" class="btn" onclick="actRecall(\''+r.id+'\')">Recall</button>'+
@@ -1790,8 +1741,6 @@ function card(r,actable){
   const alreadyTransferred = isTransferred(r);
   let transferBtn = "";
   
-  /* Only a FINALLY approved requisition may become a petty cash expense.
-     ST.APPROVED still sits with the final authority awaiting sanction. */
   if (r.status === ST.FINAL) {
       if (alreadyTransferred) {
         const landed = r.pettyCashStatus === 'PENDING_RM'
@@ -1831,12 +1780,8 @@ function card(r,actable){
     "</div></div>";
 }
 
-/* Cards the user has expanded — remembered across refresh() re-renders,
-   since refresh() rebuilds card HTML from scratch (losing the "open"
-   class) whenever markUnderReview()'s network round-trip finishes. */
 const OPEN_CARDS = new Set();
 
-/* opening a card is what sets Under Review, for the assigned manager only */
 function toggleCard(id){
   const el=document.getElementById("rq-"+id);
   if(!el) return;
@@ -1846,16 +1791,12 @@ function toggleCard(id){
   else { OPEN_CARDS.delete(id); }
 }
 
-/* Re-applies the "open" class to any cards that were expanded before the
-   last refresh() rebuilt the list HTML. Call after every innerHTML swap
-   that uses card(). */
 function restoreOpenCards(){
   OPEN_CARDS.forEach(id=>{
     const el=document.getElementById("rq-"+id);
     if(el) el.classList.add("open");
   });
 }
-
 
 function countSel(){
   const n=document.querySelectorAll(".bx:checked").length;
@@ -1913,14 +1854,10 @@ async function refresh(){
   $("mineList").innerHTML = mine.length ? mine.map(r=>card(r,false)).join("")
     : '<div class="empty"><b>No requisitions yet</b>Raise one from the New Request tab.</div>';
 
-  /* Diagnostic: server had rows, but none matched you anywhere (not
-     raised by you, not in your approval chain). Usually means the "by"
-     or "chain" values saved in the sheet don't match your login code. */
   if (list.length > 0 && inbox.length === 0 && rework.length === 0 && mine.length === 0) {
     const sampleBy = [...new Set(list.slice(0,5).map(r=>r.by))].join(", ");
     console.warn(`Server returned ${list.length} requisition(s), but none are linked to your code "${ME}" — as raiser or approver. Sample "by" values in the data: ${sampleBy || "(blank)"}. Check EmpCode/login matches the "by"/"chain" values saved by the flow.`);
   }
-
 
   /* --- KPI strip, role aware --- */
   const isMgr = inbox.length>0 || list.some(r=>r.chain && r.chain.indexOf(ME)>-1 && r.by!==ME);
@@ -1964,13 +1901,13 @@ async function refresh(){
 
 $("fltStatus").addEventListener("change",refresh);
 
-
 /* =========================================================
    EXPENSE ENTRY SYNC — only the Approved Amount travels
    ========================================================= */
 function toPayload(r){
   const approved=(r.approvedAmount!==""&&r.approvedAmount!=null)?Number(r.approvedAmount):Number(r.expenseAmount);
   return {
+    id: r.id,
     reqNo:r.no, branch:r.branch, date:r.date, expenseType:r.expenseType, category:r.category,
     expenseAmount:approved, approvedAmount:approved, requestedAmount:Number(r.requestedAmount||r.expenseAmount),
     division:r.division, expenseLimit:r.expenseLimit, bizCategory:r.bizCategory,
@@ -2004,7 +1941,7 @@ async function postToTracker(no){
    ========================================================= */
 const SLA_HOURS=3;
 const SLA_KEY="prostarm:pettycash:reminders";
-const REMINDER_ENDPOINT="";        /* paste the Outlook "send reminder" flow URL here */
+const REMINDER_ENDPOINT="";        
 
 function ageHours(iso){ return (Date.now()-new Date(iso).getTime())/3600000; }
 function ageLabel(x){
@@ -2012,13 +1949,11 @@ function ageLabel(x){
   if(x<48) return x.toFixed(1)+" hrs";
   return Math.floor(x/24)+" days";
 }
-/* the clock restarts each time the request moves to a new desk */
 function pendingSince(r){
   if(r.pendingSince) return r.pendingSince;
   const t=(r.trail||[]);
   return t.length?t[t.length-1].ts:r.raised;
 }
-/* the ledger page records conversions here when an expense is posted */
 function conversionMap(){
   try{ return JSON.parse(localStorage.getItem("prostarm:pettycash:converted")||"{}"); }catch(e){ return {}; }
 }
@@ -2037,7 +1972,7 @@ function pendingWith(r){
   const c=(r.status===ST.REJ_REWORK)?r.by:r.chain[r.step];
   if(!c||!EMP[c]) return null;
   return {code:c,name:EMP[c].n,desig:EMP[c].d,
-          role:(r.status===ST.REJ_REWORK?"Branch Person (rework)":(c===APPROVER?"Final Approver":"Reporting Manager")),
+          role:(r.status===ST.REJ_REWORK?"Branch Person (rework)":(isFinalApprover(c)?"Final Approver":"Reporting Manager")),
           email:(EMP[c].email||EMP[c].n.toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@prostarm.com")};
 }
 function readReminders(){ try{ return JSON.parse(localStorage.getItem(SLA_KEY)||"[]"); }catch(e){ return []; } }
@@ -2160,38 +2095,63 @@ async function renderAdmin(){
     : "No mail flow configured yet — reminders are queued here. Paste your flow URL into REMINDER_ENDPOINT.";
 }
 
-/* A branch user has exactly one branch, so the field stays read-only.
-   HO Admin and Finance Auditor span every branch and a regional manager
-   spans several, so for them it becomes a picker — otherwise the branch
-   would be blank and voucher numbering would have nothing to work from. */
 function setupBranchField(e) {
   const su = SESSION || {};
   let list = [];
+  
   if (su.role === 'admin' || su.role === 'auditor' || su.branch === 'ALL') {
-    list = Object.keys(BRANCH_REGION);
-  } else if (Array.isArray(su.branches) && su.branches.length > 1) {
+    list = BRANCH_CONFIG.map(b => b.code); 
+  } else if (Array.isArray(su.branches) && su.branches.length > 0) {
     list = su.branches.slice();
+  } else if (su.branch) {
+    list = [su.branch];
   }
-  if (!list.length) return;                    // single-branch user: leave as-is
+  if (!list.length) return; 
 
   const old = $("fBranch");
   if (!old || old.tagName === 'SELECT') return;
   const sel = document.createElement('select');
   sel.id = 'fBranch';
   sel.className = old.className;
-  sel.innerHTML = list.map(c =>
-    '<option value="' + c + '">' + c.replace(/^[A-Z]{2}_/, '') + '</option>').join('');
+  sel.innerHTML = list.map(c => {
+    const bObj = BRANCH_CONFIG.find(x => x.code === c);
+    return `<option value="${c}">${bObj ? bObj.name : c.replace(/^[A-Z]{2}_/, '')}</option>`;
+  }).join('');
   sel.value = (e && e.b && list.indexOf(e.b) > -1) ? e.b : list[0];
+  
+  const updateHierarchy = (branchCode) => {
+    $("aZone").value = ZONE[branchCode] || "—";
+    
+    if (EMP[ME]) {
+      EMP[ME].b = branchCode;
+      
+      if (EMP[ME].synthetic || su.role === 'admin' || su.role === 'auditor' || su.role === 'regional') {
+         let rmCode = getManagerForBranch(branchCode);
+         if (rmCode) rmCode = rmCode.toUpperCase();
+         
+         EMP[ME].m = (rmCode && rmCode !== ME) ? rmCode : (APPROVER && APPROVER !== ME ? APPROVER : null);
+         
+         if (rmCode && !EMP[rmCode]) {
+           EMP[rmCode] = { n: rmCode, b: branchCode, d: 'Regional Manager',
+                           m: (APPROVER && APPROVER !== rmCode) ? APPROVER : null,
+                           email: '', synthetic: true };
+         }
+      }
+    }
+    
+    if ($("aRM")) {
+       const mgrCode = EMP[ME].m;
+       $("aRM").value = (mgrCode && EMP[mgrCode]) ? (EMP[mgrCode].n + " — " + EMP[mgrCode].d) : (mgrCode || "—");
+    }
+  };
+
   sel.addEventListener('change', () => {
-    const b = sel.value;
-    $("aZone").value = ZONE[b] || (REGION_INFO[BRANCH_REGION[b]] ? REGION_INFO[BRANCH_REGION[b]].name : "—");
-    if (EMP[ME]) EMP[ME].b = b;
+    updateHierarchy(sel.value);
     fillStaff(); route(); refreshVoucher();
   });
+  
   old.parentNode.replaceChild(sel, old);
-  if (EMP[ME]) EMP[ME].b = sel.value;
-  $("aZone").value = ZONE[sel.value] ||
-    (REGION_INFO[BRANCH_REGION[sel.value]] ? REGION_INFO[BRANCH_REGION[sel.value]].name : "—");
+  updateHierarchy(sel.value);
 }
 
 /* ================= APP INITIALIZATION ================= */
@@ -2206,16 +2166,23 @@ async function initializeApp() {
     return;
   }
 
+  if (!ProstarmRBAC.can(SESSION_USER, 'approval.request') &&
+      !ProstarmRBAC.can(SESSION_USER, 'approval.recommend') &&
+      !ProstarmRBAC.can(SESSION_USER, 'approval.final')) {
+    window.location.href = 'dashboard.html';
+    return;
+  }
+
   SESSION = SESSION_USER;
-  ME = String(SESSION_USER.username).trim().toUpperCase();
+  ME = String(SESSION_USER.subjectId || SESSION_USER.username).trim().toUpperCase();
 
   try {
-    // Call Configuration GET URL (20s timeout — a stalled Power Automate
-    // flow will no longer leave this screen stuck forever)
-    const rawResponse = await fetchJSON(EXCEL_GET_CONFIG_URL);
-
-    // Safely extract array based on Power Automate wrapper
-    const excelData = rawResponse.value ? rawResponse.value : rawResponse;
+    ProstarmRBAC.configure(EXCEL_GET_CONFIG_URL);
+    await ProstarmRBAC.loadDirectory();
+    /* Served from the directory cache rbac.js already populated — this used
+       to be a second fetch of the very same rows, and a cold Flow made it
+       the slowest part of opening this page. */
+    const excelData = await ProstarmRBAC.rows();
 
     if (!Array.isArray(excelData)) {
       throw new Error("Config response wasn't an array — check the flow's output shape: " + JSON.stringify(rawResponse).slice(0, 300));
@@ -2231,37 +2198,55 @@ async function initializeApp() {
       };
 
       const code = getVal('EmpCode'); 
-      if(!code) return; // Skip blank rows
+      if(!code) return; 
       
+      const rawBranch = getVal('Branch');
+      const cleanBranchObj = rawBranch ? BRANCH_CONFIG.find(b => b.code.replace(/[^a-zA-Z0-9]/g, "").toUpperCase() === String(rawBranch).replace(/[^a-zA-Z0-9]/g, "").toUpperCase()) : null;
+      const cleanBranch = cleanBranchObj ? cleanBranchObj.code : rawBranch;
+
+      // Role/access is driven entirely from the Excel master — IsHOAdmin/IsAdmin
+      // (either column) marks HO Admin, Role/Access Level gives the portal role.
+      const isAdminFlag = String(getVal('IsAdmin')).toUpperCase() === 'TRUE'
+                        || String(getVal('IsHOAdmin')).toUpperCase() === 'TRUE';
+      const roleRaw = String(getVal('Role') || getVal('AccessLevel') || getVal('Access Level') || '').toLowerCase();
+      let derivedRole = 'branch';
+      if (isAdminFlag || roleRaw.includes('admin')) derivedRole = 'admin';
+      else if (roleRaw.includes('audit')) derivedRole = 'auditor';
+      else if (roleRaw.includes('regional')) derivedRole = 'regional';
+
       EMP[code] = {
         n: getVal('FullName'),
-        b: getVal('Branch'),
+        b: cleanBranch,
         d: getVal('Designation'),
         m: getVal('ManagerCode') || null,
-        email: getVal('Email') || getVal('EmailAddress') || ""   /* used by the SLA reminder */
+        email: getVal('Email') || getVal('EmailAddress') || getVal('Email ID') || "",
+        region: getVal('Region') || "",
+        regionalManagerCode: getVal('RegionalManagerCode') || null,
+        isBranchHead: String(getVal('IsBranchHead')).toUpperCase() === 'TRUE',
+        role: derivedRole,
+        accessLevel: getVal('AccessLevel') || getVal('Access Level') || ""
       };
 
-      if (getVal('Branch') && getVal('Zone')) {
-        ZONE[getVal('Branch')] = getVal('Zone');
+      if (cleanBranch && getVal('Zone')) {
+        ZONE[cleanBranch] = getVal('Zone');
       }
       const mx = getVal('MaxResubmissions');
       if (mx && !isNaN(Number(mx))) MAX_RESUBMISSIONS = Number(mx);
       const aat = getVal('AllowAboveTarget');
       if (aat) ALLOW_ABOVE_TARGET = String(aat).toUpperCase() !== 'FALSE';
 
-      if (String(getVal('IsAdmin')).toUpperCase() === 'TRUE') {
+      if (isAdminFlag) {
         ADMINS.push(code);
       }
       if (String(getVal('Designation')).trim().toLowerCase() === 'final approving authority') {
-         APPROVER = code;
+        APPROVER = String(code).toUpperCase();
       }
       
-      const branch = getVal('Branch');
       const group = getVal('ExpenseGroup');
-      if (branch && group) {
-        if (!BRANCH_STAFF_MAP[branch]) BRANCH_STAFF_MAP[branch] = {};
-        if (!BRANCH_STAFF_MAP[branch][group]) BRANCH_STAFF_MAP[branch][group] = [];
-        BRANCH_STAFF_MAP[branch][group].push(`${code} - ${getVal('FullName')}`);
+      if (cleanBranch && group) {
+        if (!BRANCH_STAFF_MAP[cleanBranch]) BRANCH_STAFF_MAP[cleanBranch] = {};
+        if (!BRANCH_STAFF_MAP[cleanBranch][group]) BRANCH_STAFF_MAP[cleanBranch][group] = [];
+        BRANCH_STAFF_MAP[cleanBranch][group].push(`${code} - ${getVal('FullName')}`);
       }
     });
 
@@ -2273,9 +2258,6 @@ async function initializeApp() {
 
   document.getElementById("loading").style.display = "none";
 
-  /* Single sign-in: a valid Petty Cash session is sufficient. The old
-     employee-code gate rejected anyone missing from the master, which is
-     why a working login could still be told it was not authorised. */
   ME = resolveSessionEmployee(SESSION);
   {
     try {
@@ -2291,7 +2273,7 @@ async function initializeApp() {
       $("aRM").value = (e.m && EMP[e.m]) ? (EMP[e.m].n + " — " + EMP[e.m].d) : (e.m || "—");
       $("tabAll").style.display = ADMINS.indexOf(ME) > -1 ? "block" : "none";
 
-      const isApp = ME === APPROVER;
+      const isApp = isFinalApprover(ME);
       $("inboxLabel").textContent = isApp ? "Pending My Approval" : "Pending My Recommendation";
       $("inboxTitle").textContent = isApp ? "Waiting For Your Approval" : "Waiting For Your Recommendation";
 
@@ -2313,24 +2295,10 @@ document.addEventListener("DOMContentLoaded", initializeApp);
 
 /* ================================================================
    TRANSFER TO PETTY CASH SHEET  (Release 4.0 integration)
-   A finally-approved requisition becomes a petty cash expense entry.
-   The branch chooses one of two routes:
-     A) Save only            -> lands as "Expense Submitted", NOT sent
-                                to the Regional Manager. Documents are
-                                attached later from the Petty Cash app.
-     B) Attach + submit      -> lands as "Pending RM Verification".
-   From there the existing chain runs unchanged:
-     Pending RM -> Regional Manager -> Pending FA -> Finance Auditor.
    ================================================================ */
 
-/* The petty cash ledger the tracker reads. Writing here is what makes
-   the entry appear in dashboard.html. */
 const PETTY_CASH_ADD_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/42c17ce44a3947458f3b837bf6a823db/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=EqmQYo67GkiuIdzxawvG_vuZGhNFWwChcg_VifsIisg";
 
-/* The original transfer flow. It writes to whatever sheet it was built
-   against, which may or may not be the ledger the tracker reads. Left
-   off by default to avoid creating the entry twice — turn it on only
-   if that flow targets a different downstream sheet you still need. */
 const ALSO_PUSH_LEGACY_TRANSFER = false;
 
 const PC_HANDOFF_KEY = "prostarm:pettycash:handoff";
@@ -2340,22 +2308,16 @@ const PC_MAX_DOCS = 10;
 let pcTransferReq = null;
 let pcStagedDocs = [];
 
-/* ---------- map a requisition onto a petty cash expense record ---------- */
 function buildPettyCashRecord(r, wfStatus, docs) {
   const now = new Date().toISOString();
   const who = ME;
 
-  /* After final approval stampApproval() overwrites expenseAmount with the
-     sanctioned figure. Fall back through the negotiation fields so a
-     reworked requisition never transfers at its originally requested value. */
   const amount = Number(
     (r.approvedAmount !== null && r.approvedAmount !== undefined && r.approvedAmount !== "")
       ? r.approvedAmount
       : (r.expenseAmount || r.currentRevisedAmount || r.requestedAmount || 0)
   );
 
-  /* Carry the approval history across so the petty cash audit trail opens
-     with the requisition, not with the transfer. */
   const trail = [];
   trail.push({ action: 'REQ_RAISED', from: '', to: 'SUBMITTED',
     remark: 'Requisition ' + (r.no || r.id) + ' raised for ' + money(amount),
@@ -2375,7 +2337,7 @@ function buildPettyCashRecord(r, wfStatus, docs) {
     actor: who, role: 'branch', at: now });
 
   const rec = {
-    id: 'PC' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    id: r.id || '',
     uid: r.uid || '',
     branch: r.branch || '',
     date: (r.date || '').split('T')[0] || now.slice(0, 10),
@@ -2409,7 +2371,6 @@ function buildPettyCashRecord(r, wfStatus, docs) {
     hoApproval: r.approvedBy ? (nameOf(r.approvedBy) + ' on ' + (r.approvedOn || '').slice(0, 10)) : (r.hoApproval || ''),
     remark: r.remark || '',
 
-    /* --- requisition linkage --- */
     reqNo: r.no || '',
     reqId: r.id || '',
     reqApprovedBy: r.approvedBy || '',
@@ -2417,7 +2378,6 @@ function buildPettyCashRecord(r, wfStatus, docs) {
     reqOriginalAmount: Number(r.originalAmount || r.requestedAmount || amount),
     sourceType: 'REQUISITION',
 
-    /* --- petty cash workflow state --- */
     wfStatus: wfStatus,
     supportingDocs: docs,
     auditTrail: trail
@@ -2427,7 +2387,6 @@ function buildPettyCashRecord(r, wfStatus, docs) {
   return rec;
 }
 
-/* ---------- transfer dialog ---------- */
 function openTransferModal(id) {
   const r = MEM.find(x => x.id === id);
   if (!r) { alert('Requisition not found. Refreshing.'); refresh(); return; }
@@ -2526,7 +2485,6 @@ function closeTransferModal() {
   pcTransferReq = null; pcStagedDocs = []; pcTransferChoice = '';
 }
 
-/* ---------- commit ---------- */
 async function confirmTransfer() {
   const r = pcTransferReq;
   if (!r) return;
@@ -2542,13 +2500,11 @@ async function confirmTransfer() {
   const btn = $("pcConfirmBtn");
   btn.disabled = true; btn.textContent = 'Transferring…';
 
-  /* Queue locally first so the entry is never lost if the flow is down.
-     dashboard.html drains this on load. */
   try {
     const q = JSON.parse(localStorage.getItem(PC_HANDOFF_KEY) || '[]');
     q.push(rec);
     localStorage.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
-  } catch (e) { /* quota — the server write below still carries it */ }
+  } catch (e) { }
 
   let serverOk = false, errMsg = '';
   try {
@@ -2573,10 +2529,9 @@ async function confirmTransfer() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(legacy)
       });
-    } catch (e) { /* secondary — never blocks */ }
+    } catch (e) { }
   }
 
-  /* Stamp the requisition so it cannot be transferred twice. */
   markAsTransferred(r);
   r.entered = new Date().toISOString();
   r.pettyCashId = rec.id;
@@ -2585,7 +2540,7 @@ async function confirmTransfer() {
     'Transferred to petty cash sheet as ' + (wfStatus === 'PENDING_RM'
       ? 'Pending RM Verification with ' + rec.supportingDocs.length + ' document(s)'
       : 'Expense Submitted (documents pending)'));
-  try { await pushToExcel(r, true); } catch (e) { /* trail only */ }
+  try { await pushToExcel(r, true); } catch (e) { }
 
   closeTransferModal();
 
