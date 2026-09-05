@@ -1890,6 +1890,106 @@ async function fetchWithTimeout(url, options, timeoutMs) {
   }
 }
 
+/* --- backend payload shaping ---------------------------------------
+   Excel/SharePoint columns are text cells with a 32,767-character limit.
+   Document bytes cannot live there, and nested arrays have to be sent as
+   JSON text. This shapes a record for transport: metadata syncs, file
+   bytes stay in the browser until a document store is configured.
+-------------------------------------------------------------------- */
+const MAX_CELL_CHARS = 30000;          // headroom under Excel's 32,767
+
+/* Declared once and applied on BOTH ingest and send, so a record that has
+   made a round trip through Excel still matches the trigger schema. */
+const NUMERIC_FIELDS = ['expenseAmount', 'receivedAmount', 'year',
+                        'docCount', 'auditCycleCount', 'reqOriginalAmount'];
+const ARRAY_FIELDS   = ['supportingDocs', 'auditTrail'];
+
+/* docCount and docNames are convenience columns this app adds. If the Flow's
+   trigger schema is strict about unknown properties, set this to false and
+   they stop being sent — nothing in the workflow depends on them. */
+const SEND_EXTRA_DOC_COLUMNS = true;
+
+function asNumber(v) {
+  if (v === '' || v === null || v === undefined) return 0;
+  const n = Number(v);
+  return isNaN(n) ? 0 : n;
+}
+function asArray(v) {
+  if (Array.isArray(v)) return v;
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (!s) return [];
+    try { const p = JSON.parse(s); return Array.isArray(p) ? p : []; } catch (e) { return []; }
+  }
+  return [];
+}
+
+function clampJson(value, max) {
+  let arr = Array.isArray(value) ? value.slice() : [];
+  let s = JSON.stringify(arr);
+  /* Drop the oldest entries first — recent history is the useful part. */
+  while (s.length > (max || MAX_CELL_CHARS) && arr.length > 1) {
+    arr = arr.slice(1);
+    s = JSON.stringify(arr);
+  }
+  return s;
+}
+
+function toBackendPayload(rec) {
+  const out = Object.assign({}, rec);
+
+  /* Arrays stay arrays — the trigger schema declares them as Array.
+     Every key is KEPT, including `data`: the schema for these items was
+     generated from a sample that contained it, so dropping the key gives
+     "Required properties are missing from object: data". The key stays and
+     the value is emptied, which satisfies the schema without shipping a
+     200 KB attachment into a 32,767-character cell. */
+  out.supportingDocs = asArray(rec.supportingDocs).map(d => Object.assign({}, d, {
+    id: String(d.id || ''), name: String(d.name || ''), mime: String(d.mime || ''),
+    size: asNumber(d.size), uploadedBy: String(d.uploadedBy || ''),
+    uploadedOn: String(d.uploadedOn || ''), url: String(d.url || ''),
+    data: ''                       // key present, bytes withheld
+  }));
+  out.auditTrail = asArray(rec.auditTrail).map(t => Object.assign({}, t, {
+    action: String(t.action || ''), from: String(t.from || ''), to: String(t.to || ''),
+    remark: String(t.remark || '').slice(0, 1000), actor: String(t.actor || ''),
+    role: String(t.role || ''), at: String(t.at || '')
+  }));
+
+  /* Keep the trail inside one cell if the flow ever flattens it. */
+  while (JSON.stringify(out.auditTrail).length > MAX_CELL_CHARS && out.auditTrail.length > 1) {
+    out.auditTrail = out.auditTrail.slice(1);
+  }
+
+  if (SEND_EXTRA_DOC_COLUMNS) {
+    out.docCount = out.supportingDocs.length;
+    out.docNames = out.supportingDocs.map(d => d.name).join(', ').slice(0, 500);
+  }
+
+  /* Integer columns must be numbers, not the strings Excel hands back. */
+  NUMERIC_FIELDS.forEach(f => { out[f] = asNumber(out[f]); });
+
+  /* The entry-time voucher image has the same cell ceiling. */
+  if (out.docImageBase64 && String(out.docImageBase64).length > MAX_CELL_CHARS) {
+    out.docImageBase64 = '';
+    out.docImageOversize = 'Y';
+  }
+
+  /* Everything else is a text column. */
+  /* Null/undefined become empty strings rather than being dropped — a
+     missing key fails a generated schema the same way a wrong type does. */
+  Object.keys(out).forEach(k => {
+    if (ARRAY_FIELDS.indexOf(k) !== -1 || NUMERIC_FIELDS.indexOf(k) !== -1) return;
+    const v = out[k];
+    if (v === null || v === undefined) { out[k] = ''; return; }
+    if (typeof v === 'object') { out[k] = JSON.stringify(v); }
+    if (typeof out[k] === 'string' && out[k].length > MAX_CELL_CHARS) {
+      out[k] = out[k].slice(0, MAX_CELL_CHARS);
+    }
+  });
+  return out;
+}
+
 async function apiRequest(url, options, retries) {
   const headers = { 'Content-Type': 'application/json', ...(API_KEY ? { 'X-API-Key': API_KEY } : {}), ...(options && options.headers) };
   let attempt = 0;
@@ -1898,7 +1998,13 @@ async function apiRequest(url, options, retries) {
   while (attempt < maxAttempts) {
     try {
       const res = await fetchWithTimeout(url, { ...options, headers }, REQUEST_TIMEOUT_MS);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok) {
+        /* Include the body — a Flow rejection explains itself there, and
+           without it every failure looked identical to being offline. */
+        let detail = '';
+        try { detail = (await res.text()).slice(0, 300); } catch (e) {}
+        throw new Error('HTTP ' + res.status + (detail ? ' — ' + detail : ''));
+      }
       return res;
     } catch (err) {
       lastErr = err;
@@ -1972,6 +2078,55 @@ function drainRequisitionHandoff() {
 }
 
 /* --- BACKEND DATA FETCHING --- */
+/* Server rows are authoritative EXCEPT for records still queued locally.
+   Overwriting those would discard work the backend has not accepted yet —
+   including the document bytes, which only exist in this browser. */
+/* Excel hands every column back as text. Arrays were written as JSON, so
+   they must be parsed or wfStatus/doc counts/trails all read as garbage. */
+function normalizeRecord(r) {
+  if (!r || typeof r !== 'object') return r;
+  ARRAY_FIELDS.forEach(f => { r[f] = asArray(r[f]); });
+  NUMERIC_FIELDS.forEach(f => {
+    if (r[f] !== undefined && r[f] !== null && r[f] !== '') r[f] = asNumber(r[f]);
+  });
+  if (r.direction) r.direction = String(r.direction).trim().toLowerCase();
+  if (r.wfStatus) r.wfStatus = String(r.wfStatus).trim().toUpperCase();
+  return r;
+}
+
+function mergeServerWithPending(serverRows, cachedRows) {
+  serverRows = (serverRows || []).map(normalizeRecord);
+  let queue = [];
+  try { queue = getPendingQueue() || []; } catch (e) { queue = []; }
+  const pendingIds = new Set(queue.map(op => op && op.payload && op.payload.id).filter(Boolean));
+
+  const localById = {};
+  (Array.isArray(cachedRows) ? cachedRows : []).forEach(r => { if (r && r.id) localById[r.id] = r; });
+
+  const merged = serverRows.map(r => (r && pendingIds.has(r.id) && localById[r.id]) ? localById[r.id] : r);
+
+  /* Records created offline are not on the server at all yet. */
+  pendingIds.forEach(id => {
+    if (!merged.some(r => r && r.id === id) && localById[id]) merged.push(localById[id]);
+  });
+
+  /* Documents live only where they were uploaded, so carry their bytes
+     across even for records the server has already accepted. */
+  merged.forEach(r => {
+    const local = r && localById[r.id];
+    if (!local || !Array.isArray(local.supportingDocs)) return;
+    if (typeof r.supportingDocs === 'string') {
+      try { r.supportingDocs = JSON.parse(r.supportingDocs); } catch (e) { r.supportingDocs = []; }
+    }
+    if (!Array.isArray(r.supportingDocs)) r.supportingDocs = [];
+    r.supportingDocs = r.supportingDocs.map(d => {
+      const hit = local.supportingDocs.find(x => x.id === d.id);
+      return (hit && hit.data) ? Object.assign({}, d, { data: hit.data }) : d;
+    });
+  });
+  return merged;
+}
+
 async function fetchBackendData() {
   if (!isConfigured(API_ENDPOINTS.GET_RECORDS)) {
     STORED_ENTRIES = JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY)) || [];
@@ -2005,7 +2160,8 @@ async function fetchBackendData() {
   try {
     const res = await apiRequest(API_ENDPOINTS.GET_RECORDS, { method: 'GET' }, 1);
     const data = await res.json();
-    STORED_ENTRIES = Array.isArray(data) ? data : (data.value || []);
+    const serverRows = Array.isArray(data) ? data : (data.value || []);
+    STORED_ENTRIES = mergeServerWithPending(serverRows, cached);
     drainRequisitionHandoff();
     localStorage.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
     lastSyncedAt = new Date();
@@ -2037,9 +2193,9 @@ async function flushPendingQueue(silent) {
   for (const op of queue) {
     try {
       if (op.type === 'add') {
-        await apiRequest(API_ENDPOINTS.ADD_RECORD, { method: 'POST', body: JSON.stringify(op.payload) }, 1);
+        await apiRequest(API_ENDPOINTS.ADD_RECORD, { method: 'POST', body: JSON.stringify(toBackendPayload(op.payload)) }, 1);
       } else if (op.type === 'update') {
-        await apiRequest(API_ENDPOINTS.UPDATE_RECORD, { method: 'POST', body: JSON.stringify(op.payload) }, 1);
+        await apiRequest(API_ENDPOINTS.UPDATE_RECORD, { method: 'POST', body: JSON.stringify(toBackendPayload(op.payload)) }, 1);
       } else if (op.type === 'delete') {
         await apiRequest(API_ENDPOINTS.DELETE_RECORD, { method: 'POST', body: JSON.stringify({ id: op.payload.id }) }, 1);
       }
@@ -2631,7 +2787,7 @@ async function saveDrawerEntry(submitForApproval) {
 
   try {
     setSyncState('busy', 'Saving…');
-    await apiRequest(endpoint, { method: 'POST', body: JSON.stringify(entry) }, 1);
+    await apiRequest(endpoint, { method: 'POST', body: JSON.stringify(toBackendPayload(entry)) }, 1);
     setSyncState('ok', 'Synced ' + new Date().toLocaleTimeString());
   } catch (err) {
     console.error(err);
@@ -4353,11 +4509,15 @@ async function pushRecordUpdate(rec) {
   if (!isConfigured(API_ENDPOINTS.UPDATE_RECORD)) return;
   try {
     setSyncState('busy', 'Saving…');
-    await apiRequest(API_ENDPOINTS.UPDATE_RECORD, { method:'POST', body: JSON.stringify(rec) }, 1);
+    await apiRequest(API_ENDPOINTS.UPDATE_RECORD, { method:'POST', body: JSON.stringify(toBackendPayload(rec)) }, 1);
     setSyncState('ok', 'Synced'); lastSyncedAt = Date.now();
   } catch (e) {
     queueOperation({ type:'update', payload:rec });
-    setSyncState('error', 'Offline — queued');
+    setSyncState('error', 'Not saved to cloud — queued');
+    /* A rejected write used to look identical to being offline, which is
+       why a failing Flow could go unnoticed for days. */
+    showToast('Saved locally but the cloud rejected it: ' + (e && e.message ? e.message : 'unknown error') +
+              ' — it stays queued and will retry.', 'error');
   }
 }
 
