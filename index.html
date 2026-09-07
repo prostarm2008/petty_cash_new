@@ -3,146 +3,284 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login - Enterprise Petty Cash</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<title>Sign In · Branch Petty Cash — Approval &amp; Expenses Register</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="mark.png">
 <style>
-  :root {
-    --navy:    #0b3f7a;
-    --blue:    #1e5fa8;
-    --blue-lt: #2f80d2;
-    --teal:    #00b3a4;
-    --teal-lt: #5fdccb;
-    --ink:     #123047;
-    --muted:   #5d7c93;
-    --line:    #c9dae6;
-    --panel:   #ffffff;
-    --page:    #dfeaf2;
-    --tile:    #f2f8fb;
-    --bg-main: var(--page);
-    --bg-surface: var(--panel);
-    --bg-card: var(--tile);
-    --border-color: var(--line);
-    --border-focus: var(--blue-lt);
-    --primary: var(--blue);
-    --primary-hover: var(--navy);
-    --debit: #c0392b;
-    --debit-bg: #fdefed;
-    --text-primary: var(--ink);
-    --text-secondary: var(--muted);
-    --text-muted: #7d98ab;
-    --radius-sm: 4px;
-    --radius-lg: 8px;
-    --shadow: 0 1px 3px rgba(11, 63, 122, .14), 0 6px 16px rgba(11, 63, 122, .08);
+  :root{
+    --navy:#0b3f7a; --blue:#1e5fa8; --blue-lt:#2f80d2; --sky:#29a3e0;
+    --teal:#00b3a4; --red:#e8232a;
+    --ink:#123047; --muted:#5d7c93; --line:#c9dae6;
+    --panel:#fff; --page:#dfeaf2; --tile:#f2f8fb;
+    --radius:10px;
+    --shadow:0 1px 3px rgba(11,63,122,.14), 0 18px 48px rgba(11,63,122,.18);
   }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    font-size: 13px;
-    background-color: var(--page);
-    background-image: radial-gradient(circle at 50% 0%, #eef5fa 0%, var(--page) 55%);
-    color: var(--ink);
-    min-height: 100vh; display: flex; align-items: center; justify-content: center;
-    padding: 20px;
-    -webkit-font-smoothing: antialiased;
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    font-size:13px; color:var(--ink);
+    min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px; -webkit-font-smoothing:antialiased;
+    background:var(--page);
+    background-image:
+      radial-gradient(circle at 88% 12%, rgba(41,163,224,.14), transparent 42%),
+      radial-gradient(circle at 8% 92%, rgba(0,179,164,.12), transparent 40%),
+      linear-gradient(160deg,#eaf3f9 0%,#dfeaf2 55%,#d3e3ee 100%);
   }
-  .login-card {
-    width: min(400px, 100%); background: var(--panel);
-    border: 1px solid var(--line); border-top: 3px solid var(--blue);
-    border-radius: var(--radius-lg);
-    padding: 32px 26px; text-align: center;
-    box-shadow: 0 1px 3px rgba(11,63,122,.14), 0 14px 34px rgba(11,63,122,.16);
-    animation: rise .35s ease;
+
+  /* ---------- shell ---------- */
+  .shell{
+    width:min(940px,100%); background:var(--panel);
+    border:1px solid rgba(255,255,255,.7); border-radius:14px;
+    box-shadow:var(--shadow); overflow:hidden;
+    display:grid; grid-template-columns:1.05fr .95fr;
+    animation:rise .4s cubic-bezier(.2,.7,.3,1);
   }
-  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-  .brand-logo { width: 190px; max-width: 68%; height: auto; display: block; margin: 2px auto 16px; }
-  .login-card h2 { color: var(--navy); font-weight: 800; letter-spacing: .2px; }
-  .form-group { margin-bottom: 12px; text-align: left; }
-  .form-group label { display: block; font-size: 9.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; font-weight: 800; letter-spacing: .5px; }
-  .form-ctrl {
-    width: 100%; background: #fff; border: 1px solid var(--line);
-    color: var(--ink); padding: 8px 11px; border-radius: var(--radius-sm); font-size: 12px; font-family: inherit; font-weight: 600;
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ---------- brand panel ---------- */
+  .brand{
+    position:relative; overflow:hidden; color:#fff;
+    padding:34px 32px 28px;
+    background:linear-gradient(158deg,#0d4a8c 0%,#0b3f7a 52%,#08325f 100%);
+    display:flex; flex-direction:column;
   }
-  .form-ctrl:focus { border-color: var(--blue-lt); outline: none; box-shadow: 0 0 0 2px rgba(47,128,210,.16); }
-  .form-ctrl::placeholder { color: #9ab0bf; font-weight: 500; }
-  .pwd-wrap { position: relative; }
-  .pwd-wrap .form-ctrl { padding-right: 46px; }
-  .pwd-toggle {
-    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-    background: none; border: none; color: var(--blue); cursor: pointer; font-size: 10.5px;
-    font-weight: 800; text-transform: uppercase; letter-spacing: .4px; padding: 4px 6px; border-radius: 4px;
+  .brand::before{           /* oversized mark, barely there */
+    content:""; position:absolute; right:-104px; bottom:-116px;
+    width:330px; height:330px; opacity:.16;
+    background:url('mark.png') no-repeat center/contain;
+    /* screen blend keeps it a light watermark instead of a dark blot */
+    mix-blend-mode:screen; filter:grayscale(1) brightness(1.7);
+    pointer-events:none;
   }
-  .pwd-toggle:hover { color: var(--navy); background: #eef7fb; }
-  .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%;
-    background: linear-gradient(180deg, var(--blue-lt), var(--blue)); color: #fff;
-    border: 1px solid var(--blue); padding: 10px; border-radius: var(--radius-sm); font-weight: 700; font-size: 12.5px; letter-spacing: .3px;
-    cursor: pointer; margin-top: 8px; box-shadow: var(--shadow); transition: filter .15s ease, background .15s ease, opacity .15s ease;
+  .brand::after{            /* thin sky sweep echoing the logo swoosh */
+    content:""; position:absolute; left:0; right:0; top:0; height:3px;
+    background:linear-gradient(90deg,var(--sky),var(--teal) 45%,transparent);
   }
-  .btn:hover:not(:disabled) { filter: brightness(1.08); }
-  .btn:disabled { opacity: .55; cursor: not-allowed; }
-  .spinner {
-    width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff;
-    animation: spin .7s linear infinite; display: none;
+  .brand-mark{
+    width:46px; height:46px; border-radius:12px; background:#fff;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+    box-shadow:0 6px 18px rgba(0,0,0,.22);
   }
-  .btn.loading .spinner { display: inline-block; }
-  .btn.loading .btn-label { display: none; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .error-banner {
-    display: none; align-items: center; gap: 8px; text-align: left; background: #fdefed; border: 1px solid #f0c9c3; color: #a5301f;
-    padding: 8px 12px; border-radius: var(--radius-sm); font-size: 11.5px; font-weight: 600; margin-bottom: 12px;
+  .brand-mark img{width:32px;height:32px;display:block}
+  .brand-co{
+    font-size:9.5px; font-weight:800; letter-spacing:1.6px; text-transform:uppercase;
+    color:#9fc9ea; margin-top:12px;
   }
-  .error-banner.show { display: flex; }
-  .status-pill {
-    display: inline-flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700;
-    color: var(--muted); margin-bottom: 16px; text-transform: uppercase; letter-spacing: .5px;
-    padding: 4px 10px; border-radius: 20px; border: 1px solid var(--line); background: var(--tile);
+  .brand h1{
+    font-size:25px; font-weight:800; line-height:1.24; letter-spacing:.1px;
+    margin-top:6px;
   }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  .status-pill.online { color: #0a7d4f; border-color: #bfe6d3; background: #eafbf3; }
-  .status-pill.online .status-dot { background: #0a7d4f; }
-  .scope-note { font-size: 11px; color: var(--ink); text-align: left; line-height: 1.5; font-weight: 500;
-    background: #eef7fb; border: 1px solid #bfdcec; border-left: 3px solid var(--teal); border-radius: var(--radius-sm); padding: 8px 10px; margin-bottom: 12px; }
-  footer { margin-top: 16px; font-size: 10px; color: var(--muted); font-weight: 600; letter-spacing: .2px; }
+  .brand h1 em{font-style:normal;color:#7fd4ec}
+  .brand .sub{
+    font-size:12px; color:#bcd8ee; font-weight:500; line-height:1.6;
+    margin-top:10px; max-width:37ch;
+  }
+  .rule{height:1px;background:rgba(255,255,255,.16);margin:22px 0 18px}
+  .flow{display:flex;flex-direction:column;gap:13px;position:relative;z-index:1}
+  .step{display:flex;align-items:flex-start;gap:11px}
+  .step .n{
+    width:23px;height:23px;border-radius:7px;flex-shrink:0;
+    background:rgba(255,255,255,.13); border:1px solid rgba(255,255,255,.22);
+    font-size:10.5px;font-weight:800;color:#cfe6f7;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .step b{display:block;font-size:12.5px;font-weight:700;letter-spacing:.1px}
+  .step span{display:block;font-size:10.5px;color:#a9c9e2;font-weight:500;margin-top:2px;line-height:1.5}
+  .brand .foot{
+    margin-top:auto; padding-top:22px; font-size:9.5px; color:#8fb6d6;
+    font-weight:600; letter-spacing:.3px;
+  }
+
+  /* ---------- form panel ---------- */
+  .pane{padding:34px 34px 28px;display:flex;flex-direction:column}
+  .pane .wordmark{width:172px;height:auto;display:block;margin-bottom:24px}
+  .pane h2{font-size:19px;font-weight:800;color:var(--navy);letter-spacing:.1px}
+  .pane .hint{font-size:11.5px;color:var(--muted);margin-top:4px;font-weight:500}
+
+  .status-pill{
+    display:inline-flex;align-items:center;gap:6px;margin:16px 0 4px;
+    font-size:9.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+    padding:4px 11px;border-radius:20px;
+    border:1px solid var(--line);background:var(--tile);color:var(--muted);
+  }
+  .status-dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .status-pill.online{color:#0a7d4f;border-color:#bfe6d3;background:#eafbf3}
+  .status-pill.offline{color:#9a6b12;border-color:#f0dfb8;background:#fdf6e6}
+
+  .error-banner{
+    display:none;align-items:flex-start;gap:8px;margin-top:14px;
+    background:#fdefed;border:1px solid #f0c9c3;border-left:3px solid var(--red);
+    color:#a5301f;padding:9px 12px;border-radius:6px;
+    font-size:11.5px;font-weight:600;line-height:1.5;
+  }
+  .error-banner.show{display:flex}
+
+  form{margin-top:18px}
+  .form-group{margin-bottom:14px}
+  label{
+    display:block;font-size:9.5px;font-weight:800;letter-spacing:.6px;
+    text-transform:uppercase;color:var(--muted);margin-bottom:5px;
+  }
+  .form-ctrl{
+    width:100%;background:#fff;border:1px solid var(--line);color:var(--ink);
+    padding:10px 12px;border-radius:7px;font-size:13px;font-family:inherit;font-weight:600;
+    transition:border-color .15s,box-shadow .15s;
+  }
+  .form-ctrl:focus{
+    border-color:var(--blue-lt);outline:none;
+    box-shadow:0 0 0 3px rgba(47,128,210,.14);
+  }
+  .form-ctrl::placeholder{color:#9ab0bf;font-weight:500}
+  .pwd-wrap{position:relative}
+  .pwd-wrap .form-ctrl{padding-right:62px}
+  .pwd-toggle{
+    position:absolute;right:7px;top:50%;transform:translateY(-50%);
+    background:none;border:none;color:var(--blue);cursor:pointer;
+    font-size:10px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;
+    padding:5px 7px;border-radius:5px;font-family:inherit;
+  }
+  .pwd-toggle:hover{color:var(--navy);background:#eef7fb}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;
+    background:linear-gradient(180deg,var(--blue-lt),var(--blue));
+    color:#fff;border:1px solid var(--blue);padding:12px;
+    border-radius:7px;font-weight:800;font-size:13px;letter-spacing:.4px;
+    cursor:pointer;margin-top:6px;font-family:inherit;
+    box-shadow:0 4px 14px rgba(30,95,168,.28);
+    transition:filter .15s,transform .1s,box-shadow .15s;
+  }
+  .btn:hover:not(:disabled){filter:brightness(1.07);box-shadow:0 6px 18px rgba(30,95,168,.34)}
+  .btn:active:not(:disabled){transform:translateY(1px)}
+  .btn:disabled{opacity:.6;cursor:not-allowed;box-shadow:none}
+  .spinner{
+    width:14px;height:14px;border-radius:50%;display:none;
+    border:2px solid rgba(255,255,255,.4);border-top-color:#fff;
+    animation:spin .7s linear infinite;
+  }
+  .btn.loading .spinner{display:inline-block}
+  .btn.loading .btn-label{display:none}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .scope-note{
+    font-size:11px;color:var(--ink);line-height:1.55;font-weight:500;
+    background:#eef7fb;border:1px solid #bfdcec;border-left:3px solid var(--teal);
+    border-radius:6px;padding:9px 11px;margin-bottom:16px;
+  }
+  footer{
+    margin-top:auto;padding-top:22px;font-size:9.5px;color:var(--muted);
+    font-weight:600;letter-spacing:.2px;line-height:1.6;
+  }
+  footer .sep{color:var(--line);margin:0 5px}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:820px){
+    .shell{grid-template-columns:1fr;width:min(460px,100%)}
+    .brand{padding:24px 26px 22px}
+    .brand::before{width:190px;height:190px;right:-74px;bottom:-84px;opacity:.12}
+    .brand h1{font-size:21px}
+    .brand .sub{max-width:none}
+    .rule{margin:16px 0 14px}
+    .flow{gap:10px}
+    .brand .foot{display:none}
+    .pane{padding:26px 26px 22px}
+    .pane .wordmark{width:138px;margin-bottom:20px}
+  }
+  @media (max-width:420px){
+    body{padding:12px}
+    .flow{display:none}
+    .rule{display:none}
+  }
 </style>
 </head>
 <body>
 
-<div class="login-card">
-  <img class="brand-logo" src="logo.png" alt="ProstarM - Power Redefined">
-  <h2 style="font-size: 20px; margin-bottom: 6px;">Petty Cash Portal</h2>
-  <p style="font-size: 12px; color: var(--text-secondary); margin-bottom: 16px;">Enter your credentials to continue</p>
+<main class="shell">
 
-  <span class="status-pill online" id="authModePill">
-    <span class="status-dot"></span>
-    <span id="authModeLabel">Connecting to server...</span>
-  </span>
+  <!-- brand / context -->
+  <section class="brand">
+    <div class="brand-mark"><img src="mark.png" alt=""></div>
+    <div class="brand-co">Prostarm Info Systems Limited</div>
+    <h1>Branch Petty Cash<br><em>Approval &amp; Expenses Register</em></h1>
+    <p class="sub">
+      Raise and approve petty cash requisitions, post branch expenses against
+      them, and carry every voucher through verification to audit.
+    </p>
 
-  <div class="error-banner" id="loginError"><span>⚠</span><span id="loginErrorText">Invalid credentials.</span></div>
+    <div class="rule"></div>
 
-  <form id="loginForm" autocomplete="off">
-    <div class="scope-note" id="autoScopeNote">
-      Your role, branch and reporting line are read automatically from the employee
-      master &mdash; no need to pick an access level.
+    <div class="flow">
+      <div class="step"><span class="n">1</span><div>
+        <b>Requisition &amp; Approval</b>
+        <span>Branch raises a request; it routes up the reporting line for sanction.</span>
+      </div></div>
+      <div class="step"><span class="n">2</span><div>
+        <b>Expenses Register</b>
+        <span>Sanctioned spend is posted to the branch ledger with a voucher number.</span>
+      </div></div>
+      <div class="step"><span class="n">3</span><div>
+        <b>Regional Verification</b>
+        <span>Supporting documents are checked and released by the Regional Manager.</span>
+      </div></div>
+      <div class="step"><span class="n">4</span><div>
+        <b>Finance Audit</b>
+        <span>Vouchers are audited branch-wise against their hard copies.</span>
+      </div></div>
     </div>
-    <div class="form-group">
-      <label for="loginUsername" id="lblUsername">Username</label>
-      <input type="text" class="form-ctrl" id="loginUsername" placeholder="Username" style="margin-bottom:10px;" autocomplete="username">
-      <label for="loginPassword">Access Key / Password</label>
-      <div class="pwd-wrap">
-        <input type="password" class="form-ctrl" id="loginPassword" placeholder="Enter password" autocomplete="current-password">
-        <button type="button" class="pwd-toggle" onclick="togglePwd()" id="pwdToggleBtn" aria-label="Show password">Show</button>
+
+    <div class="foot">Power Redefined</div>
+  </section>
+
+  <!-- sign in -->
+  <section class="pane">
+    <img class="wordmark" src="logo.png" alt="ProstarM — Power Redefined">
+
+    <h2>Sign in</h2>
+    <p class="hint">Use your Prostarm employee credentials.</p>
+
+    <span class="status-pill online" id="authModePill">
+      <span class="status-dot"></span>
+      <span id="authModeLabel">Connecting to server...</span>
+    </span>
+
+    <div class="error-banner" id="loginError">
+      <span>&#9888;</span><span id="loginErrorText">Invalid credentials.</span>
+    </div>
+
+    <form id="loginForm" autocomplete="off">
+      <div class="scope-note" id="autoScopeNote">
+        Your role, branch and reporting line are read automatically from the
+        employee master &mdash; no access level to choose.
       </div>
-    </div>
 
-    <button class="btn" type="submit" id="loginBtn">
-      <span class="spinner"></span>
-      <span class="btn-label">Sign In</span>
-    </button>
-  </form>
+      <div class="form-group">
+        <label for="loginUsername" id="lblUsername">Username</label>
+        <input type="text" class="form-ctrl" id="loginUsername" placeholder="Employee code or username"
+               style="margin-bottom:14px;" autocomplete="username">
 
-  <footer>Enterprise Petty Cash Ledger · Session auto-expires after 8 hours</footer>
-</div>
+        <label for="loginPassword">Access Key / Password</label>
+        <div class="pwd-wrap">
+          <input type="password" class="form-ctrl" id="loginPassword" placeholder="Enter password"
+                 autocomplete="current-password">
+          <button type="button" class="pwd-toggle" onclick="togglePwd()" id="pwdToggleBtn"
+                  aria-label="Show password">Show</button>
+        </div>
+      </div>
+
+      <button class="btn" type="submit" id="loginBtn">
+        <span class="spinner"></span>
+        <span class="btn-label">Sign In</span>
+      </button>
+    </form>
+
+    <footer>
+      Enterprise Petty Cash Ledger <span class="sep">|</span> Session auto-expires after 8 hours<br>
+      Authorised users only &mdash; activity is recorded against your employee code.
+    </footer>
+  </section>
+
+</main>
 
 <script src="rbac.js"></script>
 <script>

@@ -1143,9 +1143,15 @@ const API_ENDPOINTS = {
   UPDATE_RECORD: "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/30/workflows/c5fd8a7d58754041b987859213decd3e/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=b81qJgKABrqE-oUlbZ7oDB5GcGkKCCXyqU7w-MCpJWk",
   DELETE_RECORD: "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/09/workflows/7c84030d99c548968d176ca8766ded32/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=SA3wCeE2UxphoiklHYwiv0vcWX7zUhrJUwUrjudHYmQ"
 };
+/* Document library flow. Receives one file and returns its URL, so the
+   bytes live in SharePoint/OneDrive instead of a spreadsheet cell.
+   Until this is set, files remain only on the machine that uploaded them.
+   See Document_Storage_Setup.md for the four-action flow. */
+const DOC_UPLOAD_ENDPOINT = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/11/workflows/e7dfaa71103547e4bff304a11b0391fe/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-HhA9WJckySh_iG_Eo11zswJ4YYuOjtlDrBW61Z0vbg";
+
 const EXCEL_GET_CONFIG_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3d8c890bdd85458eb4af7f65b3a49577/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jBQBA8EMi2xs9QMwg9Cpcb1f2GtFGrCxDJPXRwIvHUw";   // access directory (shared with index.html)
 
-const NOTIFY_ENDPOINT = "REPLACE_WITH_NOTIFY_FLOW_URL"; // Release 2.0 — email dispatch flow (NT-01..NT-09)
+const NOTIFY_ENDPOINT = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/20/workflows/1deb80ef2065427f80695911ba6645cf/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=paO0ipQx2vNb8MQWwEENoISpIQ682EXijBA8Go0Vbg4"; // Release 2.0 — email dispatch flow (NT-01..NT-09)
 API_ENDPOINTS.NOTIFY = NOTIFY_ENDPOINT;
 
 const API_KEY = ""; // optional shared secret sent as X-API-Key header — must match your flow's condition check
@@ -1890,6 +1896,57 @@ async function fetchWithTimeout(url, options, timeoutMs) {
   }
 }
 
+/* --- DOCUMENT STORAGE ------------------------------------------------
+   A spreadsheet cell holds 32,767 characters; a 200 KB attachment is
+   ~273,000 characters of base64. The file therefore cannot live in the
+   ledger row. It is posted to a document library, which returns a URL,
+   and only that URL is stored on the record.
+--------------------------------------------------------------------- */
+function docStorageConfigured() { return isConfigured(DOC_UPLOAD_ENDPOINT); }
+
+async function uploadDocumentToCloud(doc, rec) {
+  if (!docStorageConfigured()) return '';
+  const res = await apiRequest(DOC_UPLOAD_ENDPOINT, {
+    method: 'POST',
+    body: JSON.stringify({
+      recordId: rec.id, branch: rec.branch, voucher: rec.voucher || '',
+      docId: doc.id, fileName: doc.name,
+      contentType: doc.mime || 'application/octet-stream',
+      contentBytes: doc.data || ''
+    })
+  }, 1);
+  let out = {};
+  try { out = await res.json(); } catch (e) { out = {}; }
+  return out.url || out.link || out.webUrl || out.WebUrl || out.Path || '';
+}
+
+/* Push any document whose bytes are still only in this browser. Runs after
+   an upload and again on every sync, so a failed attempt is not permanent. */
+async function flushPendingDocuments(silent) {
+  if (!docStorageConfigured()) return 0;
+  let uploaded = 0, failed = 0;
+  for (const rec of STORED_ENTRIES) {
+    const docs = asArray(rec.supportingDocs);
+    for (const d of docs) {
+      if (d.url || !d.data) continue;              // already stored, or nothing to store
+      try {
+        const url = await uploadDocumentToCloud(d, rec);
+        if (url) { d.url = url; d.cloudPending = false; uploaded++; }
+        else failed++;
+      } catch (e) { failed++; }
+    }
+    if (uploaded) { try { await pushRecordUpdate(rec); } catch (e) {} }
+  }
+  if (uploaded) {
+    persistLocalEntries();
+    if (!silent) showToast(uploaded + ' document(s) stored in the document library.', 'success');
+  }
+  if (failed && !silent) {
+    showToast(failed + ' document(s) could not be uploaded yet — they stay on this device and will retry.', 'warn');
+  }
+  return uploaded;
+}
+
 /* --- backend payload shaping ---------------------------------------
    Excel/SharePoint columns are text cells with a 32,767-character limit.
    Document bytes cannot live there, and nested arrays have to be sent as
@@ -2110,19 +2167,33 @@ function mergeServerWithPending(serverRows, cachedRows) {
     if (!merged.some(r => r && r.id === id) && localById[id]) merged.push(localById[id]);
   });
 
-  /* Documents live only where they were uploaded, so carry their bytes
-     across even for records the server has already accepted. */
+  /* Documents: union the server list with anything held locally.
+     Iterating only the server list meant that a row whose sheet has no
+     supportingDocs column — or whose write was rejected — came back empty
+     and silently erased documents the branch had already uploaded. */
   merged.forEach(r => {
-    const local = r && localById[r.id];
-    if (!local || !Array.isArray(local.supportingDocs)) return;
-    if (typeof r.supportingDocs === 'string') {
-      try { r.supportingDocs = JSON.parse(r.supportingDocs); } catch (e) { r.supportingDocs = []; }
-    }
-    if (!Array.isArray(r.supportingDocs)) r.supportingDocs = [];
+    if (!r) return;
+    r.supportingDocs = asArray(r.supportingDocs);
+    const local = localById[r.id];
+    const localDocs = local ? asArray(local.supportingDocs) : [];
+
+    /* Server copy wins on metadata, local copy supplies the bytes. */
     r.supportingDocs = r.supportingDocs.map(d => {
-      const hit = local.supportingDocs.find(x => x.id === d.id);
-      return (hit && hit.data) ? Object.assign({}, d, { data: hit.data }) : d;
+      const hit = localDocs.find(x => x.id === d.id);
+      return (hit && hit.data && !d.data) ? Object.assign({}, d, { data: hit.data }) : d;
     });
+
+    /* Anything the server does not know about is kept, not discarded. */
+    localDocs.forEach(ld => {
+      if (!r.supportingDocs.some(d => d.id === ld.id)) {
+        r.supportingDocs.push(Object.assign({}, ld, { cloudPending: true }));
+      }
+    });
+
+    /* Same for the trail — never let a sync shorten the history. */
+    const localTrail = local ? asArray(local.auditTrail) : [];
+    const serverTrail = asArray(r.auditTrail);
+    r.auditTrail = serverTrail.length >= localTrail.length ? serverTrail : localTrail;
   });
   return merged;
 }
@@ -2167,6 +2238,7 @@ async function fetchBackendData() {
     lastSyncedAt = new Date();
     setSyncState('ok', 'Synced ' + lastSyncedAt.toLocaleTimeString());
     flushPendingQueue(false);
+    flushPendingDocuments(true);   // retry any file still held locally
   } catch (error) {
     console.warn("API Error. Loading local data fallback.", error);
     STORED_ENTRIES = cached.length ? cached : (JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY)) || []);
@@ -3579,8 +3651,19 @@ const MAX_DOCS_PER_ITEM = 10;
 function docsOf(rec) { return Array.isArray(rec.supportingDocs) ? rec.supportingDocs : []; }
 function docCountChip(rec) {
   const n = docsOf(rec).length;
-  return `<span class="doc-count ${n ? '' : 'none'}" title="${n} supporting document${n === 1 ? '' : 's'}">📎 ${n}</span>`;
+  const stored = docsOf(rec).filter(d => d.url).length;
+  const title = n + ' supporting document' + (n === 1 ? '' : 's')
+    + (n ? ' · ' + stored + ' in the document library, ' + (n - stored) + ' on a device only' : '');
+  return `<span class="doc-count ${n ? '' : 'none'}" title="${escapeHtml(title)}">📎 ${n}${(n && stored < n) ? '<span style="color:#9a6b12;">*</span>' : ''}</span>`;
 }
+/* Says plainly where a file actually is. Without this a document that only
+   exists in one browser looks identical to one stored centrally. */
+function docStateLabel(d) {
+  if (d.url) return ' · <span style="color:#0a7d4f;">in document library</span>';
+  if (d.data) return ' · <span style="color:#9a6b12;">on this device only</span>';
+  return ' · <span style="color:#c0392b;">file not available</span>';
+}
+
 function docHref(d) {
   if (d.url) return d.url;
   if (d.data) return 'data:' + (d.mime || 'application/octet-stream') + ';base64,' + d.data;
@@ -3602,7 +3685,7 @@ function docListHtml(rec, allowDelete) {
       <span class="dc-icon">${docIcon(d)}</span>
       <div class="dc-main">
         <div class="dc-name">${escapeHtml(d.name || 'Document')}</div>
-        <div class="dc-meta">${escapeHtml(d.uploadedBy || '—')} · ${escapeHtml(fmtStamp(d.uploadedOn))}${d.size ? ' · ' + Math.round(d.size / 1024) + ' KB' : ''}${d.evicted ? ' · <span style="color:#9a6b12;">on server only</span>' : ''}</div>
+        <div class="dc-meta">${escapeHtml(d.uploadedBy || '—')} · ${escapeHtml(fmtStamp(d.uploadedOn))}${d.size ? ' · ' + Math.round(d.size / 1024) + ' KB' : ''}${docStateLabel(d)}</div>
       </div>
       ${(d.data || d.url) ? attachmentActions(rec.id, d.id) : '<span class="dc-meta">unavailable offline</span>'}
       ${allowDelete ? `<button class="dc-del" title="Remove" onclick="removeUploadedDoc('${rec.id}','${d.id}')">&#10005;</button>` : ''}
@@ -3929,10 +4012,24 @@ async function submitDocs() {
   const now = new Date().toISOString();
   const who = (activeUser.username || activeUser.name || 'branch');
   if (!Array.isArray(r.supportingDocs)) r.supportingDocs = [];
-  stagedDocs.forEach(d => r.supportingDocs.push({
+  const added = stagedDocs.map(d => ({
     id: 'D' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-    name: d.name, mime: d.mime, size: d.size, data: d.data, uploadedBy: who, uploadedOn: now
+    name: d.name, mime: d.mime, size: d.size, data: d.data,
+    uploadedBy: who, uploadedOn: now, url: '', cloudPending: true
   }));
+  added.forEach(d => r.supportingDocs.push(d));
+
+  /* Store the bytes in the document library first. Only the returned URL
+     goes onto the ledger row — the file itself never enters a cell. */
+  if (docStorageConfigured() && added.length) {
+    showToast('Uploading ' + added.length + ' document(s)…', 'ok');
+    for (const d of added) {
+      try {
+        const url = await uploadDocumentToCloud(d, r);
+        if (url) { d.url = url; d.cloudPending = false; }
+      } catch (e) { /* retried by flushPendingDocuments on the next sync */ }
+    }
+  }
 
   if (stagedDocs.length) {
     pushTrail(r, 'DOCS_UPLOADED', st, st,
@@ -3954,6 +4051,12 @@ async function submitDocs() {
 
   persistLocalEntries();
   await pushRecordUpdate(r);
+
+  const notStored = asArray(r.supportingDocs).filter(d => d.data && !d.url).length;
+  if (notStored) {
+    showToast(notStored + ' document(s) are saved on this device only — no document library is '
+      + 'configured, so other users will see the file name but cannot open it.', 'warn');
+  }
   closeDocDrawer();
   showToast(target === 'PENDING_FA' ? 'Sent back to the Finance Auditor.' : 'Documents uploaded — sent for Regional Manager verification.', 'success');
   bootstrapApp();

@@ -2247,6 +2247,38 @@ async function initializeApp() {
       }
     });
 
+    // ManagerCode in the Excel master isn't always an EmpCode — it can be a
+    // username or email too (same ambiguity rbac.js already resolves via its
+    // alias map for ProstarmRBAC.approvalRoute). EMP is keyed strictly by
+    // EmpCode, so an unresolved manager code made buildChain() stop early and
+    // silently truncate the approval chain instead of falling back to the
+    // RBAC route (that fallback only fires when the chain is fully empty).
+    // Resolve every EMP[].m through the same directory ProstarmRBAC already
+    // loaded, so both routing paths agree on who the manager actually is.
+    //
+    // ProstarmRBAC.userFor() returns its own canonical (uppercased) id, but
+    // EMP is keyed by the raw EmpCode string from Excel, which isn't
+    // guaranteed to be uppercase (resolveSessionEmployee already defends
+    // against this below). Map the resolved id back to whichever casing is
+    // actually an EMP key, so buildChain's EMP[cur] lookup can't miss.
+    if (window.ProstarmRBAC) {
+      const empKeyByUpper = {};
+      Object.keys(EMP).forEach(k => { empKeyByUpper[k.toUpperCase()] = k; });
+      let remapped = 0;
+      Object.keys(EMP).forEach(code => {
+        const raw = EMP[code].m;
+        if (!raw) return;
+        const resolved = ProstarmRBAC.userFor(raw);
+        if (!resolved) return;
+        const actualKey = empKeyByUpper[String(resolved.id).toUpperCase()];
+        if (actualKey && actualKey !== raw) {
+          EMP[code].m = actualKey;
+          remapped++;
+        }
+      });
+      if (remapped) console.info(`approval.html: resolved ${remapped} ManagerCode value(s) that were usernames/emails rather than EmpCodes, via the RBAC directory.`);
+    }
+
   } catch(err) {
     console.error("Failed to fetch config from Excel", err);
     document.getElementById("loading").textContent = "Error loading employee data: " + err.message;
