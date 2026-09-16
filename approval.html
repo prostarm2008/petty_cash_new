@@ -2641,7 +2641,7 @@ document.addEventListener("DOMContentLoaded", initializeApp);
 
 const PETTY_CASH_ADD_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/42c17ce44a3947458f3b837bf6a823db/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=EqmQYo67GkiuIdzxawvG_vuZGhNFWwChcg_VifsIisg";
 
-const ALSO_PUSH_LEGACY_TRANSFER = false;
+const ALSO_PUSH_LEGACY_TRANSFER = true;
 
 const PC_HANDOFF_KEY = "prostarm:pettycash:handoff";
 const PC_MAX_DOC_BYTES = 3 * 1024 * 1024;
@@ -2861,18 +2861,20 @@ async function confirmTransfer() {
   } catch (e) { errMsg = e.message; }
 
   if (ALSO_PUSH_LEGACY_TRANSFER) {
-    try {
-      const legacy = { ...r };
-      legacy.chain = JSON.stringify(r.chain || []);
-      legacy.trail = JSON.stringify(r.trail || []);
-      legacy.versions = JSON.stringify(r.versions || []);
-      Object.keys(legacy).forEach(k => { if (legacy[k] == null) legacy[k] = ''; });
-      await fetch(EXCEL_TRANSFER_DATA_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(legacy)
-      });
-    } catch (e) { }
+  try {
+    const legacy = { ...r };
+    legacy.chain = JSON.stringify(r.chain || []);
+    legacy.trail = JSON.stringify(r.trail || []);
+    legacy.versions = JSON.stringify(r.versions || []);
+    Object.keys(legacy).forEach(k => { if (legacy[k] == null) legacy[k] = ''; });
+    await fetch(EXCEL_TRANSFER_DATA_URL, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(legacy)
+    });
+  } catch (e) { 
+    console.error("Legacy Transfer to Power Automate Failed:", e); // <-- Add this
   }
+}
 
   markAsTransferred(r);
   r.entered = new Date().toISOString();
