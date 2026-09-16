@@ -177,6 +177,10 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
   letter-spacing:.4px;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap}
 .tbl td{padding:7px 8px;border-bottom:1px solid #edf3f7;vertical-align:top}
 .tbl tr:hover td{background:#f7fbfd}
+/* Group headers keep their own colour on hover; the generic rule above
+   repainted them near-white and the white text vanished. */
+.tbl tr.gb:hover>td{background:linear-gradient(180deg,#5a9de0,#2569b5);color:#fff}
+.tbl tr.gd:hover>td{background:#e3eff8;color:var(--navy)}
 .tbl .num{text-align:right;font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
 .tblwrap{overflow-x:auto}
 
@@ -237,6 +241,56 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
   .pc-badge.sub{background:#eef2f5;color:#5d7c93;border-color:#d5e2ea}
   .pc-badge.rm{background:#eaf3fa;color:#1e5fa8;border-color:#bfdcec}
   @media(max-width:600px){.pc-sum{grid-template-columns:1fr}}
+
+  /* ===== BRANCH / DATE GROUPING (All Requests + Admin Tracker) ===== */
+  .grp-tools{display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+  .grp-tools .sp{flex:1}
+  .grp-tools button{
+    background:#eaf3fa;border:1px solid #bfdcec;color:var(--blue);
+    font-size:10.5px;font-weight:800;padding:5px 11px;border-radius:5px;
+    cursor:pointer;font-family:inherit;letter-spacing:.2px;
+  }
+  .grp-tools button:hover{background:var(--blue);border-color:var(--blue);color:#fff}
+  .grp-tools .cnt{font-size:10.5px;font-weight:700;color:var(--muted)}
+
+  .bgrp{border:1px solid var(--line);border-radius:8px;margin-bottom:9px;overflow:hidden;background:#fff}
+  .bgrp-h{
+    display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;
+    background:linear-gradient(180deg,#4c93d6,#1e5fa8);color:#fff;user-select:none;
+  }
+  .bgrp-h:hover{filter:brightness(1.05)}
+  .tgl{
+    width:17px;height:17px;border-radius:4px;flex-shrink:0;
+    background:rgba(255,255,255,.18);border:1px solid rgba(255,255,255,.34);
+    color:#fff;font-size:12px;font-weight:800;line-height:1;
+    display:flex;align-items:center;justify-content:center;font-family:monospace;
+  }
+  .bgrp-h .nm{font-size:13px;font-weight:800;letter-spacing:.2px}
+  .bgrp-h .sub{font-size:10px;font-weight:600;color:#cfe4f5;opacity:.95;text-transform:none;letter-spacing:.2px;margin:0}
+  .bgrp-h .rt{margin-left:auto;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}
+
+  .dgrp{border-top:1px solid var(--line)}
+  .dgrp-h{
+    display:flex;align-items:center;gap:9px;padding:7px 12px 7px 26px;
+    cursor:pointer;background:#eef6fb;user-select:none;
+  }
+  .dgrp-h:hover{background:#e3eff8}
+  .dgrp-h .tgl{background:#fff;border-color:#bfdcec;color:var(--blue)}
+  .dgrp-h .dt{font-size:11.5px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+  .dgrp-h .sub{font-size:10px;color:var(--muted);font-weight:600}
+  .dgrp-h .rt{margin-left:auto;font-size:11.5px;font-weight:800;color:var(--navy);font-variant-numeric:tabular-nums}
+  .dgrp-b{padding:9px 12px 11px 26px;background:#fff}
+
+  /* group rows inside the tracker table */
+  tr.gb>td,tr.gd>td{cursor:pointer;user-select:none}
+  tr.gb>td{
+    background:linear-gradient(180deg,#4c93d6,#1e5fa8);color:#fff;
+    font-weight:800;font-size:11.5px;padding:8px 10px;letter-spacing:.2px;
+  }
+  tr.gd>td{background:#eef6fb;color:var(--navy);font-weight:800;font-size:11px;padding:6px 10px 6px 26px}
+  tr.gb .tgl,tr.gd .tgl{display:inline-flex;vertical-align:middle;margin-right:8px}
+  tr.gd .tgl{background:#fff;border-color:#bfdcec;color:var(--blue)}
+  tr.gb .rt,tr.gd .rt{float:right;font-variant-numeric:tabular-nums}
 
 </style>
 </head>
@@ -568,7 +622,7 @@ const HANDOFF_KEY="prostarm:pettycash:handoff";
 /* ================= SERVER STORAGE (Power Automate) ================= */
 let MEM = [];
 
-async function fetchJSON(url, opts = {}, timeoutMs = 20000) {
+async function fetchJSON(url, opts = {}, timeoutMs = 120000) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -887,6 +941,62 @@ $("fDate").addEventListener("change",refreshVoucher);
 
 /* ================= ROUTE ================= */
 
+/* ==========================================================
+   APPROVAL LIMITS
+   Requisitions up to FINAL_APPROVAL_LIMIT are closed by the
+   limit approver. Anything above it goes on to the higher
+   authority. Codes are resolved through the directory, so an
+   EmpCode, username or email all work.
+   ========================================================== */
+const FINAL_APPROVAL_LIMIT   = 2000;          // rupees, inclusive
+const LIMIT_APPROVER_ID      = 'prasenjitd';  // approves up to the limit
+const ABOVE_LIMIT_APPROVER_ID = '';           // blank = use APPROVER from the master
+
+/* Turn a username/email/EmpCode into the EmpCode the chain uses. */
+function resolveEmpCode(idOrName) {
+  const raw = String(idOrName || '').trim();
+  if (!raw) return '';
+  const up = raw.toUpperCase();
+  if (EMP[up]) return up;
+  if (window.ProstarmRBAC) {
+    const u = ProstarmRBAC.userFor(raw);
+    if (u && u.id) return String(u.id).toUpperCase();
+  }
+  const hit = Object.keys(EMP).find(k =>
+    k.toUpperCase() === up ||
+    String((EMP[k] || {}).email || '').toUpperCase() === up ||
+    String((EMP[k] || {}).n || '').trim().toUpperCase() === up);
+  return hit || up;
+}
+
+function limitApprover()      { return resolveEmpCode(LIMIT_APPROVER_ID); }
+function aboveLimitApprover() { return ABOVE_LIMIT_APPROVER_ID ? resolveEmpCode(ABOVE_LIMIT_APPROVER_ID) : APPROVER; }
+
+/* Who closes a requisition of this value. */
+function finalApproverFor(amount) {
+  const amt = Number(amount) || 0;
+  const low = limitApprover(), high = aboveLimitApprover();
+  if (amt <= FINAL_APPROVAL_LIMIT && low) return low;
+  return high || low;
+}
+
+/* The amount currently on the table, used to pick the terminal approver. */
+function chainAmount(r) {
+  if (r) return Number(liveAmount(r)) || 0;
+  return parseFloat(($("fAmount") || {}).value) || 0;
+}
+
+/* Rebuild the tail of a chain so it ends at the right authority for the
+   value. Everything before the terminal approver — the reporting line —
+   is untouched. */
+function applyApprovalLimit(chain, amount) {
+  const low = limitApprover(), high = aboveLimitApprover();
+  const terminal = finalApproverFor(amount);
+  let out = (chain || []).filter(c => c && c !== low && c !== high);
+  if (terminal) out.push(terminal);
+  return out;
+}
+
 function isFinalApprover(code) {
   const directoryUser = window.ProstarmRBAC && ProstarmRBAC.userFor(code);
   return !!(directoryUser && directoryUser.roles.indexOf('final_approver') !== -1) || code === APPROVER;
@@ -979,10 +1089,13 @@ function buildChain(start){
     }
     cur=EMP[cur].m;
   }
-  if (path.length) return path;
-  return window.ProstarmRBAC
-    ? ProstarmRBAC.approvalRoute(start, $("fBranch").value || (EMP[start] || {}).b)
-    : path;
+  const base = path.length ? path
+    : (window.ProstarmRBAC
+        ? ProstarmRBAC.approvalRoute(start, $("fBranch").value || (EMP[start] || {}).b)
+        : path);
+  /* The reporting line is preserved; only the closing authority depends
+     on the value of the request. */
+  return applyApprovalLimit(base, chainAmount(null));
 }
 
 function route(){
@@ -1186,7 +1299,12 @@ $("clearBtn").addEventListener("click",clearForm);
 
 /* ================= LISTS & ACTION ================= */
 const money=n=>"₹"+Number(n).toLocaleString("en-IN");
-function dt(s){const d=new Date(s);return pad(d.getDate())+"-"+MON[d.getMonth()]+" "+pad(d.getHours())+":"+pad(d.getMinutes());}
+function dt(s){
+  if(s===null||s===undefined||s==="") return "\u2014";
+  const d=new Date(s);
+  if(isNaN(d.getTime())) return "\u2014";      // was printing "NaN-undefined NaN:NaN"
+  return pad(d.getDate())+"-"+MON[d.getMonth()]+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+}
 function recsDone(r){return r.trail.filter(t=>t.act==="Recommended").length;}
 
 /* ==========================================================
@@ -1375,14 +1493,36 @@ async function actApprove(id){
   }
   if(amount!==onTable&&!rem){ alert("A comment is mandatory when you change the amount."); return; }
 
-  const from=r.status;
-  const isFinal=isFinalApprover(ME);
+  const isFinal = applyApprovalDecision(r, amount, onTable, rem);
+  await commit(r, id, isFinal ? "Final Approval successful." : "Approved and forwarded to the next manager.");
+}
+
+/* ----------------------------------------------------------
+   The single approve button and "Approve selected" both run
+   this, so the two paths cannot drift apart. Returns true when
+   the requisition is now finally approved.
+   ---------------------------------------------------------- */
+function applyApprovalDecision(r, amount, onTable, rem){
+  const from = r.status;
+
+  /* A reduced amount can drop the request under the approval limit, so the
+     closing authority is re-checked before deciding whether this is final. */
+  const beforeTail = (r.chain || []).slice(-1)[0];
+  r.chain = applyApprovalLimit(r.chain || [], amount);
+  if (r.step > r.chain.length - 1) r.step = Math.max(0, r.chain.length - 1);
+  const afterTail = (r.chain || []).slice(-1)[0];
+  if (beforeTail !== afterTail) {
+    logAction(r, "REROUTE", from, from, onTable, amount,
+      "Closing authority changed to " + nameOf(afterTail) + " for " + money(amount));
+  }
+
+  const isFinal = isFinalApprover(ME) || r.chain[r.chain.length - 1] === ME;
 
   if(isFinal){
     closeVersion(r,"APPROVED",ME,rem,"","");
     r.status=ST.FINAL;
     r.approvedAmount=amount;
-    r.expenseAmount=amount;          
+    r.expenseAmount=amount;
     r.approvalDate=new Date().toISOString();
     r.hoApproval=nameOf(ME)+" ("+ME+") · Final Approving Authority · approved "+
                  pad(new Date().getDate())+"-"+MON[new Date().getMonth()]+"-"+new Date().getFullYear()+" · "+r.no;
@@ -1399,8 +1539,7 @@ async function actApprove(id){
     logAction(r,"APPROVE",from,r.status,onTable,amount,rem);
     if(nextIsFinal) queueMail("APPROVED",r,r.by,rem);
   }
-  
-  await commit(r, id, isFinal ? "Final Approval successful." : "Approved and forwarded to the next manager.");
+  return isFinal;
 }
 
 async function actRejectRework(id){
@@ -1800,23 +1939,55 @@ function countSel(){
   $("bulkCount").textContent=n;
   $("bulkbar").classList.toggle("on",document.querySelectorAll(".bx").length>0);
 }
-function selectAll(on){ document.querySelectorAll(".bx").forEach(b=>b.checked=on); countSel(); }
+function selectAll(on){
+  /* Checkboxes only exist for rendered cards, so selecting everything has to
+     open the groups first — otherwise "Select all" would quietly skip whatever
+     was collapsed, and the bulk approve would cover less than it appeared to. */
+  if (on && typeof grpSetAll === 'function') grpSetAll('inb', true);
+  document.querySelectorAll(".bx").forEach(b=>b.checked=on);
+  countSel();
+}
 async function bulkAct(){
   const ids=[].slice.call(document.querySelectorAll(".bx:checked")).map(b=>b.value);
   if(!ids.length){ alert("Select at least one request."); return; }
   if(!confirm("Approve "+ids.length+" requisition(s)?")) return;
-  
+
   const list = await loadAll();
-  for(let i=0; i<ids.length; i++) {
-    let id = ids[i];
-    let r = list.find(x => x.id === id);
-    if(r && r.status === "Pending" && r.chain[r.step] === ME){
-      r.trail.push({code: ME, act: "Approved", remark: "Approved in bulk", ts: new Date().toISOString()});
-      stampApproval(r, ME, (r.targetedAmount!==""&&r.targetedAmount!=null)?Number(r.targetedAmount):Number(r.requestedAmount||r.expenseAmount));
+  let done = 0, skipped = 0;
+  const problems = [];
+
+  for (const id of ids) {
+    const r = list.find(x => x.id === id);
+    if (!r) { skipped++; problems.push(id + ": not found"); continue; }
+
+    /* The old test was `r.status === "Pending"` — a status this app never
+       sets, so the loop matched nothing and the button did nothing. Use the
+       same gate the single approve button uses. */
+    if (ACTIONABLE.indexOf(r.status) < 0 || String(r.chain[r.step]).trim().toUpperCase() !== ME) {
+      skipped++;
+      problems.push((r.no || id) + ": " + (isTerminal(r) ? "already closed" : "not awaiting you"));
+      continue;
+    }
+
+    const onTable = liveAmount(r);
+    try {
+      /* Bulk approves at the amount on the table; changing a figure needs a
+         comment, which only the single-request view can capture. */
+      applyApprovalDecision(r, onTable, onTable, "Approved in bulk");
       await pushToExcel(r, true);
+      done++;
+    } catch (err) {
+      skipped++;
+      problems.push((r.no || id) + ": " + (err && err.message ? err.message : "save failed"));
     }
   }
-  refresh();
+
+  invalidateRequisitions();
+  await refresh();
+
+  if (done && !skipped) alert(done + " requisition(s) approved.");
+  else if (done) alert(done + " approved, " + skipped + " skipped:\n\n" + problems.join("\n"));
+  else alert("Nothing was approved:\n\n" + problems.join("\n"));
 }
 
 function kpi(rows){
@@ -1835,9 +2006,8 @@ async function refresh(){
     ACTIONABLE.indexOf(r.status)>-1 && !isTerminal(r) && r.chain && r.chain[r.step] &&
     String(r.chain[r.step]).trim().toUpperCase() === ME);
   $("inboxCount").textContent = inbox.length;
-  $("inboxList").innerHTML = inbox.length ? inbox.map(r=>card(r,true)).join("")
-    : '<div class="empty"><b>Nothing waiting</b>Requisitions routed to you will appear here.</div>';
-  countSel();
+  window.__inboxRows = inbox;
+  renderInbox();
 
   /* --- Branch rework queue --- */
   const rework = list.filter(r => r.status===ST.REJ_REWORK && r.by===ME);
@@ -1884,8 +2054,8 @@ async function refresh(){
     renderAdmin();
     const f=$("fltStatus").value;
     const all=(f==="All status")?list:list.filter(r=>r.status===f);
-    $("allList").innerHTML=all.length?all.map(r=>card(r,false)).join("")
-      :'<div class="empty"><b>No requisitions</b>Nothing matches this filter.</div>';
+    window.__allRows = all;
+    renderAllRequests();
   }
 
   restoreOpenCards();
@@ -1960,9 +2130,14 @@ function isConverted(r){
   return !!m[r.no];
 }
 function convertedAt(r){
-  if(r.entered&&r.entered.at) return r.entered.at;
+  /* The petty cash transfer stamps `entered` as an ISO string, while the
+     older conversion map stored an object. Accept both. */
+  if(r.entered){
+    if(typeof r.entered==="string"&&r.entered.trim()) return r.entered;
+    if(r.entered.at) return r.entered.at;
+  }
   const m=conversionMap();
-  return m[r.no]?m[r.no].at:null;
+  return (m[r.no]&&m[r.no].at)?m[r.no].at:null;
 }
 function pendingWith(r){
   if(isTerminal(r)||!r.chain) return null;
@@ -2040,6 +2215,186 @@ function exportReminders(){
   a.click();
 }
 
+
+/* ==========================================================
+   BRANCH / DATE GROUPING
+   "All Requests" and the Admin Tracker are grouped by branch and
+   then by the date the requisition was raised. Both levels collapse.
+   Open/closed state is held here so a refresh does not reset it.
+   ========================================================== */
+const GRP_OPEN = {};                 /* key -> true|false */
+const GRP_DEFAULT_BRANCH = true;     /* branches open, dates closed: the */
+const GRP_DEFAULT_DATE   = false;    /* headers carry counts and totals  */
+
+function grpIsOpen(key, dflt){ return Object.prototype.hasOwnProperty.call(GRP_OPEN,key) ? GRP_OPEN[key] : dflt; }
+function grpToggle(key, dflt, ns){
+  GRP_OPEN[key] = !grpIsOpen(key, dflt);
+  grpRender(ns);
+}
+function grpRender(ns){
+  if (ns === 'all') renderAllRequests();
+  else if (ns === 'inb') renderInbox();
+  else renderTracker();
+}
+function grpRows(ns){
+  if (ns === 'all') return window.__allRows || [];
+  if (ns === 'inb') return window.__inboxRows || [];
+  return window.__trackRows || [];
+}
+function grpSetAll(ns, open){
+  groupByBranchDate(grpRows(ns)).forEach(b => {
+    GRP_OPEN[ns + '|b|' + b.branch] = open;
+    b.dates.forEach(d => { GRP_OPEN[ns + '|d|' + b.branch + '|' + d.key] = open; });
+  });
+  grpRender(ns);
+}
+
+/* Raised date drives the date level — these tabs track when a request
+   entered the workflow, not when the expense was incurred. */
+function grpDateKey(r){
+  const s = String(r.raised || r.date || '');
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+  return s.slice(0,10) || 'undated';
+}
+function grpDateLabel(key){
+  const d = new Date(key + 'T00:00:00');
+  if (isNaN(d.getTime())) return 'Undated';
+  return pad(d.getDate()) + '-' + MON[d.getMonth()] + '-' + d.getFullYear();
+}
+function grpBranchLabel(code){
+  const b = (typeof BRANCH_CONFIG !== 'undefined')
+    ? BRANCH_CONFIG.find(x => x.code === code) : null;
+  return (b && b.name) ? b.name : (code || 'Unassigned');
+}
+
+function groupByBranchDate(rows){
+  const by = {};
+  (rows || []).forEach(r => {
+    const b = r.branch || 'Unassigned';
+    const k = grpDateKey(r);
+    by[b] = by[b] || { branch:b, count:0, total:0, dates:{} };
+    by[b].count++; by[b].total += liveAmount(r);
+    by[b].dates[k] = by[b].dates[k] || { key:k, count:0, total:0, rows:[] };
+    by[b].dates[k].count++; by[b].dates[k].total += liveAmount(r);
+    by[b].dates[k].rows.push(r);
+  });
+  return Object.keys(by)
+    .sort((x,y) => grpBranchLabel(x).localeCompare(grpBranchLabel(y)))
+    .map(b => {
+      const g = by[b];
+      g.dates = Object.keys(g.dates).sort().reverse().map(k => g.dates[k]);  /* newest first */
+      return g;
+    });
+}
+
+function grpTgl(open){ return '<span class="tgl">' + (open ? '&minus;' : '+') + '</span>'; }
+
+function grpTools(ns, nBranch, nRows){
+  return '<div class="grp-tools">' +
+    '<span class="cnt">' + nBranch + ' branch' + (nBranch===1?'':'es') + ' &middot; ' +
+      nRows + ' requisition' + (nRows===1?'':'s') + '</span><span class="sp"></span>' +
+    '<button type="button" onclick="grpSetAll(\'' + ns + '\',true)">Expand all</button>' +
+    '<button type="button" onclick="grpSetAll(\'' + ns + '\',false)">Collapse all</button>' +
+    '</div>';
+}
+
+/* ---------- grouped card lists (All Requests + my approval queue) ---------- */
+function renderGroupedCards(hostId, rows, ns, actable, emptyHtml){
+  const host = $(hostId);
+  if (!host) return;
+  if (!rows.length){ host.innerHTML = emptyHtml; return; }
+
+  const groups = groupByBranchDate(rows);
+  let html = grpTools(ns, groups.length, rows.length);
+
+  groups.forEach(g => {
+    const bKey = ns + '|b|' + g.branch, bOpen = grpIsOpen(bKey, GRP_DEFAULT_BRANCH);
+    html += '<div class="bgrp"><div class="bgrp-h" onclick="grpToggle(\'' + bKey + '\',' + GRP_DEFAULT_BRANCH + ',\'' + ns + '\')">' +
+      grpTgl(bOpen) +
+      '<div><div class="nm">' + grpBranchLabel(g.branch) + '</div>' +
+      '<div class="sub">' + g.branch + ' &middot; ' + g.dates.length + ' day' + (g.dates.length===1?'':'s') +
+      ' &middot; ' + g.count + ' requisition' + (g.count===1?'':'s') + '</div></div>' +
+      '<span class="rt">' + money(g.total) + '</span></div>';
+
+    if (bOpen) {
+      g.dates.forEach(d => {
+        const dKey = ns + '|d|' + g.branch + '|' + d.key, dOpen = grpIsOpen(dKey, GRP_DEFAULT_DATE);
+        html += '<div class="dgrp"><div class="dgrp-h" onclick="grpToggle(\'' + dKey + '\',' + GRP_DEFAULT_DATE + ',\'' + ns + '\')">' +
+          grpTgl(dOpen) +
+          '<span class="dt">' + grpDateLabel(d.key) + '</span>' +
+          '<span class="sub">' + d.count + ' requisition' + (d.count===1?'':'s') + '</span>' +
+          '<span class="rt">' + money(d.total) + '</span></div>' +
+          (dOpen ? '<div class="dgrp-b">' + d.rows.map(r => card(r, actable)).join('') + '</div>' : '') +
+          '</div>';
+      });
+    }
+    html += '</div>';
+  });
+  host.innerHTML = html;
+  if (typeof restoreOpenCards === 'function') restoreOpenCards();
+}
+
+function renderAllRequests(){
+  renderGroupedCards('allList', window.__allRows || [], 'all', false,
+    '<div class="empty"><b>No requisitions</b>Nothing matches this filter.</div>');
+}
+
+/* My approval / recommendation queue — same grouping, actionable cards. */
+function renderInbox(){
+  renderGroupedCards('inboxList', window.__inboxRows || [], 'inb', true,
+    '<div class="empty"><b>Nothing waiting</b>Requisitions routed to you will appear here.</div>');
+  countSel();
+}
+
+/* ---------- Admin Tracker (table) ---------- */
+function renderTracker(){
+  const rows = window.__trackRows || [];
+  const host = $("trackTbl");
+  if (!host) return;
+  const COLS = 8;
+  if (!rows.length){
+    host.innerHTML = '<tr><td colspan="' + COLS + '"><div class="empty"><b>No requisitions yet</b></div></td></tr>';
+    return;
+  }
+  const groups = groupByBranchDate(rows);
+
+  let t = '<thead><tr><th>Requisition ID</th><th>Requester</th><th>Raised</th><th>Status</th>' +
+          '<th>Pending With</th><th>Role</th><th class="num">Amount</th><th class="num">Waiting</th></tr></thead><tbody>';
+
+  groups.forEach(g => {
+    const bKey = 'adm|b|' + g.branch, bOpen = grpIsOpen(bKey, GRP_DEFAULT_BRANCH);
+    t += '<tr class="gb" onclick="grpToggle(\'' + bKey + '\',' + GRP_DEFAULT_BRANCH + ',\'adm\')">' +
+         '<td colspan="' + COLS + '">' + grpTgl(bOpen) + grpBranchLabel(g.branch) +
+         ' <span style="opacity:.8;font-weight:600">(' + g.branch + ' &middot; ' + g.count +
+         ' requisition' + (g.count===1?'':'s') + ')</span>' +
+         '<span class="rt">' + money(g.total) + '</span></td></tr>';
+
+    if (!bOpen) return;
+    g.dates.forEach(d => {
+      const dKey = 'adm|d|' + g.branch + '|' + d.key, dOpen = grpIsOpen(dKey, GRP_DEFAULT_DATE);
+      t += '<tr class="gd" onclick="grpToggle(\'' + dKey + '\',' + GRP_DEFAULT_DATE + ',\'adm\')">' +
+           '<td colspan="' + COLS + '">' + grpTgl(dOpen) + grpDateLabel(d.key) +
+           ' <span style="color:var(--muted);font-weight:600">(' + d.count + ')</span>' +
+           '<span class="rt">' + money(d.total) + '</span></td></tr>';
+      if (!dOpen) return;
+      d.rows.forEach(r => {
+        const w = pendingWith(r);
+        const hrs = (!isTerminal(r)) ? ageHours(pendingSince(r)) : null;
+        const over = (hrs != null && hrs >= SLA_HOURS);
+        t += "<tr><td><b>" + r.no + "</b></td><td>" + ((EMP[r.by] && EMP[r.by].n) || r.by) +
+             "<br><span style='color:var(--muted)'>" + r.branch + "</span></td>" +
+             "<td>" + dt(r.raised) + "</td><td>" + statusTag(r) + "</td><td>" + (w ? w.name : "\u2014") +
+             "</td><td>" + (w ? w.role : "\u2014") + "</td>" +
+             '<td class="num">' + money(liveAmount(r)) + "</td>" +
+             '<td class="num" style="color:' + (over ? "var(--red)" : "var(--muted)") + '">' +
+             (hrs != null ? ageLabel(hrs) + (over ? " &#9888;" : "") : "\u2014") + "</td></tr>";
+      });
+    });
+  });
+  host.innerHTML = t + '</tbody>';
+}
+
 async function renderAdmin(){
   if(ADMINS.indexOf(ME)<0) return;
   const list=await loadAll();
@@ -2055,18 +2410,8 @@ async function renderAdmin(){
     ["Approved value",money(appr.reduce((s,r)=>s+liveAmount(r),0)),"var(--navy)"]
   ]);
 
-  let t='<thead><tr><th>Requisition ID</th><th>Requester</th><th>Raised</th><th>Status</th>'+
-        '<th>Pending With</th><th>Role</th><th class="num">Amount</th><th class="num">Waiting</th></tr></thead><tbody>';
-  list.slice().sort((a,b)=>String(b.raised||"").localeCompare(String(a.raised||""))).forEach(r=>{
-    const w=pendingWith(r);
-    const hrs=(!isTerminal(r))?ageHours(pendingSince(r)):null;
-    const over=(hrs!=null&&hrs>=SLA_HOURS);
-    t+="<tr><td><b>"+r.no+"</b></td><td>"+((EMP[r.by]&&EMP[r.by].n)||r.by)+"<br><span style='color:var(--muted)'>"+r.branch+"</span></td>"+
-       "<td>"+dt(r.raised)+"</td><td>"+statusTag(r)+"</td><td>"+(w?w.name:"—")+"</td><td>"+(w?w.role:"—")+"</td>"+
-       '<td class="num">'+money(liveAmount(r))+"</td>"+
-       '<td class="num" style="color:'+(over?"var(--red)":"var(--muted)")+'">'+(hrs!=null?ageLabel(hrs)+(over?" &#9888;":""):"—")+"</td></tr>";
-  });
-  $("trackTbl").innerHTML=list.length?t+"</tbody>":'<tr><td><div class="empty"><b>No requisitions yet</b></div></td></tr>';
+  window.__trackRows = list.slice();
+  renderTracker();
 
   let c='<thead><tr><th>Requisition ID</th><th>Branch</th><th>Category</th><th class="num">Approved</th>'+
         '<th>Conversion</th><th>Entered</th></tr></thead><tbody>';
@@ -2246,38 +2591,6 @@ async function initializeApp() {
         BRANCH_STAFF_MAP[cleanBranch][group].push(`${code} - ${getVal('FullName')}`);
       }
     });
-
-    // ManagerCode in the Excel master isn't always an EmpCode — it can be a
-    // username or email too (same ambiguity rbac.js already resolves via its
-    // alias map for ProstarmRBAC.approvalRoute). EMP is keyed strictly by
-    // EmpCode, so an unresolved manager code made buildChain() stop early and
-    // silently truncate the approval chain instead of falling back to the
-    // RBAC route (that fallback only fires when the chain is fully empty).
-    // Resolve every EMP[].m through the same directory ProstarmRBAC already
-    // loaded, so both routing paths agree on who the manager actually is.
-    //
-    // ProstarmRBAC.userFor() returns its own canonical (uppercased) id, but
-    // EMP is keyed by the raw EmpCode string from Excel, which isn't
-    // guaranteed to be uppercase (resolveSessionEmployee already defends
-    // against this below). Map the resolved id back to whichever casing is
-    // actually an EMP key, so buildChain's EMP[cur] lookup can't miss.
-    if (window.ProstarmRBAC) {
-      const empKeyByUpper = {};
-      Object.keys(EMP).forEach(k => { empKeyByUpper[k.toUpperCase()] = k; });
-      let remapped = 0;
-      Object.keys(EMP).forEach(code => {
-        const raw = EMP[code].m;
-        if (!raw) return;
-        const resolved = ProstarmRBAC.userFor(raw);
-        if (!resolved) return;
-        const actualKey = empKeyByUpper[String(resolved.id).toUpperCase()];
-        if (actualKey && actualKey !== raw) {
-          EMP[code].m = actualKey;
-          remapped++;
-        }
-      });
-      if (remapped) console.info(`approval.html: resolved ${remapped} ManagerCode value(s) that were usernames/emails rather than EmpCodes, via the RBAC directory.`);
-    }
 
   } catch(err) {
     console.error("Failed to fetch config from Excel", err);

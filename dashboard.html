@@ -1147,15 +1147,15 @@ const API_ENDPOINTS = {
    bytes live in SharePoint/OneDrive instead of a spreadsheet cell.
    Until this is set, files remain only on the machine that uploaded them.
    See Document_Storage_Setup.md for the four-action flow. */
-const DOC_UPLOAD_ENDPOINT = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/11/workflows/e7dfaa71103547e4bff304a11b0391fe/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-HhA9WJckySh_iG_Eo11zswJ4YYuOjtlDrBW61Z0vbg";
+const DOC_UPLOAD_ENDPOINT = "REPLACE_WITH_DOC_UPLOAD_FLOW_URL";
 
 const EXCEL_GET_CONFIG_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3d8c890bdd85458eb4af7f65b3a49577/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jBQBA8EMi2xs9QMwg9Cpcb1f2GtFGrCxDJPXRwIvHUw";   // access directory (shared with index.html)
 
-const NOTIFY_ENDPOINT = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/20/workflows/1deb80ef2065427f80695911ba6645cf/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=paO0ipQx2vNb8MQWwEENoISpIQ682EXijBA8Go0Vbg4"; // Release 2.0 — email dispatch flow (NT-01..NT-09)
+const NOTIFY_ENDPOINT = "REPLACE_WITH_NOTIFY_FLOW_URL"; // Release 2.0 — email dispatch flow (NT-01..NT-09)
 API_ENDPOINTS.NOTIFY = NOTIFY_ENDPOINT;
 
 const API_KEY = ""; // optional shared secret sent as X-API-Key header — must match your flow's condition check
-const REQUEST_TIMEOUT_MS = 60000;
+const REQUEST_TIMEOUT_MS = 120000;
 const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024; // 3MB
 const AUTO_SYNC_INTERVAL_MS = 30000;
 const SESSION_MAX_AGE_MS = 8 * 60 * 60 * 1000;
