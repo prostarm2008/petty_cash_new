@@ -2861,20 +2861,54 @@ async function confirmTransfer() {
   } catch (e) { errMsg = e.message; }
 
   if (ALSO_PUSH_LEGACY_TRANSFER) {
-  try {
-    const legacy = { ...r };
-    legacy.chain = JSON.stringify(r.chain || []);
-    legacy.trail = JSON.stringify(r.trail || []);
-    legacy.versions = JSON.stringify(r.versions || []);
-    Object.keys(legacy).forEach(k => { if (legacy[k] == null) legacy[k] = ''; });
-    await fetch(EXCEL_TRANSFER_DATA_URL, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(legacy)
-    });
-  } catch (e) { 
-    console.error("Legacy Transfer to Power Automate Failed:", e); // <-- Add this
+    try {
+      const legacy = { ...r };
+      legacy.chain = JSON.stringify(r.chain || []);
+      legacy.trail = JSON.stringify(r.trail || []);
+      legacy.versions = JSON.stringify(r.versions || []);
+      
+      // 1. DATE FIELDS CLEANUP (Same as pushToExcel)
+      const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered', 'firstViewedAt', 'approvalDate', 'cancelledAt'];
+      dateFields.forEach(f => {
+          if (!legacy[f] || legacy[f] === "") {
+              delete legacy[f]; // Remove empty dates so Power Automate doesn't fail
+          } else if ((f === 'date' || f === 'invoiceDate') && legacy[f].includes('T')) {
+              legacy[f] = legacy[f].split('T')[0];
+          }
+      });
+
+      // 2. NUMBER FIELDS CLEANUP (Same as pushToExcel)
+      const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step'];
+      numFields.forEach(f => {
+          if (legacy[f] === "" || legacy[f] === null || legacy[f] === undefined) {
+              delete legacy[f]; // Remove empty numbers
+          } else if (!isNaN(legacy[f])) {
+              legacy[f] = Number(legacy[f]); // Ensure it's a strict number type
+          }
+      });
+
+      // 3. Fallback for remaining nulls
+      Object.keys(legacy).forEach(k => { if (legacy[k] == null) legacy[k] = ''; });
+
+      // 4. Send the cleaned payload
+      const res = await fetch(EXCEL_TRANSFER_DATA_URL, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(legacy)
+      });
+      
+      // 5. Catch Silent Errors
+      if (!res.ok) {
+         const errText = await res.text();
+         console.error("Legacy Transfer Rejected by Power Automate (Status " + res.status + "):", errText);
+      } else {
+         console.log("Legacy Transfer Triggered Successfully!");
+      }
+      
+    } catch (e) { 
+      console.error("Network/Fetch error during legacy transfer:", e);
+    }
   }
-}
 
   markAsTransferred(r);
   r.entered = new Date().toISOString();
