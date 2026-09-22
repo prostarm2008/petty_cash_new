@@ -1,6 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* ============================================================
+   IDBKV — IndexedDB-backed key/value store.
+   Drop-in replacement for localStorage's getItem/setItem/removeItem,
+   used so this app never writes data to browser localStorage.
+   All pages in this suite share the same database/store name so
+   data handed off between pages (petty cash records, approval
+   queues, reminders, etc.) still works exactly as before.
+   ============================================================ */
+window.IDBKV = (function(){
+  const DB_NAME = 'prostarm_app_store';
+  const STORE = 'kv';
+  const cache = new Map();
+  let db = null;
+
+  function openDb(){
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) { reject(new Error('IndexedDB not supported')); return; }
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore(STORE); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function loadAll(){
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const store = tx.objectStore(STORE);
+      const req = store.openCursor();
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) { cache.set(cursor.key, cursor.value); cursor.continue(); }
+        else resolve();
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function persistSet(key, value){
+    if (!db) return;
+    try {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(value, key);
+    } catch (e) { console.error('IDBKV write failed for', key, e); }
+  }
+
+  function persistRemove(key){
+    if (!db) return;
+    try {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(key);
+    } catch (e) { console.error('IDBKV delete failed for', key, e); }
+  }
+
+  const ready = openDb()
+    .then(d => { db = d; return loadAll(); })
+    .catch(e => { console.error('IDBKV: falling back to in-memory-only store', e); });
+
+  return {
+    ready,
+    getItem(key){ return cache.has(key) ? cache.get(key) : null; },
+    setItem(key, value){ cache.set(key, String(value)); persistSet(key, String(value)); },
+    removeItem(key){ cache.delete(key); persistRemove(key); }
+  };
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Enterprise Petty Cash Ledger Portal</title>
@@ -1782,7 +1849,8 @@ function startHeaderClock() {
 }
 
 /* --- INITIALIZATION & AUTH CHECK --- */
-window.addEventListener('DOMContentLoaded', () => {
+window.addEventListener('DOMContentLoaded', async () => {
+  await IDBKV.ready; // wait for the IndexedDB-backed store to warm up before touching any saved data
   // The login session already contains the resolved branch scope and
   // permissions.  Do not block first paint on a second directory download.
   // A later page refresh/login receives any changed mappings.
@@ -2095,9 +2163,9 @@ function updatePendingBadge() {
 }
 
 function getPendingQueue() {
-  try { return JSON.parse(localStorage.getItem(PENDING_QUEUE_KEY)) || []; } catch (e) { return []; }
+  try { return JSON.parse(IDBKV.getItem(PENDING_QUEUE_KEY)) || []; } catch (e) { return []; }
 }
-function setPendingQueue(q) { localStorage.setItem(PENDING_QUEUE_KEY, JSON.stringify(q)); updatePendingBadge(); }
+function setPendingQueue(q) { IDBKV.setItem(PENDING_QUEUE_KEY, JSON.stringify(q)); updatePendingBadge(); }
 function queueOperation(op) {
   const q = getPendingQueue();
   q.push(op);
@@ -2113,7 +2181,7 @@ const PC_HANDOFF_KEY = 'prostarm:pettycash:handoff';
 
 function drainRequisitionHandoff() {
   let queue = [];
-  try { queue = JSON.parse(localStorage.getItem(PC_HANDOFF_KEY) || '[]'); } catch (e) { queue = []; }
+  try { queue = JSON.parse(IDBKV.getItem(PC_HANDOFF_KEY) || '[]'); } catch (e) { queue = []; }
   if (!Array.isArray(queue) || !queue.length) return 0;
 
   let added = 0;
@@ -2126,9 +2194,9 @@ function drainRequisitionHandoff() {
     added++;
   });
 
-  localStorage.removeItem(PC_HANDOFF_KEY);
+  IDBKV.removeItem(PC_HANDOFF_KEY);
   if (added) {
-    try { localStorage.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES)); } catch (e) {}
+    try { IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES)); } catch (e) {}
     showToast(added + ' approved requisition' + (added === 1 ? '' : 's') + ' received into the petty cash sheet.', 'success');
   }
   return added;
@@ -2200,7 +2268,7 @@ function mergeServerWithPending(serverRows, cachedRows) {
 
 async function fetchBackendData() {
   if (!isConfigured(API_ENDPOINTS.GET_RECORDS)) {
-    STORED_ENTRIES = JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY)) || [];
+    STORED_ENTRIES = JSON.parse(IDBKV.getItem(LOCAL_ENTRIES_KEY)) || [];
     drainRequisitionHandoff();
     setSyncState('error', 'Local mode — not connected');
     renderApp();
@@ -2212,7 +2280,7 @@ async function fetchBackendData() {
   // several seconds, and there's no reason to make the user stare at a
   // spinner for data that's likely still accurate from last time.
   let cached = [];
-  try { cached = JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY)) || []; } catch (e) { cached = []; }
+  try { cached = JSON.parse(IDBKV.getItem(LOCAL_ENTRIES_KEY)) || []; } catch (e) { cached = []; }
 
   if (cached.length) {
     STORED_ENTRIES = cached;
@@ -2234,14 +2302,14 @@ async function fetchBackendData() {
     const serverRows = Array.isArray(data) ? data : (data.value || []);
     STORED_ENTRIES = mergeServerWithPending(serverRows, cached);
     drainRequisitionHandoff();
-    localStorage.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
+    IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
     lastSyncedAt = new Date();
     setSyncState('ok', 'Synced ' + lastSyncedAt.toLocaleTimeString());
     flushPendingQueue(false);
     flushPendingDocuments(true);   // retry any file still held locally
   } catch (error) {
     console.warn("API Error. Loading local data fallback.", error);
-    STORED_ENTRIES = cached.length ? cached : (JSON.parse(localStorage.getItem(LOCAL_ENTRIES_KEY)) || []);
+    STORED_ENTRIES = cached.length ? cached : (JSON.parse(IDBKV.getItem(LOCAL_ENTRIES_KEY)) || []);
     drainRequisitionHandoff();
     setSyncState('error', 'Offline — showing cached data');
     showToast('Could not reach the backend. Showing locally cached data.', 'error');
@@ -2835,7 +2903,7 @@ async function saveDrawerEntry(submitForApproval) {
     if (idx >= 0) STORED_ENTRIES[idx] = entry; else STORED_ENTRIES.push(entry);
   }
   try {
-    localStorage.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
+    IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
   } catch (err) {
     // Storage quota exceeded (large image attachments are the usual cause) — roll back so we don't
     // leave the in-memory list out of sync with what's actually persisted.
@@ -2877,7 +2945,7 @@ async function deleteEntry(id) {
   }
   askConfirm('Delete this record?', 'This action cannot be undone once synced.', async () => {
     STORED_ENTRIES = STORED_ENTRIES.filter(e => e.id !== id);
-    localStorage.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
+    IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
     renderApp();
     showToast('Record deleted.', 'ok');
 
@@ -3581,12 +3649,12 @@ const DEFAULT_CONFIG = {
 let APP_CONFIG = Object.assign({}, DEFAULT_CONFIG);
 function loadConfig() {
   try {
-    const raw = JSON.parse(localStorage.getItem(CONFIG_KEY));
+    const raw = JSON.parse(IDBKV.getItem(CONFIG_KEY));
     if (raw && typeof raw === 'object') APP_CONFIG = Object.assign({}, DEFAULT_CONFIG, raw);
   } catch (e) { APP_CONFIG = Object.assign({}, DEFAULT_CONFIG); }
   if (!APP_CONFIG.branchThresholds) APP_CONFIG.branchThresholds = {};
 }
-function saveConfig() { localStorage.setItem(CONFIG_KEY, JSON.stringify(APP_CONFIG)); }
+function saveConfig() { IDBKV.setItem(CONFIG_KEY, JSON.stringify(APP_CONFIG)); }
 
 /* --- WORKFLOW STATUS MODEL ---------------------------------------
    Seven persisted states. "Documents Uploaded" and "Approved by
@@ -4589,7 +4657,7 @@ function downloadSheet(aoa, filename, sheetName) {
    ================================================================ */
 function persistLocalEntries() {
   try {
-    localStorage.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
+    IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
     return true;
   } catch (e) {
     try {
@@ -4599,7 +4667,7 @@ function persistLocalEntries() {
         c.supportingDocs = r.supportingDocs.map(d => Object.assign({}, d, { data:'', evicted:true }));
         return c;
       });
-      localStorage.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(slim));
+      IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(slim));
       showToast('Offline cache is full — document files were not cached locally. They remain available after sync.', 'warn');
       return true;
     } catch (e2) {

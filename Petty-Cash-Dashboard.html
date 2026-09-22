@@ -1,6 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* ============================================================
+   IDBKV — IndexedDB-backed key/value store.
+   Drop-in replacement for localStorage's getItem/setItem/removeItem,
+   used so this app never writes data to browser localStorage.
+   All pages in this suite share the same database/store name so
+   data handed off between pages (petty cash records, approval
+   queues, reminders, etc.) still works exactly as before.
+   ============================================================ */
+window.IDBKV = (function(){
+  const DB_NAME = 'prostarm_app_store';
+  const STORE = 'kv';
+  const cache = new Map();
+  let db = null;
+
+  function openDb(){
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) { reject(new Error('IndexedDB not supported')); return; }
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore(STORE); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function loadAll(){
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const store = tx.objectStore(STORE);
+      const req = store.openCursor();
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) { cache.set(cursor.key, cursor.value); cursor.continue(); }
+        else resolve();
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function persistSet(key, value){
+    if (!db) return;
+    try {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(value, key);
+    } catch (e) { console.error('IDBKV write failed for', key, e); }
+  }
+
+  function persistRemove(key){
+    if (!db) return;
+    try {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(key);
+    } catch (e) { console.error('IDBKV delete failed for', key, e); }
+  }
+
+  const ready = openDb()
+    .then(d => { db = d; return loadAll(); })
+    .catch(e => { console.error('IDBKV: falling back to in-memory-only store', e); });
+
+  return {
+    ready,
+    getItem(key){ return cache.has(key) ? cache.get(key) : null; },
+    setItem(key, value){ cache.set(key, String(value)); persistSet(key, String(value)); },
+    removeItem(key){ cache.delete(key); persistRemove(key); }
+  };
+})();
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Branchwise Expense Dashboard — Prostarm</title>
@@ -427,6 +494,8 @@ tfoot td{font-weight:800;background:#eaf3f9;border-top:2px solid var(--blue);pos
 
 <script src="rbac.js"></script>
 <script>
+(async function(){
+await IDBKV.ready; /* wait for the IndexedDB-backed store to warm up before touching any petty-cash data */
 /* --- ACCESS GUARD -----------------------------------------------
    Must match the roles the Ledger shows the Analytics button to
    (HO Admin, Regional Manager, Finance Auditor). Restricting this to
@@ -503,7 +572,7 @@ const fmtDay = s => parseYmd(s).toLocaleDateString('en-IN', { day: '2-digit', mo
 
 function buildLiveData(){
   let raw;
-  try { raw = JSON.parse(localStorage.getItem(LIVE_ENTRIES_KEY)) || []; } catch(e){ raw = []; }
+  try { raw = JSON.parse(IDBKV.getItem(LIVE_ENTRIES_KEY)) || []; } catch(e){ raw = []; }
   if (!Array.isArray(raw) || !raw.length) return null;
 
   let expenses = raw.filter(e => e && e.direction === 'out' && e.branch && e.category && e.expenseType && (+e.expenseAmount) > 0);
@@ -1586,6 +1655,7 @@ tick(); setInterval(tick,1000);
 let rzT; window.addEventListener('resize',()=>{clearTimeout(rzT);rzT=setTimeout(render,140);});
 document.getElementById('stamp').textContent='Report generated '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
 render();
+})();
 </script>
 </body>
 </html>
