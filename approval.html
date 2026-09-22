@@ -1,73 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-/* ============================================================
-   IDBKV — IndexedDB-backed key/value store.
-   Drop-in replacement for localStorage's getItem/setItem/removeItem,
-   used so this app never writes data to browser localStorage.
-   All pages in this suite share the same database/store name so
-   data handed off between pages (petty cash records, approval
-   queues, reminders, etc.) still works exactly as before.
-   ============================================================ */
-window.IDBKV = (function(){
-  const DB_NAME = 'prostarm_app_store';
-  const STORE = 'kv';
-  const cache = new Map();
-  let db = null;
-
-  function openDb(){
-    return new Promise((resolve, reject) => {
-      if (!('indexedDB' in window)) { reject(new Error('IndexedDB not supported')); return; }
-      const req = indexedDB.open(DB_NAME, 1);
-      req.onupgradeneeded = () => { req.result.createObjectStore(STORE); };
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
-
-  function loadAll(){
-    return new Promise((resolve, reject) => {
-      const tx = db.transaction(STORE, 'readonly');
-      const store = tx.objectStore(STORE);
-      const req = store.openCursor();
-      req.onsuccess = (e) => {
-        const cursor = e.target.result;
-        if (cursor) { cache.set(cursor.key, cursor.value); cursor.continue(); }
-        else resolve();
-      };
-      req.onerror = () => reject(req.error);
-    });
-  }
-
-  function persistSet(key, value){
-    if (!db) return;
-    try {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put(value, key);
-    } catch (e) { console.error('IDBKV write failed for', key, e); }
-  }
-
-  function persistRemove(key){
-    if (!db) return;
-    try {
-      const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).delete(key);
-    } catch (e) { console.error('IDBKV delete failed for', key, e); }
-  }
-
-  const ready = openDb()
-    .then(d => { db = d; return loadAll(); })
-    .catch(e => { console.error('IDBKV: falling back to in-memory-only store', e); });
-
-  return {
-    ready,
-    getItem(key){ return cache.has(key) ? cache.get(key) : null; },
-    setItem(key, value){ cache.set(key, String(value)); persistSet(key, String(value)); },
-    removeItem(key){ cache.delete(key); persistRemove(key); }
-  };
-})();
-</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Petty Cash Requisition &amp; Approval — Prostarm</title>
@@ -358,6 +291,9 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
   tr.gb .tgl,tr.gd .tgl{display:inline-flex;vertical-align:middle;margin-right:8px}
   tr.gd .tgl{background:#fff;border-color:#bfdcec;color:var(--blue)}
   tr.gb .rt,tr.gd .rt{float:right;font-variant-numeric:tabular-nums}
+  .dec-note{font-size:11px;font-weight:700;border-radius:5px;padding:7px 10px;margin-top:7px;line-height:1.5}
+  .dec-note.ok{background:#eafbf3;border:1px solid #bfe6d3;color:#0a7d4f}
+  .dec-note.fwd{background:#fdf6e6;border:1px solid #f0dfb8;color:#8a5f10}
 
 </style>
 </head>
@@ -581,7 +517,11 @@ input.amt{font-size:16px;font-weight:800;color:var(--navy);font-variant-numeric:
 
     <div class="card">
       <h3>Live Requisition Tracker<em>every requisition and whose desk it is on</em></h3>
-      <div class="body" style="padding:0"><div class="tblwrap"><table class="tbl" id="trackTbl"></table></div></div>
+      <div class="body" style="padding:0">
+        <div class="grp-tools" style="padding:8px 10px 0"><span class="cnt" id="stuckNote"></span>
+          <span class="sp"></span>
+          <button type="button" onclick="repairStuckApprovals()">Repair stuck approvals</button></div>
+        <div class="tblwrap"><table class="tbl" id="trackTbl"></table></div></div>
     </div>
 
     <div class="card" style="margin-top:10px">
@@ -689,7 +629,7 @@ const HANDOFF_KEY="prostarm:pettycash:handoff";
 /* ================= SERVER STORAGE (Power Automate) ================= */
 let MEM = [];
 
-async function fetchJSON(url, opts = {}, timeoutMs = 120000) {
+async function fetchJSON(url, opts = {}, timeoutMs = 20000) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -1020,23 +960,72 @@ const LIMIT_APPROVER_ID      = 'prasenjitd';  // approves up to the limit
 const ABOVE_LIMIT_APPROVER_ID = '';           // blank = use APPROVER from the master
 
 /* Turn a username/email/EmpCode into the EmpCode the chain uses. */
+function normKey(s){ return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+
+/* Resolve an EmpCode / username / email / full name to a real EmpCode.
+   Returns '' when the person genuinely is not in the directory — it must
+   never invent a code, because an invented one gets pushed onto the chain
+   as a step nobody can ever action. */
 function resolveEmpCode(idOrName) {
   const raw = String(idOrName || '').trim();
   if (!raw) return '';
-  const up = raw.toUpperCase();
+  const up = raw.toUpperCase(), nk = normKey(raw);
+
   if (EMP[up]) return up;
-  if (window.ProstarmRBAC) {
+
+  if (window.ProstarmRBAC && ProstarmRBAC.userFor) {
     const u = ProstarmRBAC.userFor(raw);
+    if (u && u.id && EMP[String(u.id).toUpperCase()]) return String(u.id).toUpperCase();
     if (u && u.id) return String(u.id).toUpperCase();
   }
-  const hit = Object.keys(EMP).find(k =>
-    k.toUpperCase() === up ||
-    String((EMP[k] || {}).email || '').toUpperCase() === up ||
-    String((EMP[k] || {}).n || '').trim().toUpperCase() === up);
-  return hit || up;
+
+  const keys = Object.keys(EMP);
+  let hit = keys.find(k => normKey(k) === nk);                                    /* EmpCode */
+  if (!hit) hit = keys.find(k => normKey((EMP[k] || {}).email) === nk);           /* email */
+  if (!hit) hit = keys.find(k => normKey((EMP[k] || {}).username) === nk);        /* username */
+  if (!hit) hit = keys.find(k => normKey((EMP[k] || {}).n) === nk);               /* full name */
+  /* "prasenjitd" against "Prasenjit Das" — a login-style abbreviation of the
+     name. Only accepted when exactly one person matches. */
+  if (!hit) {
+    let near = keys.filter(k => {
+      const n = normKey((EMP[k] || {}).n);
+      return n && nk.length >= 6 && n.indexOf(nk) === 0;
+    });
+    /* Ignore records this app synthesised for a signed-in user; a real
+       directory row for the same person must win. */
+    if (near.length > 1) {
+      const real = near.filter(k => !(EMP[k] || {}).synthetic);
+      if (real.length) near = real;
+    }
+    if (near.length === 1) hit = near[0];
+  }
+  return hit || '';
 }
 
 function limitApprover()      { return resolveEmpCode(LIMIT_APPROVER_ID); }
+
+/* Spells out the value rule on the route panel, and says so loudly if the
+   limit approver cannot be found — otherwise a mis-typed code silently
+   sends every small request to the final authority. */
+function limitRuleNote(){
+  const amt  = chainAmount(null);
+  const low  = limitApprover();
+  const high = aboveLimitApprover();
+  if (!low) {
+    return '<br><br><b>\u26a0 Approval limit inactive:</b> "' + LIMIT_APPROVER_ID +
+           '" is not in the employee master, so every request goes to the final authority. ' +
+           'Set <code>LIMIT_APPROVER_ID</code> to a valid employee code.';
+  }
+  if (!amt) {
+    return '<br><br>Up to <b>' + money(FINAL_APPROVAL_LIMIT) + '</b> the route closes with <b>' +
+           nameOf(low) + '</b>. Above that it goes on to <b>' + nameOf(high) + '</b>.';
+  }
+  return (amt <= FINAL_APPROVAL_LIMIT)
+    ? '<br><br>At <b>' + money(amt) + '</b> this is within the <b>' + money(FINAL_APPROVAL_LIMIT) +
+      '</b> limit — <b>' + nameOf(low) + '</b> closes it, and the branch can then post it to Petty Cash.'
+    : '<br><br>At <b>' + money(amt) + '</b> this is above the <b>' + money(FINAL_APPROVAL_LIMIT) +
+      '</b> limit — it must go on to <b>' + nameOf(high) + '</b> for final approval.';
+}
 function aboveLimitApprover() { return ABOVE_LIMIT_APPROVER_ID ? resolveEmpCode(ABOVE_LIMIT_APPROVER_ID) : APPROVER; }
 
 /* Who closes a requisition of this value. */
@@ -1056,11 +1045,36 @@ function chainAmount(r) {
 /* Rebuild the tail of a chain so it ends at the right authority for the
    value. Everything before the terminal approver — the reporting line —
    is untouched. */
-function applyApprovalLimit(chain, amount) {
-  const low = limitApprover(), high = aboveLimitApprover();
+/* Will an approval by `who` at `amount` close the requisition outright?
+   The button label, the helper line and the action itself all read this,
+   so what the button promises is what actually happens. */
+function approvalClosesIt(amount, who){
+  const me = who || ME;
+  return (me === finalApproverFor(amount)) || isFinalApprover(me);
+}
+
+function applyApprovalLimit(chain, amount, keepCode) {
+  const src = (chain || []).filter(Boolean);
   const terminal = finalApproverFor(amount);
-  let out = (chain || []).filter(c => c && c !== low && c !== high);
-  if (terminal) out.push(terminal);
+
+  /* Unresolvable approver: leave the reporting line exactly as the directory
+     built it rather than bolting on a step that does not exist. */
+  if (!terminal) return src.slice();
+
+  const high = aboveLimitApprover();
+  const idx = src.indexOf(terminal);
+
+  if (idx > -1) {
+    /* Already in the reporting line — the route simply ENDS with them.
+       Appending here is what produced the duplicate "Unknown" step. */
+    return src.slice(0, idx + 1);
+  }
+
+  /* Not in the line: drop any higher authority that no longer applies,
+     then close with the right one. */
+  let out = src.filter(c => c !== high && c !== terminal);
+  if (keepCode && keepCode !== terminal && out.indexOf(keepCode) < 0) out.push(keepCode);
+  out.push(terminal);
   return out;
 }
 
@@ -1098,10 +1112,22 @@ function resolveSessionEmployee(su) {
   if (EMP[UP]) key = UP;
   else if (EMP[uname]) key = uname;
   else {
-    const hit = Object.keys(EMP).find(k =>
-      String(k).toUpperCase() === UP ||
-      (EMP[k].email && su.email && String(EMP[k].email).toLowerCase() === String(su.email).toLowerCase()));
-    if (hit) key = hit;
+    /* subjectId is the EmpCode the directory issued — try it before anything
+       else, then fall back to the full resolver (username, email, name). */
+    const bySubject = su.subjectId ? String(su.subjectId).trim().toUpperCase() : '';
+    if (bySubject && EMP[bySubject]) key = bySubject;
+    if (!key) {
+      const viaResolver = resolveEmpCode(su.subjectId || uname) ||
+                          resolveEmpCode(su.email || '') ||
+                          resolveEmpCode(su.name || '');
+      if (viaResolver && EMP[viaResolver]) key = viaResolver;
+    }
+    if (!key) {
+      const hit = Object.keys(EMP).find(k =>
+        String(k).toUpperCase() === UP ||
+        (EMP[k].email && su.email && String(EMP[k].email).toLowerCase() === String(su.email).toLowerCase()));
+      if (hit) key = hit;
+    }
   }
 
   const branch = su.branch && su.branch !== 'ALL'
@@ -1199,7 +1225,8 @@ function route(){
     ? "<b>"+cat+"</b> is a flagged head ("+FLAGGED[cat]+") — it reaches Final Approver marked for extra scrutiny."
     : (recs===0
         ? "This request goes straight to the <b>Final Approver</b> for approval — no recommendation stage."
-        : "<b>"+recs+"</b> recommendation"+(recs>1?"s":"")+" in the reporting line, then <b>Final Approver</b> approves. On approval it can be posted straight into the Expenses Entry Tracker."));
+        : "<b>"+recs+"</b> recommendation"+(recs>1?"s":"")+" in the reporting line, then <b>Final Approver</b> approves. On approval it can be posted straight into the Expenses Entry Tracker."))
+    + limitRuleNote();
   $("logisticsCard").classList.toggle("on",MOVEMENT_HEADS.indexOf(typeSel.value)>-1);
   const own=$("fBizCategory").value==="Branch";
   $("custReq").style.display=own?"none":"inline";
@@ -1485,7 +1512,7 @@ function logAction(r, code, from, to, before, after, comments){
 
 /* ---------- notification outbox (FR-30..FR-37) ---------- */
 const OUTBOX_KEY="prostarm:pettycash:outbox";
-function outbox(){ try{ return JSON.parse(IDBKV.getItem(OUTBOX_KEY)||"[]"); }catch(e){ return []; } }
+function outbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX_KEY)||"[]"); }catch(e){ return []; } }
 function queueMail(evt, r, toCode, extra){
   const box=outbox();
   const key=r.no+"|"+evt+"|"+(r.currentVersion||0)+"|"+toCode;
@@ -1508,7 +1535,7 @@ function queueMail(evt, r, toCode, extra){
     body:body, amount:liveAmount(r), branch:r.branch,
     queuedAt:new Date().toISOString(), status:"queued"
   });
-  try{ IDBKV.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
+  try{ localStorage.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
   if(typeof REMINDER_ENDPOINT!=="undefined"&&REMINDER_ENDPOINT) flushOutbox();
 }
 async function flushOutbox(){
@@ -1521,7 +1548,7 @@ async function flushOutbox(){
     if(!res.ok) throw new Error(res.status);
     due.forEach(x=>{ x.status="sent"; x.sentAt=new Date().toISOString(); });
   }catch(e){ due.forEach(x=>{ x.status="failed"; x.error=String(e.message||e); }); }
-  try{ IDBKV.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
+  try{ localStorage.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
   return due.length;
 }
 
@@ -1575,15 +1602,22 @@ function applyApprovalDecision(r, amount, onTable, rem){
   /* A reduced amount can drop the request under the approval limit, so the
      closing authority is re-checked before deciding whether this is final. */
   const beforeTail = (r.chain || []).slice(-1)[0];
-  r.chain = applyApprovalLimit(r.chain || [], amount);
-  if (r.step > r.chain.length - 1) r.step = Math.max(0, r.chain.length - 1);
+  r.chain = applyApprovalLimit(r.chain || [], amount, ME);
+  /* Re-point the step at whoever is acting, so a reshaped chain cannot leave
+     the pointer on a stale index. */
+  const myIdx = r.chain.indexOf(ME);
+  r.step = (myIdx >= 0) ? myIdx : Math.min(r.step, Math.max(0, r.chain.length - 1));
   const afterTail = (r.chain || []).slice(-1)[0];
   if (beforeTail !== afterTail) {
     logAction(r, "REROUTE", from, from, onTable, amount,
       "Closing authority changed to " + nameOf(afterTail) + " for " + money(amount));
   }
 
-  const isFinal = isFinalApprover(ME) || r.chain[r.chain.length - 1] === ME;
+  /* Finality follows the VALUE, not a position in the chain. Up to the limit
+     the limit approver closes it outright; above the limit only the final
+     authority can. Deciding from the chain meant a requisition carrying an
+     older chain came back round to the same person again. */
+  const isFinal = approvalClosesIt(amount, ME);
 
   if(isFinal){
     closeVersion(r,"APPROVED",ME,rem,"","");
@@ -1797,14 +1831,43 @@ function versionTable(r){
   return h+"</tbody></table></div>";
 }
 
+/* Recompute the button whenever the amount is edited — typing 2500 into a
+   request that was 800 changes who closes it, and the button has to say so. */
+function refreshDecisionButton(id){
+  const amtEl=$("amt-"+id), btn=$("btn-"+id), note=$("note-"+id);
+  if(!btn) return;
+  const r=(MEM||[]).find(x=>x.id===id);
+  const typed=amtEl?parseFloat(amtEl.value):NaN;
+  const amount=(!isNaN(typed)&&typed>0)?typed:(r?liveAmount(r):0);
+  const closes=approvalClosesIt(amount, ME);
+  btn.innerHTML = closes ? "Approve &amp; Close" : "Approve &amp; forward";
+  if(note){
+    note.innerHTML = closes
+      ? 'Closes the requisition at ' + money(amount) +
+        '. The branch can then post it to the Petty Cash application.'
+      : 'Above the ' + money(FINAL_APPROVAL_LIMIT) + ' limit &mdash; forwards to ' +
+        nameOf(aboveLimitApprover()) + ' for final approval.';
+    note.className = 'dec-note ' + (closes ? 'ok' : 'fwd');
+  }
+}
+
 function managerPanel(r){
   const onTable=liveAmount(r);
+  const closes=approvalClosesIt(onTable, ME);
   return '<div class="sub" style="margin-top:12px">Your decision</div>'+
     '<div class="act">'+
       '<div class="f" style="flex:0 0 150px"><label>Approve at (₹)</label>'+
-        '<input id="amt-'+r.id+'" type="number" min="1" step="0.01" value="'+onTable+'"></div>'+
-      '<button type="button" class="btn btn-go" onclick="actApprove(\''+r.id+'\')">'+
-        (isFinalApprover(ME)?"Final Approve":"Approve &amp; forward")+'</button>'+
+        '<input id="amt-'+r.id+'" type="number" min="1" step="0.01" value="'+onTable+'" '+
+        'oninput="refreshDecisionButton(\''+r.id+'\')"></div>'+
+      '<button type="button" class="btn btn-go" id="btn-'+r.id+'" onclick="actApprove(\''+r.id+'\')">'+
+        (closes?"Approve &amp; Close":"Approve &amp; forward")+'</button>'+
+    '</div>'+
+    '<div class="dec-note '+(closes?'ok':'fwd')+'" id="note-'+r.id+'">'+
+      (closes
+        ? 'Closes the requisition at '+money(onTable)+
+          '. The branch can then post it to the Petty Cash application.'
+        : 'Above the '+money(FINAL_APPROVAL_LIMIT)+' limit &mdash; forwards to '+
+          nameOf(aboveLimitApprover())+' for final approval.')+
     '</div>'+
     '<div class="rework-box">'+
       '<b>Not satisfied with the rate? Send it back for rework.</b>'+
@@ -1897,7 +1960,7 @@ const TRANSFER_MAP_KEY = "prostarm:pettycash:transferred";
 
 function getTransferredMap() {
   try {
-    return JSON.parse(IDBKV.getItem(TRANSFER_MAP_KEY) || "{}");
+    return JSON.parse(localStorage.getItem(TRANSFER_MAP_KEY) || "{}");
   } catch (e) {
     return {};
   }
@@ -1914,7 +1977,7 @@ function markAsTransferred(r) {
   map[r.no] = { at: new Date().toISOString(), by: ME };
   map[r.id] = { at: new Date().toISOString(), by: ME };
   try {
-    IDBKV.setItem(TRANSFER_MAP_KEY, JSON.stringify(map));
+    localStorage.setItem(TRANSFER_MAP_KEY, JSON.stringify(map));
   } catch (e) {}
   r.transferred = true;
 }
@@ -2166,7 +2229,7 @@ async function postToTracker(no){
   if(r.status!==ST.FINAL){ alert("Only finally approved requisitions can be posted."); return; }
   if(isConverted(r)&&!confirm("This was already posted. Open it again?")) return;
   const p=toPayload(r);
-  try{ sessionStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); IDBKV.setItem(HANDOFF_KEY,JSON.stringify(p)); }catch(e){}
+  try{ sessionStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); localStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); }catch(e){}
   window.open(TRACKER_URL+"?req="+b64(p),"_blank");
 }
 
@@ -2189,7 +2252,7 @@ function pendingSince(r){
   return t.length?t[t.length-1].ts:r.raised;
 }
 function conversionMap(){
-  try{ return JSON.parse(IDBKV.getItem("prostarm:pettycash:converted")||"{}"); }catch(e){ return {}; }
+  try{ return JSON.parse(localStorage.getItem("prostarm:pettycash:converted")||"{}"); }catch(e){ return {}; }
 }
 function isConverted(r){
   if(r.entered) return true;
@@ -2214,8 +2277,8 @@ function pendingWith(r){
           role:(r.status===ST.REJ_REWORK?"Branch Person (rework)":(isFinalApprover(c)?"Final Approver":"Reporting Manager")),
           email:(EMP[c].email||EMP[c].n.toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@prostarm.com")};
 }
-function readReminders(){ try{ return JSON.parse(IDBKV.getItem(SLA_KEY)||"[]"); }catch(e){ return []; } }
-function writeReminders(l){ try{ IDBKV.setItem(SLA_KEY,JSON.stringify(l)); }catch(e){} }
+function readReminders(){ try{ return JSON.parse(localStorage.getItem(SLA_KEY)||"[]"); }catch(e){ return []; } }
+function writeReminders(l){ try{ localStorage.setItem(SLA_KEY,JSON.stringify(l)); }catch(e){} }
 
 async function slaSweep(silent){
   const list=await loadAll();
@@ -2462,6 +2525,74 @@ function renderTracker(){
   host.innerHTML = t + '</tbody>';
 }
 
+/* ----------------------------------------------------------
+   Requisitions approved under the earlier rule can be left open
+   even though the limit approver already signed them, or pointing
+   at a step that no longer exists. Both are recoverable from the
+   trail — the approval genuinely happened, only the status failed
+   to follow. Nothing is approved here that was not approved before.
+   ---------------------------------------------------------- */
+function findStuckApprovals(list){
+  const low = limitApprover();
+  return (list || []).filter(r => {
+    if (isTerminal(r)) return false;
+    const amt = liveAmount(r);
+    if (amt > FINAL_APPROVAL_LIMIT) {
+      /* above the limit: only orphaned pointers are repairable */
+      return !!(r.chain && (r.step > r.chain.length - 1 || !r.chain[r.step]));
+    }
+    /* at or under the limit: closed if the limit approver already approved */
+    return (r.trail || []).some(t => t.code === low &&
+      (t.act === 'APPROVE' || t.act === 'FINAL_APPROVE' || t.act === 'Approved'));
+  });
+}
+
+async function repairStuckApprovals(){
+  const list = await loadAll();
+  const stuck = findStuckApprovals(list);
+  if (!stuck.length) { alert('Nothing to repair — no requisition is stranded.'); return; }
+
+  const low = limitApprover();
+  const lines = stuck.map(r => r.no + ' \u00b7 ' + money(liveAmount(r)) + ' \u00b7 ' + r.status).join('\n');
+  if (!confirm('Repair ' + stuck.length + ' stranded requisition(s)?\n\n' + lines +
+               '\n\nRequests up to ' + money(FINAL_APPROVAL_LIMIT) +
+               ' already approved by ' + nameOf(low) + ' will be closed.')) return;
+
+  let fixed = 0;
+  for (const r of stuck) {
+    const amt = liveAmount(r);
+    if (amt <= FINAL_APPROVAL_LIMIT) {
+      const from = r.status;
+      r.chain = applyApprovalLimit(r.chain || [], amt, low);
+      r.step = Math.max(0, r.chain.indexOf(low));
+      r.status = ST.FINAL;
+      r.approvedAmount = amt; r.expenseAmount = amt;
+      r.approvalDate = r.approvalDate || new Date().toISOString();
+      r.approvedBy = low;
+      r.hoApproval = nameOf(low) + ' (' + low + ') \u00b7 approved within the ' +
+                     money(FINAL_APPROVAL_LIMIT) + ' limit \u00b7 ' + r.no;
+      r.currentOwner = ''; r.pendingSince = '';
+      logAction(r, 'REPAIR', from, ST.FINAL, amt, amt,
+        'Closed on repair: already approved by ' + nameOf(low) + ' within the limit.');
+    } else {
+      const from = r.status;
+      const high = aboveLimitApprover();
+      r.chain = applyApprovalLimit(r.chain || [], amt);
+      r.step = Math.max(0, r.chain.indexOf(high));
+      r.currentOwner = r.chain[r.step] || high;
+      r.status = ST.APPROVED;
+      r.pendingSince = r.pendingSince || new Date().toISOString();
+      logAction(r, 'REPAIR', from, r.status, amt, amt,
+        'Re-pointed to ' + nameOf(r.currentOwner) + ' \u2014 above the limit.');
+    }
+    await pushToExcel(r, true);
+    fixed++;
+  }
+  invalidateRequisitions();
+  await refresh();
+  alert(fixed + ' requisition(s) repaired.');
+}
+
 async function renderAdmin(){
   if(ADMINS.indexOf(ME)<0) return;
   const list=await loadAll();
@@ -2479,6 +2610,12 @@ async function renderAdmin(){
 
   window.__trackRows = list.slice();
   renderTracker();
+  const stuckEl = $("stuckNote");
+  if (stuckEl) {
+    const n = findStuckApprovals(list).length;
+    stuckEl.textContent = n ? (n + ' requisition(s) look stranded') : 'No stranded requisitions';
+    stuckEl.style.color = n ? 'var(--red)' : 'var(--muted)';
+  }
 
   let c='<thead><tr><th>Requisition ID</th><th>Branch</th><th>Category</th><th class="num">Approved</th>'+
         '<th>Conversion</th><th>Entered</th></tr></thead><tbody>';
@@ -2565,7 +2702,6 @@ function setupBranchField(e) {
 
 /* ================= APP INITIALIZATION ================= */
 async function initializeApp() {
-  await IDBKV.ready; /* wait for the IndexedDB-backed store to warm up before touching any saved data */
   let SESSION_USER = null;
   try { 
     SESSION_USER = JSON.parse(sessionStorage.getItem('activeUser') || 'null'); 
@@ -2709,7 +2845,7 @@ document.addEventListener("DOMContentLoaded", initializeApp);
 
 const PETTY_CASH_ADD_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/42c17ce44a3947458f3b837bf6a823db/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=EqmQYo67GkiuIdzxawvG_vuZGhNFWwChcg_VifsIisg";
 
-const ALSO_PUSH_LEGACY_TRANSFER = true;
+const ALSO_PUSH_LEGACY_TRANSFER = false;
 
 const PC_HANDOFF_KEY = "prostarm:pettycash:handoff";
 const PC_MAX_DOC_BYTES = 3 * 1024 * 1024;
@@ -2911,9 +3047,9 @@ async function confirmTransfer() {
   btn.disabled = true; btn.textContent = 'Transferring…';
 
   try {
-    const q = JSON.parse(IDBKV.getItem(PC_HANDOFF_KEY) || '[]');
+    const q = JSON.parse(localStorage.getItem(PC_HANDOFF_KEY) || '[]');
     q.push(rec);
-    IDBKV.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
+    localStorage.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
   } catch (e) { }
 
   let serverOk = false, errMsg = '';
@@ -2934,48 +3070,12 @@ async function confirmTransfer() {
       legacy.chain = JSON.stringify(r.chain || []);
       legacy.trail = JSON.stringify(r.trail || []);
       legacy.versions = JSON.stringify(r.versions || []);
-      
-      // 1. DATE FIELDS CLEANUP (Same as pushToExcel)
-      const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered', 'firstViewedAt', 'approvalDate', 'cancelledAt'];
-      dateFields.forEach(f => {
-          if (!legacy[f] || legacy[f] === "") {
-              delete legacy[f]; // Remove empty dates so Power Automate doesn't fail
-          } else if ((f === 'date' || f === 'invoiceDate') && legacy[f].includes('T')) {
-              legacy[f] = legacy[f].split('T')[0];
-          }
-      });
-
-      // 2. NUMBER FIELDS CLEANUP (Same as pushToExcel)
-      const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step'];
-      numFields.forEach(f => {
-          if (legacy[f] === "" || legacy[f] === null || legacy[f] === undefined) {
-              delete legacy[f]; // Remove empty numbers
-          } else if (!isNaN(legacy[f])) {
-              legacy[f] = Number(legacy[f]); // Ensure it's a strict number type
-          }
-      });
-
-      // 3. Fallback for remaining nulls
       Object.keys(legacy).forEach(k => { if (legacy[k] == null) legacy[k] = ''; });
-
-      // 4. Send the cleaned payload
-      const res = await fetch(EXCEL_TRANSFER_DATA_URL, {
-        method: 'POST', 
-        headers: { 'Content-Type': 'application/json' },
+      await fetch(EXCEL_TRANSFER_DATA_URL, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(legacy)
       });
-      
-      // 5. Catch Silent Errors
-      if (!res.ok) {
-         const errText = await res.text();
-         console.error("Legacy Transfer Rejected by Power Automate (Status " + res.status + "):", errText);
-      } else {
-         console.log("Legacy Transfer Triggered Successfully!");
-      }
-      
-    } catch (e) { 
-      console.error("Network/Fetch error during legacy transfer:", e);
-    }
+    } catch (e) { }
   }
 
   markAsTransferred(r);
