@@ -2976,6 +2976,97 @@ function exportCSVPayload(filename, dataset) {
   URL.revokeObjectURL(url);
 }
 
+/* ==========================================================
+   EXPORT ANALYSIS SHEETS
+   Built from the same dataset the detail sheet uses, so the
+   filters in force on screen apply to every sheet alike.
+   ========================================================== */
+
+/* Branch-wise debit / credit totals. */
+function buildBranchSummaryRows(dataset) {
+  const by = {};
+  (dataset || []).forEach(e => {
+    const code = e.branch || 'Unassigned';
+    if (!by[code]) by[code] = { credit: 0, debit: 0, cr: 0, dr: 0, last: '' };
+    const g = by[code];
+    if (e.direction === 'in') { g.credit += Number(e.receivedAmount) || 0; g.cr++; }
+    else                      { g.debit  += Number(e.expenseAmount)  || 0; g.dr++; }
+    if (e.date && e.date > g.last) g.last = e.date;
+  });
+
+  const rows = [[
+    'Branch Code', 'Branch Name', 'Region',
+    'Credit (Cash Received)', 'Debit (Cash Spent)', 'Closing Balance',
+    'Credit Entries', 'Debit Entries', 'Total Entries', 'Last Transaction'
+  ]];
+
+  let tc = 0, td = 0, tcr = 0, tdr = 0;
+  Object.keys(by).sort((a, b) => branchName(a).localeCompare(branchName(b))).forEach(code => {
+    const g = by[code];
+    tc += g.credit; td += g.debit; tcr += g.cr; tdr += g.dr;
+    rows.push([
+      code, branchName(code), regionName(regionOf(code)),
+      g.credit, g.debit, g.credit - g.debit,
+      g.cr, g.dr, g.cr + g.dr,
+      g.last ? formatDateDMY(g.last) : ''
+    ]);
+  });
+  rows.push([]);
+  rows.push(['TOTAL', '', '', tc, td, tc - td, tcr, tdr, tcr + tdr, '']);
+  return rows;
+}
+
+/* Branch-wise LAST credit — the most recent replenishment per branch.
+   Branches that have never been funded are listed too, because a missing
+   top-up is exactly what this sheet is for. */
+function buildLastCreditRows(dataset) {
+  const by = {};
+  (dataset || []).forEach(e => {
+    if (e.direction !== 'in') return;
+    const code = e.branch || 'Unassigned';
+    const cur = by[code];
+    /* Latest by date; same date resolved by the later entry in the file. */
+    if (!cur || String(e.date || '') >= String(cur.date || '')) by[code] = e;
+  });
+
+  const rows = [[
+    'Branch Code', 'Branch Name', 'Region',
+    'Last Credit Date', 'Last Credit Amount', 'UTR / Reference',
+    'Received From', 'Remark', 'Days Since Last Credit',
+    'Total Credits', 'Current Balance'
+  ]];
+
+  const today = new Date();
+  const codes = (SCOPED_BRANCHES && SCOPED_BRANCHES.length)
+    ? SCOPED_BRANCHES.map(b => b.code)
+    : Object.keys(by);
+
+  codes.sort((a, b) => branchName(a).localeCompare(branchName(b))).forEach(code => {
+    const e = by[code];
+    let credits = 0, debits = 0;
+    (dataset || []).forEach(x => {
+      if (x.branch !== code) return;
+      if (x.direction === 'in') credits += Number(x.receivedAmount) || 0;
+      else debits += Number(x.expenseAmount) || 0;
+    });
+
+    if (!e) {
+      rows.push([code, branchName(code), regionName(regionOf(code)),
+                 'No credit received', '', '', '', '', '', credits, credits - debits]);
+      return;
+    }
+    const d = new Date(e.date);
+    const days = isNaN(d.getTime()) ? '' : Math.max(0, Math.floor((today - d) / 86400000));
+    rows.push([
+      code, branchName(code), regionName(regionOf(code)),
+      formatDateDMY(e.date), Number(e.receivedAmount) || 0,
+      e.receivedUTR || '', e.person || '', e.remark || '',
+      days, credits, credits - debits
+    ]);
+  });
+  return rows;
+}
+
 function exportExcelPayload(filename, dataset, branchLabel) {
   if (typeof XLSX === 'undefined') { showToast('Excel export library failed to load. Try CSV export instead.', 'error'); return; }
   const wb = XLSX.utils.book_new();
@@ -2997,6 +3088,20 @@ function exportExcelPayload(filename, dataset, branchLabel) {
   ];
   const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
   XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+  /* Branch-wise debit & credit */
+  const bRows = buildBranchSummaryRows(dataset);
+  const wsBranch = XLSX.utils.aoa_to_sheet(bRows);
+  wsBranch['!cols'] = [{wch:16},{wch:18},{wch:14},{wch:20},{wch:18},{wch:17},
+                       {wch:14},{wch:13},{wch:12},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, wsBranch, 'Branch Summary');
+
+  /* Branch-wise last credit */
+  const lRows = buildLastCreditRows(dataset);
+  const wsLast = XLSX.utils.aoa_to_sheet(lRows);
+  wsLast['!cols'] = [{wch:16},{wch:18},{wch:14},{wch:17},{wch:18},{wch:20},
+                     {wch:18},{wch:28},{wch:20},{wch:14},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, wsLast, 'Last Credit');
 
   XLSX.writeFile(wb, filename);
 }

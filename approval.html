@@ -1048,9 +1048,53 @@ function chainAmount(r) {
 /* Will an approval by `who` at `amount` close the requisition outright?
    The button label, the helper line and the action itself all read this,
    so what the button promises is what actually happens. */
+/* Records written before the resolver fix carry a literal code that matches
+   nobody — "PRASENJITD" instead of PM1267. Treat a step as mine when the
+   stored code resolves to me, so those requisitions become actionable again
+   without anyone re-keying the sheet. */
+function sameApprover(a, b){
+  if (!a || !b) return false;
+  const A = String(a).trim().toUpperCase(), B = String(b).trim().toUpperCase();
+  if (A === B) return true;
+  const ra = EMP[A] ? A : resolveEmpCode(A);
+  const rb = EMP[B] ? B : resolveEmpCode(B);
+  return !!ra && ra === rb;
+}
+function isMyTurn(r){
+  return !!(r && r.chain && sameApprover(r.chain[r.step], ME));
+}
+
 function approvalClosesIt(amount, who){
   const me = who || ME;
   return (me === finalApproverFor(amount)) || isFinalApprover(me);
+}
+
+/* Map every entry in a stored chain onto a real employee code, dropping
+   anything that resolves to nobody. Duplicates collapse, order is kept. */
+function normaliseChainCodes(chain){
+  const out = [];
+  (chain || []).forEach(c => {
+    if (!c) return;
+    const up = String(c).trim().toUpperCase();
+    let code = EMP[up] ? up : resolveEmpCode(up);
+    if (!code || !EMP[code]) return;          // phantom — drop it
+    if (out.indexOf(code) < 0) out.push(code);
+  });
+  return out;
+}
+
+/* The first approver in the chain who has not yet approved. */
+function nextUnapprovedStep(r, chain){
+  const acted = new Set();
+  (r.trail || []).forEach(t => {
+    if (['APPROVE','FINAL_APPROVE','Approved','RECOMMEND'].indexOf(t.act) > -1) {
+      const c = EMP[String(t.code || '').toUpperCase()] ? String(t.code).toUpperCase()
+                                                        : resolveEmpCode(t.code);
+      if (c) acted.add(c);
+    }
+  });
+  for (let i = 0; i < chain.length; i++) if (!acted.has(chain[i])) return i;
+  return chain.length;                        // everyone has approved
 }
 
 function applyApprovalLimit(chain, amount, keepCode) {
@@ -1561,7 +1605,7 @@ async function markUnderReview(id){
   const r=list.find(x=>x.id===id);
   if(!r) return;
   if(r.status!==ST.SUBMITTED&&r.status!==ST.REWORKED) return;
-  if(!r.chain||r.chain[r.step]!==ME) return;
+  if(!isMyTurn(r)) return;
   const from=r.status;
   r.status=ST.UNDER_REVIEW;
   r.firstViewedAt=r.firstViewedAt||new Date().toISOString();
@@ -1574,7 +1618,7 @@ async function actApprove(id){
   const list=await loadAll();
   const r=list.find(x=>x.id===id);
   if(!r) return guardFail();
-  if(ACTIONABLE.indexOf(r.status)<0||r.chain[r.step]!==ME) return guardFail();
+  if(ACTIONABLE.indexOf(r.status)<0||!isMyTurn(r)) return guardFail();
 
   const amtEl=$("amt-"+id), rem=($("rem-"+id)?$("rem-"+id).value.trim():"");
   const typed=amtEl?parseFloat(amtEl.value):NaN;
@@ -1602,7 +1646,9 @@ function applyApprovalDecision(r, amount, onTable, rem){
   /* A reduced amount can drop the request under the approval limit, so the
      closing authority is re-checked before deciding whether this is final. */
   const beforeTail = (r.chain || []).slice(-1)[0];
-  r.chain = applyApprovalLimit(r.chain || [], amount, ME);
+  /* Rewrite any unresolvable codes to real employees before reshaping, so a
+     record heals the moment someone acts on it. */
+  r.chain = applyApprovalLimit(normaliseChainCodes(r.chain), amount, ME);
   /* Re-point the step at whoever is acting, so a reshaped chain cannot leave
      the pointer on a stale index. */
   const myIdx = r.chain.indexOf(ME);
@@ -1647,7 +1693,7 @@ async function actRejectRework(id){
   const list=await loadAll();
   const r=list.find(x=>x.id===id);
   if(!r) return guardFail();
-  if(ACTIONABLE.indexOf(r.status)<0||r.chain[r.step]!==ME) return guardFail();
+  if(ACTIONABLE.indexOf(r.status)<0||!isMyTurn(r)) return guardFail();
 
   const tgt=parseFloat(($("tgt-"+id)||{}).value);
   const reason=(($("rsn-"+id)||{}).value)||"";
@@ -1790,11 +1836,17 @@ function statusTag(r){
   let pendingWith = "";
   if (r.chain && r.chain[r.step]) {
       const currentOwnerCode = String(r.chain[r.step]).trim().toUpperCase();
-      
-      if (currentOwnerCode === ME) {
+
+      /* Compare through the resolver, so a record still carrying an old
+         unresolved code reads "Pending with You" rather than showing that
+         raw code back to the very person who has to action it. */
+      if (sameApprover(currentOwnerCode, ME)) {
           pendingWith = "You";
       } else {
-          pendingWith = nameOf(r.chain[r.step]).split(" ")[0];
+          const real = EMP[currentOwnerCode] ? currentOwnerCode : resolveEmpCode(currentOwnerCode);
+          pendingWith = (real && EMP[real])
+            ? nameOf(real).split(" ")[0]
+            : nameOf(r.chain[r.step]).split(" ")[0];
       }
   }
 
@@ -1985,7 +2037,7 @@ function markAsTransferred(r) {
 function transferData(id) { openTransferModal(id); }
 
 function card(r,actable){
-  const withMe   = ACTIONABLE.indexOf(r.status)>-1 && r.chain && r.chain[r.step]===ME;
+  const withMe   = ACTIONABLE.indexOf(r.status)>-1 && isMyTurn(r);
   const myRework = r.status===ST.REJ_REWORK && r.by===ME;
   const canRecall= (r.status===ST.SUBMITTED||r.status===ST.REWORKED) && r.by===ME && !r.firstViewedAt;
   const canPost  = (r.status===ST.FINAL)&&(r.by===ME||ADMINS.indexOf(ME)>-1);
@@ -2093,7 +2145,7 @@ async function bulkAct(){
     /* The old test was `r.status === "Pending"` — a status this app never
        sets, so the loop matched nothing and the button did nothing. Use the
        same gate the single approve button uses. */
-    if (ACTIONABLE.indexOf(r.status) < 0 || String(r.chain[r.step]).trim().toUpperCase() !== ME) {
+    if (ACTIONABLE.indexOf(r.status) < 0 || !sameApprover(r.chain[r.step], ME)) {
       skipped++;
       problems.push((r.no || id) + ": " + (isTerminal(r) ? "already closed" : "not awaiting you"));
       continue;
@@ -2536,14 +2588,21 @@ function findStuckApprovals(list){
   const low = limitApprover();
   return (list || []).filter(r => {
     if (isTerminal(r)) return false;
-    const amt = liveAmount(r);
-    if (amt > FINAL_APPROVAL_LIMIT) {
-      /* above the limit: only orphaned pointers are repairable */
-      return !!(r.chain && (r.step > r.chain.length - 1 || !r.chain[r.step]));
+    const chain = r.chain || [];
+
+    /* A code in the chain that matches nobody in the directory — the record
+       is parked on a step no one can ever action. */
+    if (chain.some(c => c && !EMP[String(c).trim().toUpperCase()])) return true;
+
+    /* Pointer past the end of the chain. */
+    if (r.step > chain.length - 1 || !chain[r.step]) return true;
+
+    /* At or under the limit and the limit approver has already approved. */
+    if (liveAmount(r) <= FINAL_APPROVAL_LIMIT && low) {
+      return (r.trail || []).some(t => sameApprover(t.code, low) &&
+        ['APPROVE','FINAL_APPROVE','Approved'].indexOf(t.act) > -1);
     }
-    /* at or under the limit: closed if the limit approver already approved */
-    return (r.trail || []).some(t => t.code === low &&
-      (t.act === 'APPROVE' || t.act === 'FINAL_APPROVE' || t.act === 'Approved'));
+    return false;
   });
 }
 
@@ -2560,30 +2619,34 @@ async function repairStuckApprovals(){
 
   let fixed = 0;
   for (const r of stuck) {
-    const amt = liveAmount(r);
-    if (amt <= FINAL_APPROVAL_LIMIT) {
-      const from = r.status;
-      r.chain = applyApprovalLimit(r.chain || [], amt, low);
-      r.step = Math.max(0, r.chain.indexOf(low));
+    const amt  = liveAmount(r);
+    const from = r.status;
+    const had  = (r.chain || []).join(' > ');
+
+    /* Rewrite unresolvable codes to real employees, then re-apply the limit. */
+    r.chain = applyApprovalLimit(normaliseChainCodes(r.chain), amt);
+    const idx = nextUnapprovedStep(r, r.chain);
+
+    if (idx >= r.chain.length) {
+      /* Everyone in the route has approved — close at the sanctioned value. */
+      const closer = r.chain[r.chain.length - 1] || low;
+      r.step = Math.max(0, r.chain.length - 1);
       r.status = ST.FINAL;
       r.approvedAmount = amt; r.expenseAmount = amt;
       r.approvalDate = r.approvalDate || new Date().toISOString();
-      r.approvedBy = low;
-      r.hoApproval = nameOf(low) + ' (' + low + ') \u00b7 approved within the ' +
-                     money(FINAL_APPROVAL_LIMIT) + ' limit \u00b7 ' + r.no;
+      r.approvedBy = closer;
+      r.hoApproval = nameOf(closer) + ' (' + closer + ') \u00b7 ' + r.no;
       r.currentOwner = ''; r.pendingSince = '';
       logAction(r, 'REPAIR', from, ST.FINAL, amt, amt,
-        'Closed on repair: already approved by ' + nameOf(low) + ' within the limit.');
+        'Closed on repair \u2014 route complete. Chain corrected from: ' + had);
     } else {
-      const from = r.status;
-      const high = aboveLimitApprover();
-      r.chain = applyApprovalLimit(r.chain || [], amt);
-      r.step = Math.max(0, r.chain.indexOf(high));
-      r.currentOwner = r.chain[r.step] || high;
-      r.status = ST.APPROVED;
+      /* Park it with whoever genuinely owes a decision. */
+      r.step = idx;
+      r.currentOwner = r.chain[idx];
+      r.status = (r.status === ST.REWORKED) ? ST.REWORKED : ST.SUBMITTED;
       r.pendingSince = r.pendingSince || new Date().toISOString();
       logAction(r, 'REPAIR', from, r.status, amt, amt,
-        'Re-pointed to ' + nameOf(r.currentOwner) + ' \u2014 above the limit.');
+        'Re-pointed to ' + nameOf(r.currentOwner) + '. Chain corrected from: ' + had);
     }
     await pushToExcel(r, true);
     fixed++;
