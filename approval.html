@@ -1,6 +1,73 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>
+/* ============================================================
+   IDBKV — IndexedDB-backed key/value store.
+   Drop-in replacement for localStorage's getItem/setItem/removeItem,
+   used so this app never writes data to browser localStorage.
+   All pages in this suite share the same database/store name so
+   data handed off between pages (petty cash records, approval
+   queues, reminders, etc.) still works exactly as before.
+   ============================================================ */
+window.IDBKV = (function(){
+  const DB_NAME = 'prostarm_app_store';
+  const STORE = 'kv';
+  const cache = new Map();
+  let db = null;
+
+  function openDb(){
+    return new Promise((resolve, reject) => {
+      if (!('indexedDB' in window)) { reject(new Error('IndexedDB not supported')); return; }
+      const req = indexedDB.open(DB_NAME, 1);
+      req.onupgradeneeded = () => { req.result.createObjectStore(STORE); };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function loadAll(){
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(STORE, 'readonly');
+      const store = tx.objectStore(STORE);
+      const req = store.openCursor();
+      req.onsuccess = (e) => {
+        const cursor = e.target.result;
+        if (cursor) { cache.set(cursor.key, cursor.value); cursor.continue(); }
+        else resolve();
+      };
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  function persistSet(key, value){
+    if (!db) return;
+    try {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).put(value, key);
+    } catch (e) { console.error('IDBKV write failed for', key, e); }
+  }
+
+  function persistRemove(key){
+    if (!db) return;
+    try {
+      const tx = db.transaction(STORE, 'readwrite');
+      tx.objectStore(STORE).delete(key);
+    } catch (e) { console.error('IDBKV delete failed for', key, e); }
+  }
+
+  const ready = openDb()
+    .then(d => { db = d; return loadAll(); })
+    .catch(e => { console.error('IDBKV: falling back to in-memory-only store', e); });
+
+  return {
+    ready,
+    getItem(key){ return cache.has(key) ? cache.get(key) : null; },
+    setItem(key, value){ cache.set(key, String(value)); persistSet(key, String(value)); },
+    removeItem(key){ cache.delete(key); persistRemove(key); }
+  };
+})();
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Petty Cash Requisition &amp; Approval — Prostarm</title>
@@ -1556,7 +1623,7 @@ function logAction(r, code, from, to, before, after, comments){
 
 /* ---------- notification outbox (FR-30..FR-37) ---------- */
 const OUTBOX_KEY="prostarm:pettycash:outbox";
-function outbox(){ try{ return JSON.parse(localStorage.getItem(OUTBOX_KEY)||"[]"); }catch(e){ return []; } }
+function outbox(){ try{ return JSON.parse(IDBKV.getItem(OUTBOX_KEY)||"[]"); }catch(e){ return []; } }
 function queueMail(evt, r, toCode, extra){
   const box=outbox();
   const key=r.no+"|"+evt+"|"+(r.currentVersion||0)+"|"+toCode;
@@ -1579,7 +1646,7 @@ function queueMail(evt, r, toCode, extra){
     body:body, amount:liveAmount(r), branch:r.branch,
     queuedAt:new Date().toISOString(), status:"queued"
   });
-  try{ localStorage.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
+  try{ IDBKV.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
   if(typeof REMINDER_ENDPOINT!=="undefined"&&REMINDER_ENDPOINT) flushOutbox();
 }
 async function flushOutbox(){
@@ -1592,7 +1659,7 @@ async function flushOutbox(){
     if(!res.ok) throw new Error(res.status);
     due.forEach(x=>{ x.status="sent"; x.sentAt=new Date().toISOString(); });
   }catch(e){ due.forEach(x=>{ x.status="failed"; x.error=String(e.message||e); }); }
-  try{ localStorage.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
+  try{ IDBKV.setItem(OUTBOX_KEY,JSON.stringify(box)); }catch(e){}
   return due.length;
 }
 
@@ -2012,7 +2079,7 @@ const TRANSFER_MAP_KEY = "prostarm:pettycash:transferred";
 
 function getTransferredMap() {
   try {
-    return JSON.parse(localStorage.getItem(TRANSFER_MAP_KEY) || "{}");
+    return JSON.parse(IDBKV.getItem(TRANSFER_MAP_KEY) || "{}");
   } catch (e) {
     return {};
   }
@@ -2029,7 +2096,7 @@ function markAsTransferred(r) {
   map[r.no] = { at: new Date().toISOString(), by: ME };
   map[r.id] = { at: new Date().toISOString(), by: ME };
   try {
-    localStorage.setItem(TRANSFER_MAP_KEY, JSON.stringify(map));
+    IDBKV.setItem(TRANSFER_MAP_KEY, JSON.stringify(map));
   } catch (e) {}
   r.transferred = true;
 }
@@ -2281,7 +2348,7 @@ async function postToTracker(no){
   if(r.status!==ST.FINAL){ alert("Only finally approved requisitions can be posted."); return; }
   if(isConverted(r)&&!confirm("This was already posted. Open it again?")) return;
   const p=toPayload(r);
-  try{ sessionStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); localStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); }catch(e){}
+  try{ sessionStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); IDBKV.setItem(HANDOFF_KEY,JSON.stringify(p)); }catch(e){}
   window.open(TRACKER_URL+"?req="+b64(p),"_blank");
 }
 
@@ -2304,7 +2371,7 @@ function pendingSince(r){
   return t.length?t[t.length-1].ts:r.raised;
 }
 function conversionMap(){
-  try{ return JSON.parse(localStorage.getItem("prostarm:pettycash:converted")||"{}"); }catch(e){ return {}; }
+  try{ return JSON.parse(IDBKV.getItem("prostarm:pettycash:converted")||"{}"); }catch(e){ return {}; }
 }
 function isConverted(r){
   if(r.entered) return true;
@@ -2329,8 +2396,8 @@ function pendingWith(r){
           role:(r.status===ST.REJ_REWORK?"Branch Person (rework)":(isFinalApprover(c)?"Final Approver":"Reporting Manager")),
           email:(EMP[c].email||EMP[c].n.toLowerCase().replace(/[^a-z]+/g,".").replace(/^\.|\.$/g,"")+"@prostarm.com")};
 }
-function readReminders(){ try{ return JSON.parse(localStorage.getItem(SLA_KEY)||"[]"); }catch(e){ return []; } }
-function writeReminders(l){ try{ localStorage.setItem(SLA_KEY,JSON.stringify(l)); }catch(e){} }
+function readReminders(){ try{ return JSON.parse(IDBKV.getItem(SLA_KEY)||"[]"); }catch(e){ return []; } }
+function writeReminders(l){ try{ IDBKV.setItem(SLA_KEY,JSON.stringify(l)); }catch(e){} }
 
 async function slaSweep(silent){
   const list=await loadAll();
@@ -2765,6 +2832,7 @@ function setupBranchField(e) {
 
 /* ================= APP INITIALIZATION ================= */
 async function initializeApp() {
+  await IDBKV.ready; /* wait for the IndexedDB-backed store to warm up before touching any saved data */
   let SESSION_USER = null;
   try { 
     SESSION_USER = JSON.parse(sessionStorage.getItem('activeUser') || 'null'); 
@@ -3110,9 +3178,9 @@ async function confirmTransfer() {
   btn.disabled = true; btn.textContent = 'Transferring…';
 
   try {
-    const q = JSON.parse(localStorage.getItem(PC_HANDOFF_KEY) || '[]');
+    const q = JSON.parse(IDBKV.getItem(PC_HANDOFF_KEY) || '[]');
     q.push(rec);
-    localStorage.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
+    IDBKV.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
   } catch (e) { }
 
   let serverOk = false, errMsg = '';
