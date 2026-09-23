@@ -3185,28 +3185,55 @@ async function confirmTransfer() {
 
   let serverOk = false, errMsg = '';
   try {
-    if (PETTY_CASH_ADD_URL.indexOf('http') === 0) {
-      const res = await fetch(PETTY_CASH_ADD_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(rec)
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status + ': ' + (await res.text()).slice(0, 200));
-      serverOk = true;
-    }
-  } catch (e) { errMsg = e.message; }
+    const legacy = { ...r };
+    legacy.chain = JSON.stringify(r.chain || []);
+    legacy.trail = JSON.stringify(r.trail || []);
+    legacy.versions = JSON.stringify(r.versions || []);
 
-  if (ALSO_PUSH_LEGACY_TRANSFER) {
-    try {
-      const legacy = { ...r };
-      legacy.chain = JSON.stringify(r.chain || []);
-      legacy.trail = JSON.stringify(r.trail || []);
-      legacy.versions = JSON.stringify(r.versions || []);
-      Object.keys(legacy).forEach(k => { if (legacy[k] == null) legacy[k] = ''; });
-      await fetch(EXCEL_TRANSFER_DATA_URL, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+    // Date fields ko sahi format mein set karna
+    const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered', 'firstViewedAt', 'approvalDate', 'cancelledAt'];
+    dateFields.forEach(f => {
+        if (!legacy[f] || legacy[f] === "") {
+            delete legacy[f];
+        } else if ((f === 'date' || f === 'invoiceDate') && legacy[f].includes('T')) {
+            legacy[f] = legacy[f].split('T')[0];
+        }
+    });
+
+    // Number fields ko strict Number type mein convert karna (Yahi Error 400 ka fix hai)
+    const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step'];
+    numFields.forEach(f => {
+        if (legacy[f] === "" || legacy[f] === null || legacy[f] === undefined) {
+            delete legacy[f]; // Khali number fields ko remove karein taaki schema fail na ho
+        } else if (!isNaN(legacy[f])) {
+            legacy[f] = Number(legacy[f]); // Text numbers ko actual Number mein convert karein
+        }
+    });
+
+    // Baki bache hue nulls ko empty string bana dein
+    Object.keys(legacy).forEach(k => { if (legacy[k] === null) legacy[k] = ''; });
+    
+    // Seedha EXCEL_TRANSFER_DATA_URL ko POST request bhejein
+    const res = await fetch(EXCEL_TRANSFER_DATA_URL, {
+        method: 'POST', 
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(legacy)
-      });
-    } catch (e) { }
+    });
+    
+    if (!res.ok) {
+        throw new Error('HTTP ' + res.status + ': ' + (await res.text()).slice(0, 200));
+    }
+    serverOk = true;
+  } catch (e) { 
+    errMsg = e.message; 
+  }
+
+  // Strict Stop: Agar EXCEL_TRANSFER_DATA_URL fail hota hai toh aage na badhe
+  if (!serverOk) {
+    alert("Transfer Failed! Backend Flow Error: " + errMsg);
+    btn.disabled = false;
+    btn.textContent = (pcTransferChoice === 'A') ? 'Save to Petty Cash Sheet' : 'Attach & Submit for RM Approval';
+    return; 
   }
 
   markAsTransferred(r);
