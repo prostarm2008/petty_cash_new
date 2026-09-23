@@ -3177,11 +3177,11 @@ async function confirmTransfer() {
   const btn = $("pcConfirmBtn");
   btn.disabled = true; btn.textContent = 'Transferring…';
 
-  try {
-    const q = JSON.parse(IDBKV.getItem(PC_HANDOFF_KEY) || '[]');
-    q.push(rec);
-    IDBKV.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
-  } catch (e) { }
+  //try {
+  //  const q = JSON.parse(IDBKV.getItem(PC_HANDOFF_KEY) || '[]');
+  //  q.push(rec);
+  //  IDBKV.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
+  //} catch (e) { }
 
   let serverOk = false, errMsg = '';
   try {
