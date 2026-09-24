@@ -2297,7 +2297,16 @@ async function fetchBackendData() {
   }
 
   try {
-    const res = await apiRequest(API_ENDPOINTS.GET_RECORDS, { method: 'GET' }, 1);
+    const res = await apiRequest(API_ENDPOINTS.GET_RECORDS, {
+    method: 'POST',
+    body: JSON.stringify({
+        role: activeUser.role || '',
+        branch: activeUser.branch || '',
+        branches: Array.isArray(ALLOWED_BRANCHES)
+            ? ALLOWED_BRANCHES.join(',')
+            : ''
+    })
+}, 1);
     const data = await res.json();
     const serverRows = Array.isArray(data) ? data : (data.value || []);
     STORED_ENTRIES = mergeServerWithPending(serverRows, cached);
