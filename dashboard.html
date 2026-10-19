@@ -864,7 +864,7 @@ window.IDBKV = (function(){
       </div>
     </div>
     <div class="header-right">
-      <div class="sync-pill" id="syncPill" onclick="manualSync()" title="Click to sync now">
+      <div class="sync-pill" id="syncPill" onclick="manualSync(event)" title="Click to sync now (Shift+click = full refresh)">
         <span class="sync-dot"></span>
         <span id="syncLabel">Connecting…</span>
         <span class="pending-badge" id="pendingBadge" style="display:none;">0</span>
@@ -1220,6 +1220,11 @@ const EXCEL_GET_CONFIG_URL = "https://8549b42c711be8948675eefb5cf215.dd.environm
 
 const NOTIFY_ENDPOINT = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/20/workflows/1deb80ef2065427f80695911ba6645cf/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=paO0ipQx2vNb8MQWwEENoISpIQ682EXijBA8Go0Vbg4"; // Release 2.0 — email dispatch flow (NT-01..NT-09)
 API_ENDPOINTS.NOTIFY = NOTIFY_ENDPOINT;
+/* FAST LOAD: paste the URL of the new "Get one record" flow here. While this is
+   empty the app behaves exactly as before (full rows, full download). Once set,
+   the list loads without the heavy columns and syncs only what changed; the
+   documents / audit trail of a record load when that record is opened. */
+API_ENDPOINTS.GET_RECORD = "";
 
 const API_KEY = ""; // optional shared secret sent as X-API-Key header — must match your flow's condition check
 const REQUEST_TIMEOUT_MS = 120000;
@@ -1744,6 +1749,97 @@ const getISO = () => new Date().toISOString().slice(0, 10);
 const PENDING_QUEUE_KEY = 'petty_cash_pending_queue_v1';
 const LOCAL_ENTRIES_KEY = 'petty_cash_records_v2';
 
+/* ================================================================
+   MONTH-WISE LEDGER
+   Only the selected month is loaded into the browser. Each branch's
+   OPENING balance (closing of the previous month) comes from the flow
+   (Office Script), so the running balance and cash-in-hand stay correct.
+   Set MONTH_VIEW = false to go back to loading everything.
+   ================================================================ */
+const MONTH_VIEW = true;
+const OPENINGS_KEY = 'petty_cash_openings_v1';
+function currentMonthKey() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+let selectedMonth = currentMonthKey();
+let OPENINGS = {};               // branch -> opening balance of selectedMonth
+let openingsState = 'loading';   // loading | ok | missing
+let loadedKey = null;            // which dataset STORED_ENTRIES currently holds ('' = everything)
+let fetchSeq = 0;
+
+function monthViewOn() { return MONTH_VIEW && isConfigured(API_ENDPOINTS.GET_RECORDS); }
+/* Ledger screen = one month. Verify / audit / queries / critical need pending items from every month. */
+function datasetKey() { return (monthViewOn() && currentView === 'ledger') ? selectedMonth : ''; }
+function entriesKey() {
+  const k = (loadedKey === null) ? datasetKey() : loadedKey;
+  return k ? LOCAL_ENTRIES_KEY + ':' + k : LOCAL_ENTRIES_KEY;
+}
+function openingActive() { return monthViewOn() && currentView === 'ledger'; }
+/* Entry-level order for the running balance: entry date first, then TxID
+   (TX + time of entry), so a back-dated entry sits on its own date and a
+   same-day entry made earlier comes first. */
+function txNum(id) { const n = parseInt(String(id || '').replace(/[^0-9]/g, ''), 10); return isNaN(n) ? 0 : n; }
+function cmpEntryOrder(a, b) { return String(a.date || '').localeCompare(String(b.date || '')) || (txNum(a.id) - txNum(b.id)); }
+function openingFor(branch) { return openingActive() ? (Number(OPENINGS[branch]) || 0) : 0; }
+function openingForBranches(codes) { return (codes || []).reduce((t, b) => t + openingFor(b), 0); }
+function openingForDataset(ds) {
+  if (!openingActive()) return 0;
+  const seen = {}; let n = 0, only = '';
+  (ds || []).forEach(e => { if (e && e.branch && !seen[e.branch]) { seen[e.branch] = 1; n++; only = e.branch; } });
+  if (n === 0) return 0;
+  if (n === 1) return openingFor(only);
+  return openingForBranches(SCOPED_BRANCHES.map(b => b.code));
+}
+
+function loadOpeningsFromCache(key) {
+  OPENINGS = {}; openingsState = 'loading';
+  if (!key) { openingsState = 'ok'; return; }
+  try {
+    const c = JSON.parse(IDBKV.getItem(OPENINGS_KEY + ':' + key));
+    if (c && c.map) { OPENINGS = c.map; openingsState = c.ok ? 'ok' : 'missing'; }
+  } catch (e) {}
+}
+
+function applyOpenings(data, key, rows) {
+  if (!key) { OPENINGS = {}; openingsState = 'ok'; return; }
+  const map = {}; let ok;
+  if (data && !Array.isArray(data) && Array.isArray(data.openings)) {
+    data.openings.forEach(r => { if (r && r.month === key && r.branch) map[r.branch] = Number(r.opening) || 0; });
+    ok = data.openings.length > 0;
+  } else {
+    /* Old-style flow returned every row: opening = everything dated before this month. */
+    const from = key + '-01';
+    (rows || []).forEach(r => {
+      if (r && r.branch && r.date && String(r.date).slice(0, 10) < from) {
+        map[r.branch] = (map[r.branch] || 0) + (r.direction === 'in' ? Number(r.receivedAmount || 0) : -Number(r.expenseAmount || 0));
+      }
+    });
+    ok = true;
+  }
+  OPENINGS = map; openingsState = ok ? 'ok' : 'missing';
+  try { IDBKV.setItem(OPENINGS_KEY + ':' + key, JSON.stringify({ map: map, ok: ok })); } catch (e) {}
+}
+
+function monthPickerHtml() {
+  const cur = currentMonthKey();
+  return `<div style="display:flex; gap:6px; align-items:center;">
+    <button class="btn sm secondary" onclick="shiftMonth(-1)" title="Previous month">‹</button>
+    <input type="month" class="select-ctrl" value="${escapeHtml(selectedMonth)}" max="${cur}" onchange="setMonth(this.value)">
+    <button class="btn sm secondary" onclick="shiftMonth(1)" ${selectedMonth >= cur ? 'disabled' : ''} title="Next month">›</button>
+  </div>`;
+}
+function setMonth(m) {
+  if (!/^\d{4}-\d{2}$/.test(m || '')) return;
+  selectedMonth = m; filterDateRange = 'all'; currentPage = 1;
+  fetchBackendData();
+}
+function shiftMonth(n) {
+  const p = selectedMonth.split('-').map(Number);
+  const d = new Date(p[0], p[1] - 1 + n, 1);
+  setMonth(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+}
+
+const SYNC_META_KEY = 'petty_cash_sync_meta_v1';       // { since, fullAt } for delta sync
+const FULL_SYNC_MAX_AGE_MS = 24 * 60 * 60 * 1000;       // one full reconcile a day (catches deletes)
+
 function escapeHtml(str) {
   if (str === null || str === undefined) return '';
   return String(str)
@@ -2093,7 +2189,12 @@ function clampJson(value, max) {
 }
 
 function toBackendPayload(rec) {
+  /* A list-only row has no documents / audit trail. Writing it would wipe
+     those columns in Excel, so it is never allowed to leave the browser. */
+  if (rec && rec._summary) throw new Error('Record details not loaded yet — reopen the record and retry.');
   const out = Object.assign({}, rec);
+  delete out._summary;     // client-only flag
+  delete out.modifiedOn;   // set by the flow, never by the browser
 
   /* Arrays stay arrays — the trigger schema declares them as Array.
      Every key is KEPT, including `data`: the schema for these items was
@@ -2228,7 +2329,7 @@ function drainRequisitionHandoff() {
 
   IDBKV.removeItem(PC_HANDOFF_KEY);
   if (added) {
-    try { IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES)); } catch (e) {}
+    try { IDBKV.setItem(entriesKey(), JSON.stringify(STORED_ENTRIES)); } catch (e) {}
     showToast(added + ' approved requisition' + (added === 1 ? '' : 's') + ' received into the petty cash sheet.', 'success');
   }
   return added;
@@ -2298,9 +2399,102 @@ function mergeServerWithPending(serverRows, cachedRows) {
   return merged;
 }
 
-async function fetchBackendData() {
+/* --- FAST LOAD: list rows + delta sync + lazy details ---------------
+   The list never needs documents or the audit trail, so the flow can leave
+   them out (summary mode) and the app fetches them for one record when it
+   is opened. After the first full load only rows changed since the last sync
+   are downloaded. Everything here is inert until API_ENDPOINTS.GET_RECORD
+   is set, and an old-style flow that ignores `summary` / `since` still works. */
+function docCountOf(r) { return r && r._summary ? (Number(r.docCount !== undefined ? r.docCount : r['Doc Count']) || 0) : docsOf(r).length; }
+function docNamesOf(r) { return r && r._summary ? String(r.docNames || r['Doc Names'] || '') : docsOf(r).map(x => x.name).join(' | '); }
+
+function readSyncMeta() { try { return JSON.parse(IDBKV.getItem(SYNC_META_KEY)) || {}; } catch (e) { return {}; } }
+function writeSyncMeta(m) { try { IDBKV.setItem(SYNC_META_KEY, JSON.stringify(m)); } catch (e) {} }
+
+function normalizeSummaryRow(r, local) {
+  if (!r || typeof r !== 'object') return r;
+  const carriedDetail = ARRAY_FIELDS.some(f => r[f] !== undefined && r[f] !== null && r[f] !== '');
+  normalizeRecord(r);
+  if (carriedDetail) { r._summary = false; return r; }
+  /* Same version as the one we already hold in full → keep its detail. */
+  const unchanged = local && local._summary === false && r.modifiedOn && local.modifiedOn === r.modifiedOn;
+  if (unchanged) {
+    r.supportingDocs = local.supportingDocs; r.auditTrail = local.auditTrail;
+    if (local.docImageBase64 !== undefined) r.docImageBase64 = local.docImageBase64;
+    r._summary = false;
+  } else {
+    /* Only documents still waiting to upload live in the browser alone. */
+    r.supportingDocs = local ? asArray(local.supportingDocs).filter(d => d && d.data && !d.url) : [];
+    r.auditTrail = local ? asArray(local.auditTrail) : [];   // flow may not return a trail — never drop the local one
+    r._summary = true;
+  }
+  return r;
+}
+
+function mergeSummaryRows(serverRows, cachedRows, isDelta) {
+  let queue = [];
+  try { queue = getPendingQueue() || []; } catch (e) { queue = []; }
+  const pendingIds = new Set(queue.map(op => op && op.payload && op.payload.id).filter(Boolean));
+  const localById = {};
+  (Array.isArray(cachedRows) ? cachedRows : []).forEach(r => { if (r && r.id) localById[r.id] = r; });
+
+  const fresh = (serverRows || []).map(r => normalizeSummaryRow(r, r && localById[r.id]));
+  const pick = r => (r && pendingIds.has(r.id) && localById[r.id]) ? localById[r.id] : r;   // unsent local work wins
+
+  if (isDelta) {
+    const byId = new Map();
+    (cachedRows || []).forEach(r => { if (r && r.id) byId.set(r.id, r); });
+    fresh.forEach(r => { if (r && r.id) byId.set(r.id, pick(r)); });
+    return Array.from(byId.values());
+  }
+  const merged = fresh.map(pick);
+  pendingIds.forEach(id => {
+    if (!merged.some(r => r && r.id === id) && localById[id]) merged.push(localById[id]);
+  });
+  return merged;
+}
+
+const __detailInFlight = {};
+/* Loads documents + audit trail for one record. Resolves to the record; if it
+   could not be loaded the record keeps _summary === true and callers stop. */
+async function ensureDetail(id) {
+  const rec = STORED_ENTRIES.find(e => e.id === id);
+  if (!rec || !rec._summary) return rec;
+  if (!isConfigured(API_ENDPOINTS.GET_RECORD)) return rec;
+  if (__detailInFlight[id]) return __detailInFlight[id];
+  __detailInFlight[id] = (async () => {
+    try {
+      const res = await apiRequest(API_ENDPOINTS.GET_RECORD, { method: 'POST', body: JSON.stringify({ id: id }) }, 1);
+      const d = await res.json();
+      const row = Array.isArray(d) ? d[0] : ((d && Array.isArray(d.value)) ? d.value[0] : d);
+      if (!row || typeof row !== 'object') throw new Error('empty response');
+      const pending = asArray(rec.supportingDocs).filter(x => x && x.data && !x.url);
+      const serverDocs = asArray(row.supportingDocs);
+      rec.supportingDocs = serverDocs
+        .map(sd => { const hit = pending.find(p => p.id === sd.id); return (hit && !sd.data) ? Object.assign({}, sd, { data: hit.data }) : sd; })
+        .concat(pending.filter(p => !serverDocs.some(sd => sd.id === p.id)).map(p => Object.assign({}, p, { cloudPending: true })));
+      const srvTrail = asArray(row.auditTrail), locTrail = asArray(rec.auditTrail);
+      rec.auditTrail = srvTrail.length >= locTrail.length ? srvTrail : locTrail;   // history never shrinks
+      if (row.docImageBase64 !== undefined) rec.docImageBase64 = row.docImageBase64;
+      rec._summary = false;
+      persistLocalEntries();
+    } catch (e) {
+      showToast('Could not load record details: ' + (e && e.message ? e.message : 'network error'), 'error');
+    } finally {
+      delete __detailInFlight[id];
+    }
+    return rec;
+  })();
+  return __detailInFlight[id];
+}
+
+async function fetchBackendData(forceFull) {
+  const reqKey = datasetKey();          // month for the ledger screen, '' for the workflow screens
+  const seq = ++fetchSeq;
+  loadedKey = reqKey;
+  loadOpeningsFromCache(reqKey);
   if (!isConfigured(API_ENDPOINTS.GET_RECORDS)) {
-    STORED_ENTRIES = JSON.parse(IDBKV.getItem(LOCAL_ENTRIES_KEY)) || [];
+    STORED_ENTRIES = JSON.parse(IDBKV.getItem(entriesKey())) || [];
     drainRequisitionHandoff();
     setSyncState('error', 'Local mode — not connected');
     renderApp();
@@ -2312,7 +2506,7 @@ async function fetchBackendData() {
   // several seconds, and there's no reason to make the user stare at a
   // spinner for data that's likely still accurate from last time.
   let cached = [];
-  try { cached = JSON.parse(IDBKV.getItem(LOCAL_ENTRIES_KEY)) || []; } catch (e) { cached = []; }
+  try { cached = JSON.parse(IDBKV.getItem(entriesKey())) || []; } catch (e) { cached = []; }
 
   if (cached.length) {
     STORED_ENTRIES = cached;
@@ -2329,28 +2523,49 @@ async function fetchBackendData() {
   }
 
   try {
+    const lite = !monthViewOn() && isConfigured(API_ENDPOINTS.GET_RECORD);
+    const meta = readSyncMeta();
+    const canDelta = lite && !forceFull && cached.length > 0 && !!meta.since &&
+                     (Date.now() - (meta.fullAt || 0) < FULL_SYNC_MAX_AGE_MS);
+    if (canDelta) setSyncState('busy', 'Checking updates…');
     const res = await apiRequest(API_ENDPOINTS.GET_RECORDS, {
-    method: 'POST',
-    body: JSON.stringify({
+      method: 'POST',
+      body: JSON.stringify({
         role: activeUser.role || '',
         branch: activeUser.branch || '',
-        branches: Array.isArray(ALLOWED_BRANCHES)
-            ? ALLOWED_BRANCHES.join(',')
-            : ''
-    })
-}, 1);
+        branches: Array.isArray(ALLOWED_BRANCHES) ? ALLOWED_BRANCHES.join(',') : '',
+        summary: lite,
+        since: canDelta ? meta.since : '',
+        month: reqKey
+      })
+    }, 1);
     const data = await res.json();
+    if (seq !== fetchSeq) return;   // a newer month/view was requested meanwhile
     const serverRows = Array.isArray(data) ? data : (data.value || []);
-    STORED_ENTRIES = mergeServerWithPending(serverRows, cached);
+    const isSummary = lite && !Array.isArray(data) && data.summary === true;
+    const isDelta = canDelta && isSummary && data.delta === true;
+    if (isSummary) {
+      STORED_ENTRIES = mergeSummaryRows(serverRows, cached, isDelta);
+      /* Next sync asks only for rows changed after this point (5-minute overlap). */
+      const st = Date.parse(data.serverTime || '') || Date.now();
+      writeSyncMeta({ since: new Date(st - 5 * 60000).toISOString(),
+                      fullAt: isDelta ? (meta.fullAt || Date.now()) : Date.now() });
+    } else {
+      STORED_ENTRIES = mergeServerWithPending(serverRows, cached);
+      writeSyncMeta({});   // flow is not in summary mode — always full
+    }
+    applyOpenings(data, reqKey, serverRows);
     drainRequisitionHandoff();
-    IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
+    persistLocalEntries();
     lastSyncedAt = new Date();
     setSyncState('ok', 'Synced ' + lastSyncedAt.toLocaleTimeString());
     flushPendingQueue(false);
     flushPendingDocuments(true);   // retry any file still held locally
   } catch (error) {
+    if (seq !== fetchSeq) return;
+    if (openingsState === 'loading') openingsState = 'missing';
     console.warn("API Error. Loading local data fallback.", error);
-    STORED_ENTRIES = cached.length ? cached : (JSON.parse(IDBKV.getItem(LOCAL_ENTRIES_KEY)) || []);
+    STORED_ENTRIES = cached.length ? cached : (JSON.parse(IDBKV.getItem(entriesKey())) || []);
     drainRequisitionHandoff();
     setSyncState('error', 'Offline — showing cached data');
     showToast('Could not reach the backend. Showing locally cached data.', 'error');
@@ -2358,9 +2573,9 @@ async function fetchBackendData() {
   renderApp();
 }
 
-async function manualSync() {
+async function manualSync(ev) {
   if (syncState === 'busy') return;
-  await fetchBackendData();
+  await fetchBackendData(!!(ev && ev.shiftKey));   // Shift+click = full refresh
 }
 
 /* Attempts to push any queued add/update/delete operations to the backend. */
@@ -2657,7 +2872,8 @@ function openDrawer(defaultBranch) {
   setTimeout(() => $('fDate').focus(), 50);
 }
 
-function editEntry(id) {
+async function editEntry(id) {
+  { const _d = await ensureDetail(id); if (_d && _d._summary) return; }   // load documents / trail on demand
   if (activeUser.role !== 'admin') { showToast('Only HO Admin can edit records.', 'error'); return; }
   const item = STORED_ENTRIES.find(e => e.id === id);
   if (!item) { showToast('Record not found.', 'error'); return; }
@@ -2944,7 +3160,7 @@ async function saveDrawerEntry(submitForApproval) {
     if (idx >= 0) STORED_ENTRIES[idx] = entry; else STORED_ENTRIES.push(entry);
   }
   try {
-    IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
+    IDBKV.setItem(entriesKey(), JSON.stringify(STORED_ENTRIES));
   } catch (err) {
     // Storage quota exceeded (large image attachments are the usual cause) — roll back so we don't
     // leave the in-memory list out of sync with what's actually persisted.
@@ -2986,7 +3202,7 @@ async function deleteEntry(id) {
   }
   askConfirm('Delete this record?', 'This action cannot be undone once synced.', async () => {
     STORED_ENTRIES = STORED_ENTRIES.filter(e => e.id !== id);
-    IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
+    IDBKV.setItem(entriesKey(), JSON.stringify(STORED_ENTRIES));
     renderApp();
     showToast('Record deleted.', 'ok');
 
@@ -3020,8 +3236,8 @@ const EXCEL_HEADERS = [
 ];
 
 function buildExportRows(dataset) {
-  let running = 0;
-  const sorted = dataset.slice().sort((a,b) => a.date.localeCompare(b.date));
+  let running = openingForDataset(dataset);
+  const sorted = dataset.slice().sort(cmpEntryOrder);
   return sorted.map((e, idx) => {
     const amt = e.direction === 'in' ? Number(e.receivedAmount || 0) : -Number(e.expenseAmount || 0);
     running += amt;
@@ -3184,12 +3400,13 @@ function exportExcelPayload(filename, dataset, branchLabel) {
   ws['!cols'] = EXCEL_HEADERS.map(() => ({ wch: 16 }));
   XLSX.utils.book_append_sheet(wb, ws, (branchLabel || 'Ledger').slice(0, 30));
 
-  const stats = getStats(dataset);
+  const stats = getStats(dataset, openingForDataset(dataset));
   const summaryRows = [
     ['Petty Cash Summary', ''],
     ['Generated', new Date().toLocaleString()],
     ['Scope', branchLabel || 'All Branches'],
     [''],
+    ['Opening Balance (carried forward)', stats.opening],
     ['Total Cash Received', stats.credit],
     ['Total Cash Spent', stats.debit],
     ['Actual Cash In-Hand', stats.balance],
@@ -3247,6 +3464,7 @@ document.addEventListener('click', (e) => {
 
 /* --- FILTERS & RENDERING --- */
 function matchDateFilter(dateStr) {
+  if (openingActive() && dateStr && String(dateStr).slice(0, 7) !== selectedMonth) return false;
   if (filterDateRange === 'all') return true;
 
   if (filterDateRange === 'custom') {
@@ -3271,7 +3489,14 @@ const __searchBlobCache = new WeakMap();
 function getEntrySearchBlob(e) {
   let blob = __searchBlobCache.get(e);
   if (blob === undefined) {
-    blob = JSON.stringify(e).toLowerCase();
+    let b = '';
+    for (const k in e) {
+      if (k === 'supportingDocs' || k === 'auditTrail' || k === 'docImageBase64' || k === '_summary') continue;
+      const v = e[k];
+      if (typeof v === 'string') b += ' ' + (v.length > 300 ? v.slice(0, 300) : v);
+      else if (typeof v === 'number') b += ' ' + v;
+    }
+    blob = b.toLowerCase();
     __searchBlobCache.set(e, blob);
   }
   return blob;
@@ -3284,10 +3509,11 @@ function getVisibleEntries() {
   return list;
 }
 
-function getStats(list) {
+function getStats(list, opening) {
   let credit = 0, debit = 0;
   list.forEach(i => { credit += Number(i.receivedAmount || 0); debit += Number(i.expenseAmount || 0); });
-  return { credit, debit, balance: credit - debit, count: list.length };
+  const open = Number(opening) || 0;
+  return { opening: open, credit, debit, balance: open + credit - debit, count: list.length };
 }
 
 function onSearchInput(value) {
@@ -3297,6 +3523,7 @@ function onSearchInput(value) {
 
 // Generate the reusable Date Filter Dropdown with Custom pickers
 function renderDateFilterUI() {
+  if (monthViewOn() && currentView === 'ledger') return monthPickerHtml();
   return `
     <div style="display:flex; gap:8px; align-items:center;">
       <select class="select-ctrl" onchange="filterDateRange=this.value; currentPage=1; bootstrapApp();">
@@ -3318,16 +3545,22 @@ function renderDateFilterUI() {
 }
 
 function renderKPIHeader() {
+  const scope = activeTab === 'ALL' ? SCOPED_BRANCHES.map(b => b.code) : (canAccessBranch(activeTab) ? [activeTab] : []);
   const stats = getStats(activeTab === 'ALL'
     ? getVisibleEntries()
-    : (canAccessBranch(activeTab) ? STORED_ENTRIES.filter(e => e.branch === activeTab && matchDateFilter(e.date)) : []));
+    : (canAccessBranch(activeTab) ? STORED_ENTRIES.filter(e => e.branch === activeTab && matchDateFilter(e.date)) : []),
+    openingForBranches(scope));
+  const mv = openingActive();
+  const openCard = mv ? `<div class="kpi-card"><div class="kpi-title">Opening Balance</div><div class="kpi-value mono">${openingsState === 'ok' ? formatINR(stats.opening) : (openingsState === 'loading' ? 'Loading…' : '⚠ n/a')}</div></div>` : '';
+  const warn = (mv && openingsState === 'missing') ? `<div class="stale-banner"><span>⚠</span><span>Opening balance could not be loaded — running balance and cash in-hand may be wrong. Check the Office Script step in the flow.</span></div>` : '';
   return `
-    <div class="metrics-grid">
+    <div class="metrics-grid"${mv ? ' style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));"' : ''}>
+      ${openCard}
       <div class="kpi-card"><div class="kpi-title">Actual Cash In-Hand</div><div class="kpi-value mono" style="color: ${stats.balance >= 0 ? 'var(--primary)' : 'var(--debit)'}">${formatINR(stats.balance)}</div></div>
       <div class="kpi-card credit"><div class="kpi-title">Total Cash Received</div><div class="kpi-value mono" style="color: var(--credit);">${formatINR(stats.credit)}</div></div>
       <div class="kpi-card debit"><div class="kpi-title">Total Cash Spent</div><div class="kpi-value mono" style="color: var(--debit);">${formatINR(stats.debit)}</div></div>
       <div class="kpi-card"><div class="kpi-title">Transactions Count</div><div class="kpi-value mono">${stats.count}</div></div>
-    </div>
+    </div>${warn}
   `;
 }
 
@@ -3393,8 +3626,8 @@ function renderBranchLedgerView(branchCode) {
             <p style="color:var(--text-secondary); font-size:13px;">${escapeHtml(branchCode)} is not part of your assigned branches.</p>`;
   }
   const bObj = BRANCH_CONFIG.find(x => x.code === branchCode) || { name: branchCode };
-  const items = getVisibleEntries().filter(e => e.branch === branchCode).sort((a,b) => a.date.localeCompare(b.date));
-  let running = 0;
+  const items = getVisibleEntries().filter(e => e.branch === branchCode).sort(cmpEntryOrder);
+  let running = openingFor(branchCode);   // carried forward from the previous month
   const withBalance = items.map(item => { running += item.direction === 'in' ? Number(item.receivedAmount||0) : -Number(item.expenseAmount||0); return { ...item, runningBalance: running }; });
   const processedRows = sortRows(withBalance);
 
@@ -3540,7 +3773,7 @@ function renderLedgerBody() {
         </div>
       </div>
       <div class="grid-branch-cards">${SCOPED_BRANCHES.map(b => {
-      const s = getStats(STORED_ENTRIES.filter(e => e.branch === b.code && matchDateFilter(e.date)));
+      const s = getStats(STORED_ENTRIES.filter(e => e.branch === b.code && matchDateFilter(e.date)), openingFor(b.code));
       return `<div class="branch-summary-card" onclick="switchTab('${b.code}')"><div class="bsc-code">${escapeHtml(b.code)}</div><div class="bsc-name">${escapeHtml(b.name)}</div><div class="bsc-balance mono ${s.balance < 0 ? 'debit' : ''}">${formatINR(s.balance)}</div><div class="bsc-meta"><span style="color:var(--credit)">▲ ${formatINR(s.credit)}</span><span style="color:var(--debit)">▼ ${formatINR(s.debit)}</span></div></div>`;
     }).join('')}</div>`;
   } else {
@@ -3551,6 +3784,7 @@ function renderLedgerBody() {
 
 /* Re-renders while preserving focus/cursor position of the active input (search box etc). */
 function bootstrapApp() {
+  if (monthViewOn() && loadedKey !== null && datasetKey() !== loadedKey) { fetchBackendData(); return; }
   const active = document.activeElement;
   const activeId = active && active.id;
   const selStart = active && 'selectionStart' in active ? active.selectionStart : null;
@@ -3576,7 +3810,8 @@ function switchTab(code) {
   bootstrapApp();
 }
 
-function viewDetailModal(id) {
+async function viewDetailModal(id) {
+  { const _d = await ensureDetail(id); if (_d && _d._summary) return; }   // load documents / trail on demand
   const item = STORED_ENTRIES.find(e => e.id === id);
   if (!item) return;
   currentDetailId = id;
@@ -4132,7 +4367,8 @@ function recordSummaryHtml(r) {
    ================================================================ */
 let uploadingId = null, stagedDocs = [];
 
-function openDocDrawer(id) {
+async function openDocDrawer(id) {
+  { const _d = await ensureDetail(id); if (_d && _d._summary) return; }   // load documents / trail on demand
   if (!canUploadDocs()) { showToast('Only Branch Users can upload supporting documents.', 'error'); return; }
   const r = STORED_ENTRIES.find(x => x.id === id);
   if (!r) { showToast('Record not found.', 'error'); return; }
@@ -4484,7 +4720,7 @@ function renderAuditQueueView() {
       vKeys.forEach(vk => {
         const items = byVoucher[vk];
         const vTotal = items.reduce((s, r) => s + (Number(r.expenseAmount)||0), 0);
-        const vDocs = items.reduce((s, r) => s + docsOf(r).length, 0);
+        const vDocs = items.reduce((s, r) => s + docCountOf(r), 0);
         const vKey = bKey + '_V_' + vk;
         const vOpen = !!expanded[vKey];
         h += `<div class="vgrp">
@@ -4521,7 +4757,8 @@ function renderAuditQueueView() {
    ================================================================ */
 let reviewingId = null, reviewMode = 'rm', reviewChoice = '';
 
-function openReviewDrawer(id, mode) {
+async function openReviewDrawer(id, mode) {
+  { const _d = await ensureDetail(id); if (_d && _d._summary) return; }   // load documents / trail on demand
   const r = STORED_ENTRIES.find(x => x.id === id);
   if (!r) { showToast('Record not found.', 'error'); return; }
   if (mode === 'rm' && !canVerify()) { showToast('Verification is restricted to Regional Managers.', 'error'); return; }
@@ -4665,7 +4902,7 @@ function renderCriticalView() {
 
   let h = '';
   if (stale) h += `<div class="stale-banner"><span>⚠</span><span>Showing cached figures — last synchronised ${lastSyncedAt?fmtStamp(new Date(lastSyncedAt).toISOString()):'never'}.</span>
-    <button class="btn sm secondary" onclick="manualSync()" style="margin-left:auto;">Sync now</button></div>`;
+    <button class="btn sm secondary" onclick="manualSync(event)" style="margin-left:auto;">Sync now</button></div>`;
 
   h += `<div class="metrics-grid">
       <div class="kpi-card debit"><div class="kpi-title">Critical Branches</div><div class="kpi-value mono" style="color:var(--debit);">${crit.length}</div></div>
@@ -4772,7 +5009,7 @@ function exportAuditSummary() {
               'Audited By','Audited On','Last Remark']];
   faFiltered().forEach(r => d.push([formatDateDMY(r.date), branchName(r.branch), regionName(regionOf(r.branch)),
     r.voucher||'', r.expenseType||'', Number(r.expenseAmount)||0, r.person||r.engineer||'',
-    WF[wfStatusOf(r)].label, docsOf(r).length, docsOf(r).map(x=>x.name).join(' | '),
+    WF[wfStatusOf(r)].label, docCountOf(r), docNamesOf(r),
     r.rmApprovedBy||'', r.rmApprovedOn?fmtStamp(r.rmApprovedOn):'',
     r.auditedBy||'', r.auditedOn?fmtStamp(r.auditedOn):'', r.reviewRemark||r.returnRemark||'']));
   downloadSheet(d, 'Audit_Report_' + getISO(), 'Audit Report');
@@ -4802,7 +5039,7 @@ function downloadSheet(aoa, filename, sheetName) {
    ================================================================ */
 function persistLocalEntries() {
   try {
-    IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(STORED_ENTRIES));
+    IDBKV.setItem(entriesKey(), JSON.stringify(STORED_ENTRIES));
     return true;
   } catch (e) {
     try {
@@ -4812,7 +5049,7 @@ function persistLocalEntries() {
         c.supportingDocs = r.supportingDocs.map(d => Object.assign({}, d, { data:'', evicted:true }));
         return c;
       });
-      IDBKV.setItem(LOCAL_ENTRIES_KEY, JSON.stringify(slim));
+      IDBKV.setItem(entriesKey(), JSON.stringify(slim));
       showToast('Offline cache is full — document files were not cached locally. They remain available after sync.', 'warn');
       return true;
     } catch (e2) {
