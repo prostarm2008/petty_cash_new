@@ -1225,6 +1225,10 @@ API_ENDPOINTS.NOTIFY = NOTIFY_ENDPOINT;
    the list loads without the heavy columns and syncs only what changed; the
    documents / audit trail of a record load when that record is opened. */
 API_ENDPOINTS.GET_RECORD = "";
+/* CRITICAL CASH: paste the URL of the small "GET_BALANCES" flow here. It returns
+   the all-time cash in hand + last entry date of every branch (Office Script), so
+   the Critical Cash screen and its badge never need the full ledger in the browser. */
+API_ENDPOINTS.GET_BALANCES = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/25/workflows/addff660b5f640d097cee485bbe95a5b/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=inMira-XoR_YKn1nxwJywtJzXYYCkdOIcHvFA-gV4lc";
 
 const API_KEY = ""; // optional shared secret sent as X-API-Key header — must match your flow's condition check
 const REQUEST_TIMEOUT_MS = 120000;
@@ -1765,9 +1769,85 @@ let openingsState = 'loading';   // loading | ok | missing
 let loadedKey = null;            // which dataset STORED_ENTRIES currently holds ('' = everything)
 let fetchSeq = 0;
 
+/* --- all-time branch balances (Critical Cash) --- */
+const BALANCES_KEY = 'petty_cash_balances_v1';
+let BRANCH_BALANCES = null;        // { branchCode: { balance, lastAt } } or null until loaded
+let balancesLoadedAt = 0, balancesBusy = false;
+function balancesOn() { return isConfigured(API_ENDPOINTS.GET_BALANCES); }
+function loadBalancesCache() {
+  if (BRANCH_BALANCES !== null) return;
+  try { const c = JSON.parse(IDBKV.getItem(BALANCES_KEY)); if (c && c.map) { BRANCH_BALANCES = c.map; balancesLoadedAt = 0; } } catch (e) {}
+}
+async function loadBalances(force) {
+  if (!balancesOn() || balancesBusy || !activeUser) return;
+  if (typeof canSeeCritical === 'function' && !canSeeCritical()) return;
+  if (!force && Date.now() - balancesLoadedAt < 60000) return;
+  balancesBusy = true;
+  try {
+    const res = await apiRequest(API_ENDPOINTS.GET_BALANCES, {
+      method: 'POST',
+      body: JSON.stringify({
+        role: activeUser.role || '', branch: activeUser.branch || '',
+        branches: Array.isArray(ALLOWED_BRANCHES) ? ALLOWED_BRANCHES.join(',') : ''
+      })
+    }, 1);
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : (data.balances || data.value || []);
+    if (!Array.isArray(list)) throw new Error('bad response');
+    const map = {};
+    list.forEach(r => { if (r && r.branch) map[r.branch] = { balance: Number(r.balance) || 0, lastAt: r.lastEntryDate || '' }; });
+    BRANCH_BALANCES = map; balancesLoadedAt = Date.now();
+    try { IDBKV.setItem(BALANCES_KEY, JSON.stringify({ map: map })); } catch (e) {}
+    bootstrapApp();
+  } catch (e) {
+    console.warn('Balances load failed', e);
+  } finally { balancesBusy = false; }
+}
+
+/* --- week filter inside the month: Wk1 = 1-7, Wk2 = 8-14, Wk3 = 15-21, Wk4 = 22-28, Wk5 = 29-end --- */
+let selectedWeek = 'ALL';   // 'ALL' | '1' .. '5'
+function weekOfDay(d) { return d <= 7 ? 1 : d <= 14 ? 2 : d <= 21 ? 3 : d <= 28 ? 4 : 5; }
+function weekOfDate(ds) { const d = parseInt(String(ds || '').slice(8, 10), 10); return isNaN(d) ? 0 : weekOfDay(d); }
+function daysInMonthKey(key) { const p = String(key).split('-').map(Number); return new Date(p[0], p[1], 0).getDate(); }
+function weekLabel(w, key) {
+  const dim = daysInMonthKey(key), st = (w - 1) * 7 + 1, en = w === 5 ? dim : st + 6;
+  return 'Wk' + w + ' (' + (st === en ? st : st + '–' + en) + ')';
+}
+/* Entries of earlier weeks of the same month: they are part of this week's opening balance. */
+function weekPriorNet(branch) {
+  if (selectedWeek === 'ALL') return 0;
+  const sd = (Number(selectedWeek) - 1) * 7 + 1;
+  let n = 0;
+  for (let i = 0; i < STORED_ENTRIES.length; i++) {
+    const e = STORED_ENTRIES[i];
+    if (!e || e.branch !== branch || !e.date || String(e.date).slice(0, 7) !== selectedMonth) continue;
+    if (parseInt(String(e.date).slice(8, 10), 10) < sd) n += e.direction === 'in' ? (Number(e.receivedAmount) || 0) : -(Number(e.expenseAmount) || 0);
+  }
+  return n;
+}
+function setWeek(v) { selectedWeek = v; currentPage = 1; bootstrapApp(); }
+
+/* --- Analytics page reads this shared store (slim copy, months loaded so far) --- */
+const ANALYTICS_KEY = 'petty_cash_analytics_v1';
+function feedAnalytics(key, rows) {
+  try {
+    let cur = {};
+    try { cur = JSON.parse(IDBKV.getItem(ANALYTICS_KEY)) || {}; } catch (e) { cur = {}; }
+    if (!key) cur = {};                                        // full load replaces everything
+    else Object.keys(cur).forEach(id => { if (String(cur[id].date || '').slice(0, 7) === key) delete cur[id]; });
+    (rows || []).forEach(e => {
+      if (!e || !e.id || e._pending) return;
+      cur[e.id] = { id: e.id, branch: e.branch, direction: e.direction, category: e.category, expenseType: e.expenseType,
+                    expenseAmount: e.expenseAmount, receivedAmount: e.receivedAmount, date: e.date,
+                    customerName: e.customerName, bizCategory: e.bizCategory, person: e.person };
+    });
+    IDBKV.setItem(ANALYTICS_KEY, JSON.stringify(cur));
+  } catch (e) {}
+}
+
 function monthViewOn() { return MONTH_VIEW && isConfigured(API_ENDPOINTS.GET_RECORDS); }
 /* Ledger screen = one month. Verify / audit / queries / critical need pending items from every month. */
-function datasetKey() { return (monthViewOn() && currentView === 'ledger') ? selectedMonth : ''; }
+function datasetKey() { return (monthViewOn() && (currentView === 'ledger' || (currentView === 'critical' && balancesOn()))) ? selectedMonth : ''; }
 function entriesKey() {
   const k = (loadedKey === null) ? datasetKey() : loadedKey;
   return k ? LOCAL_ENTRIES_KEY + ':' + k : LOCAL_ENTRIES_KEY;
@@ -1778,7 +1858,7 @@ function openingActive() { return monthViewOn() && currentView === 'ledger'; }
    same-day entry made earlier comes first. */
 function txNum(id) { const n = parseInt(String(id || '').replace(/[^0-9]/g, ''), 10); return isNaN(n) ? 0 : n; }
 function cmpEntryOrder(a, b) { return String(a.date || '').localeCompare(String(b.date || '')) || (txNum(a.id) - txNum(b.id)); }
-function openingFor(branch) { return openingActive() ? (Number(OPENINGS[branch]) || 0) : 0; }
+function openingFor(branch) { return openingActive() ? (Number(OPENINGS[branch]) || 0) + weekPriorNet(branch) : 0; }
 function openingForBranches(codes) { return (codes || []).reduce((t, b) => t + openingFor(b), 0); }
 function openingForDataset(ds) {
   if (!openingActive()) return 0;
@@ -1824,11 +1904,17 @@ function monthPickerHtml() {
     <button class="btn sm secondary" onclick="shiftMonth(-1)" title="Previous month">‹</button>
     <input type="month" class="select-ctrl" value="${escapeHtml(selectedMonth)}" max="${cur}" onchange="setMonth(this.value)">
     <button class="btn sm secondary" onclick="shiftMonth(1)" ${selectedMonth >= cur ? 'disabled' : ''} title="Next month">›</button>
+    <select class="select-ctrl" onchange="setWeek(this.value)" title="Week of the month">
+      <option value="ALL" ${selectedWeek === 'ALL' ? 'selected' : ''}>All Weeks</option>
+      ${[1, 2, 3, 4, 5].filter(w => w < 5 || daysInMonthKey(selectedMonth) > 28)
+          .map(w => `<option value="${w}" ${String(selectedWeek) === String(w) ? 'selected' : ''}>${weekLabel(w, selectedMonth)}</option>`).join('')}
+    </select>
   </div>`;
 }
 function setMonth(m) {
   if (!/^\d{4}-\d{2}$/.test(m || '')) return;
   selectedMonth = m; filterDateRange = 'all'; currentPage = 1;
+  if (selectedWeek === '5' && daysInMonthKey(m) <= 28) selectedWeek = 'ALL';
   fetchBackendData();
 }
 function shiftMonth(n) {
@@ -2489,6 +2575,7 @@ async function ensureDetail(id) {
 }
 
 async function fetchBackendData(forceFull) {
+  loadBalancesCache();
   const reqKey = datasetKey();          // month for the ledger screen, '' for the workflow screens
   const seq = ++fetchSeq;
   loadedKey = reqKey;
@@ -2557,8 +2644,10 @@ async function fetchBackendData(forceFull) {
     applyOpenings(data, reqKey, serverRows);
     drainRequisitionHandoff();
     persistLocalEntries();
+    feedAnalytics(reqKey, STORED_ENTRIES);
     lastSyncedAt = new Date();
     setSyncState('ok', 'Synced ' + lastSyncedAt.toLocaleTimeString());
+    loadBalances();
     flushPendingQueue(false);
     flushPendingDocuments(true);   // retry any file still held locally
   } catch (error) {
@@ -3465,6 +3554,7 @@ document.addEventListener('click', (e) => {
 /* --- FILTERS & RENDERING --- */
 function matchDateFilter(dateStr) {
   if (openingActive() && dateStr && String(dateStr).slice(0, 7) !== selectedMonth) return false;
+  if (openingActive() && selectedWeek !== 'ALL' && weekOfDate(dateStr) !== Number(selectedWeek)) return false;
   if (filterDateRange === 'all') return true;
 
   if (filterDateRange === 'custom') {
@@ -3551,7 +3641,7 @@ function renderKPIHeader() {
     : (canAccessBranch(activeTab) ? STORED_ENTRIES.filter(e => e.branch === activeTab && matchDateFilter(e.date)) : []),
     openingForBranches(scope));
   const mv = openingActive();
-  const openCard = mv ? `<div class="kpi-card"><div class="kpi-title">Opening Balance</div><div class="kpi-value mono">${openingsState === 'ok' ? formatINR(stats.opening) : (openingsState === 'loading' ? 'Loading…' : '⚠ n/a')}</div></div>` : '';
+  const openCard = mv ? `<div class="kpi-card"><div class="kpi-title">${selectedWeek === 'ALL' ? 'Opening Balance' : 'Opening (before Wk' + selectedWeek + ')'}</div><div class="kpi-value mono">${openingsState === 'ok' ? formatINR(stats.opening) : (openingsState === 'loading' ? 'Loading…' : '⚠ n/a')}</div></div>` : '';
   const warn = (mv && openingsState === 'missing') ? `<div class="stale-banner"><span>⚠</span><span>Opening balance could not be loaded — running balance and cash in-hand may be wrong. Check the Office Script step in the flow.</span></div>` : '';
   return `
     <div class="metrics-grid"${mv ? ' style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));"' : ''}>
@@ -4230,6 +4320,10 @@ function notify(event, payload) {
 
 /* --- BALANCES (unchanged from R2) --------------------------------- */
 function branchBalanceAllTime(code) {
+  if (balancesOn() && BRANCH_BALANCES) {
+    const x = BRANCH_BALANCES[code];
+    return { balance: x ? x.balance : 0, credit: 0, debit: 0, lastAt: x ? x.lastAt : '' };
+  }
   let credit = 0, debit = 0, lastAt = '';
   for (let i = 0; i < STORED_ENTRIES.length; i++) {
     const e = STORED_ENTRIES[i];
@@ -4254,6 +4348,7 @@ function classifyBranch(code) {
            lastAt: b.lastAt, threshold: t, status: status, shortfall: Math.max(0, t - b.balance) };
 }
 function criticalRows() {
+  if (balancesOn() && !BRANCH_BALANCES) return [];   // not loaded yet — never show a false ₹0
   return SCOPED_BRANCHES.map(b => classifyBranch(b.code))
     .filter(r => r.status !== 'NORMAL')
     .sort((a, b) => a.status !== b.status ? (a.status === 'CRITICAL' ? -1 : 1) : a.balance - b.balance);
@@ -4298,7 +4393,9 @@ function setView(v) {
   const gate = { audit:canAudit, verify:canVerify, queries:canRespondQueries,
                  critical:canSeeCritical, config:canConfigure };
   if (gate[v] && !gate[v]()) { showToast('You do not have access to this page.', 'error'); return; }
-  currentView = v; currentPage = 1; bootstrapApp();
+  currentView = v; currentPage = 1;
+  if (v === 'critical') loadBalances();
+  bootstrapApp();
 }
 function toggleGroup(key) { expanded[key] = !expanded[key]; bootstrapApp(); }
 
@@ -4896,11 +4993,13 @@ function renderCriticalView() {
   const crit = rows.filter(r => r.status === 'CRITICAL'), warn = rows.filter(r => r.status === 'WARNING');
   const shortfall = crit.reduce((s, r) => s + r.shortfall, 0);
   const stale = !lastSyncedAt || (Date.now() - lastSyncedAt > 300000);
+  const balLoading = balancesOn() && !BRANCH_BALANCES;
   // Dynamically extract unique regions from the user's available scope
   const uniqueRegions = [...new Set(SCOPED_BRANCHES.map(b => regionOf(b.code)))].filter(Boolean);
   const regions = uniqueRegions.map(r => ({ code: r, name: r }));
 
   let h = '';
+  if (balLoading) h += `<div class="stale-banner"><span>⏳</span><span>Loading branch balances…</span></div>`;
   if (stale) h += `<div class="stale-banner"><span>⚠</span><span>Showing cached figures — last synchronised ${lastSyncedAt?fmtStamp(new Date(lastSyncedAt).toISOString()):'never'}.</span>
     <button class="btn sm secondary" onclick="manualSync(event)" style="margin-left:auto;">Sync now</button></div>`;
 
@@ -4922,6 +5021,7 @@ function renderCriticalView() {
         <button class="btn secondary" onclick="exportCriticalBalances()">📊 Export</button>
       </div></div>`;
 
+  if (balLoading) return h;
   if (!rows.length) return h + `<div class="empty-state"><div class="es-icon">✅</div>
     <div class="es-title">All branches are adequately funded</div>
     <div class="es-body">No branch is at or below ${formatINR(APP_CONFIG.criticalThreshold)} in the selected scope.</div></div>`;
