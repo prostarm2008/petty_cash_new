@@ -289,82 +289,26 @@
   const EXCEL_GET_CONFIG_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/3d8c890bdd85458eb4af7f65b3a49577/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=jBQBA8EMi2xs9QMwg9Cpcb1f2GtFGrCxDJPXRwIvHUw";
   const API_KEY = ""; 
 
-  let DYNAMIC_BRANCHES = [];
   const $ = (id) => document.getElementById(id);
+  let DIRECTORY_READY = false;
 
-  // Employee master lookup, keyed by EmpCode (uppercased). Built once from the
-  // same Excel config the rest of the suite reads, so role/branch/hierarchy
-  // are always sourced from one place.
-  let EMP_CONFIG = {};
-
-  function normalizeBranchCode(b) {
-    if (!b) return b;
-    b = String(b);
-    if (b.includes('-')) {
-      const p = b.split('-');
-      return p[0].trim() + '_' + p[1].trim();
-    }
-    return b;
-  }
-
-  // A row's key is matched case-insensitively against any of these header names.
-  function rowVal(row, key) {
-    const foundKey = Object.keys(row).find(k => k.toLowerCase() === key.toLowerCase());
-    return foundKey ? row[foundKey] : undefined;
-  }
-
-  // IsHOAdmin / IsAdmin (either column) -> admin. Otherwise Role / Access Level
-  // text decides: contains "audit" -> auditor, "regional" -> regional, else branch.
-  function deriveRole(row) {
-    const isAdmin = String(rowVal(row, 'IsHOAdmin') || '').toUpperCase() === 'TRUE'
-                  || String(rowVal(row, 'IsAdmin') || '').toUpperCase() === 'TRUE';
-    if (isAdmin) return 'admin';
-    const raw = String(rowVal(row, 'Role') || rowVal(row, 'Access Level') || '').toLowerCase();
-    if (raw.includes('admin')) return 'admin';
-    if (raw.includes('audit')) return 'auditor';
-    if (raw.includes('regional')) return 'regional';
-    return 'branch';
-  }
-
-  // Load the employee master + branch list dynamically from Excel on startup.
+  // Load the access directory once (rbac.js caches it for the whole suite).
+  // Sign In stays disabled until it is available, so a server problem is
+  // reported as a server problem instead of "you are not mapped".
   async function loadConfig() {
+    $('loginBtn').disabled = true;
     try {
       ProstarmRBAC.configure(EXCEL_GET_CONFIG_URL);
-      await ProstarmRBAC.loadDirectory();
-      const res = await fetch(EXCEL_GET_CONFIG_URL);
-      const data = await res.json();
-      const rows = data.value ? data.value : data;
-      const branchSet = new Set();
-
-      rows.forEach(r => {
-        let b = normalizeBranchCode(rowVal(r, 'Branch') || rowVal(r, 'BranchCode'));
-        if (b && !branchSet.has(b)) {
-          branchSet.add(b);
-          const bName = rowVal(r, 'BranchName') || b.split('_')[1] || b;
-          DYNAMIC_BRANCHES.push({ code: b, name: bName });
-        }
-
-        const code = rowVal(r, 'EmpCode');
-        if (code) {
-          EMP_CONFIG[String(code).trim().toUpperCase()] = {
-            n: rowVal(r, 'FullName'),
-            b: b,
-            email: rowVal(r, 'Email') || rowVal(r, 'EmailAddress') || rowVal(r, 'Email ID') || '',
-            regionalManagerCode: rowVal(r, 'RegionalManagerCode') || null,
-            role: deriveRole(r)
-          };
-        }
-      });
-
-      if (DYNAMIC_BRANCHES.length === 0) throw new Error("No branches found in config.");
-      if (Object.keys(EMP_CONFIG).length === 0) throw new Error("No employees found in config.");
-
+      const snap = await ProstarmRBAC.loadDirectory();
+      if (!snap.users.length) throw new Error("No employees found in config.");
+      DIRECTORY_READY = true;
+      $('loginBtn').disabled = false;
       $('authModeLabel').textContent = "Server authentication active";
     } catch (err) {
       console.error("Failed to load employee master dynamically", err);
       $('authModeLabel').textContent = "Error connecting to server";
       $('authModePill').className = "status-pill error";
-      showLoginError("Could not load the employee master from the server. Please try again shortly.");
+      showLoginError("Could not load the employee master from the server. Please refresh the page and try again.");
     }
   }
 
@@ -408,46 +352,8 @@
     window.location.href = 'dashboard.html';
   }
 
-  // Determine every branch this EmpCode has visibility over, per their derived role.
-  function resolveBranchesForUser(empCode, role, ownBranch) {
-    if (role === 'admin' || role === 'auditor') {
-      return DYNAMIC_BRANCHES.length > 0 ? DYNAMIC_BRANCHES.map(b => b.code) : ["ALL"];
-    }
-    if (role === 'regional') {
-      const covered = Object.values(EMP_CONFIG)
-        .filter(r => String(r.regionalManagerCode || '').trim().toUpperCase() === empCode)
-        .map(r => r.b)
-        .filter(Boolean);
-      const unique = Array.from(new Set(covered));
-      if (unique.length) return unique;
-      // No branches list this person as their RM yet — fall back to their own branch.
-      return ownBranch ? [ownBranch] : [];
-    }
-    return ownBranch ? [ownBranch] : [];
-  }
-
-  // Find this person's row in the Excel master. The login username won't always
-  // equal EmpCode (e.g. AD usernames like "chandans" vs EmpCode "E004"), so try
-  // several identity fields the auth backend might hand back before giving up.
-  function findEmployeeRow(uname, data) {
-    const candidates = [uname, data && data.username, data && data.empCode, data && data.EmpCode]
-      .filter(Boolean).map(c => String(c).trim().toUpperCase());
-    for (const c of candidates) {
-      if (EMP_CONFIG[c]) return { key: c, row: EMP_CONFIG[c] };
-    }
-    const emailToMatch = (data && data.email) || '';
-    if (emailToMatch) {
-      const hitKey = Object.keys(EMP_CONFIG).find(k =>
-        EMP_CONFIG[k].email && String(EMP_CONFIG[k].email).toLowerCase() === emailToMatch.toLowerCase());
-      if (hitKey) return { key: hitKey, row: EMP_CONFIG[hitKey] };
-    }
-    return null;
-  }
-
-  // Authenticate against the backend first (password check), then prefer the
-  // Excel employee master for role/branch/name/email. If this person's login
-  // username doesn't match anything in Excel, fall back to whatever the
-  // backend itself returned rather than blocking their sign-in.
+  // Authenticate against the backend (password check); role/branch/name come
+  // from the employee directory via rbac.js.
   async function handleServerLogin(username, pwd) {
     const uname = username.trim();
 
@@ -469,31 +375,6 @@
     // Authentication verifies the password; all authorization attributes come
     // from rbac.js/the employee directory, never from this response or UI.
     return ProstarmRBAC.createSession(data, uname);
-
-    const match = findEmployeeRow(uname, data);
-
-    let role, branches;
-    if (match) {
-      role = match.row.role || 'branch';
-      branches = resolveBranchesForUser(match.key, role, match.row.b);
-    } else {
-      console.warn('No Excel master row matched "' + uname + '" — using role/branch from the auth server instead.');
-      role = data.role || 'branch';
-      branches = data.branches && data.branches.length ? data.branches : (data.branch ? [data.branch] : []);
-      if (role === 'admin' || role === 'auditor') {
-        branches = DYNAMIC_BRANCHES.length > 0 ? DYNAMIC_BRANCHES.map(b => b.code) : ["ALL"];
-      }
-    }
-
-    return {
-      role: role,
-      branch: branches[0] || 'ALL',
-      branches: branches,
-      username: uname,
-      name: (match && match.row.n) || data.name || data.displayName || uname,
-      email: (match && match.row.email) || data.email || '',
-      token: data.token || ''
-    };
   }
 
   $('loginForm').addEventListener('submit', async (e) => {
@@ -503,6 +384,7 @@
     const username = $('loginUsername').value.trim();
     const pwd = $('loginPassword').value.trim();
 
+    if (!DIRECTORY_READY) { showLoginError('Employee directory is not loaded yet. Please refresh the page.'); return; }
     if (!username) { showLoginError('Please enter your username.'); return; }
     if (!pwd) { showLoginError('Please enter your password.'); return; }
 

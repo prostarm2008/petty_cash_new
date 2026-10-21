@@ -982,7 +982,7 @@ function setToday() {
 function stampHeader(){
   const bc = String((EMP[ME]&&EMP[ME].b)||"").split("_")[0];
   const d = new Date();
-  REQNO = "REQ/" + bc + "/" + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + "/" + String(Math.floor(Math.random()*9000)+1000);
+  REQNO = "REQ/" + bc + "/" + String(d.getFullYear()).slice(2) + pad(d.getMonth()+1) + "/" + String(Date.now()).slice(-7) + String(Math.floor(Math.random()*90)+10);
   $("reqNoTop").textContent = REQNO;
 }
 
@@ -2862,7 +2862,7 @@ async function initializeApp() {
     const excelData = await ProstarmRBAC.rows();
 
     if (!Array.isArray(excelData)) {
-      throw new Error("Config response wasn't an array — check the flow's output shape: " + JSON.stringify(rawResponse).slice(0, 300));
+      throw new Error("Config response wasn't an array — check the flow's output shape: " + JSON.stringify(excelData).slice(0, 300));
     }
     if (!excelData.length) {
       throw new Error("Config response was an empty array — check the Excel table has rows and the flow is pointed at it.");

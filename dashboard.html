@@ -1743,13 +1743,16 @@ const $ = (id) => document.getElementById(id);
 const formatINR = (n) => "₹" + (Number(n) || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 function formatDateDMY(dateStr) {
   if (!dateStr) return '—';
+  const ym = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr));
+  if (ym) return `${ym[3]}-${ym[2]}-${ym[1]}`;
   const d = new Date(dateStr);
   if (isNaN(d)) return dateStr;
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
   return `${dd}-${mm}-${d.getFullYear()}`;
 }
-const getISO = () => new Date().toISOString().slice(0, 10);
+/* Local (IST) calendar date — toISOString() is UTC and gives yesterday between 00:00 and 05:30 IST. */
+const getISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
 const PENDING_QUEUE_KEY = 'petty_cash_pending_queue_v1';
 const LOCAL_ENTRIES_KEY = 'petty_cash_records_v2';
 
@@ -2293,6 +2296,7 @@ function toBackendPayload(rec) {
   const out = Object.assign({}, rec);
   delete out._summary;     // client-only flag
   delete out.modifiedOn;   // set by the flow, never by the browser
+  delete out._expDate;     // client-side cache of the Expense Date
 
   /* Arrays stay arrays — the trigger schema declares them as Array.
      Every key is KEPT, including `data`: the schema for these items was
@@ -2439,6 +2443,46 @@ function drainRequisitionHandoff() {
    including the document bytes, which only exist in this browser. */
 /* Excel hands every column back as text. Arrays were written as JSON, so
    they must be parsed or wfStatus/doc counts/trails all read as garbage. */
+/* --- EXPENSE DATE ------------------------------------------------
+   The sheet keeps an Expense Date that is separate from the entry Date.
+   The flow returns whatever the column header is called, so the key is
+   matched loosely (case, spaces, underscores ignored) and the value is
+   converted to YYYY-MM-DD (ISO text, dd/mm/yyyy, or an Excel serial). */
+const EXPENSE_DATE_KEYS = ['expensedate', 'dateofexpense', 'expensedt', 'expdate', 'dateofexp', 'expenseon', 'expensedateon'];
+function toIsoDate(v) {
+  if (v === null || v === undefined) return '';
+  const ymd = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  if (typeof v === 'number' || /^\d{5}(\.\d+)?$/.test(String(v).trim())) {
+    const n = Number(v);
+    if (n > 20000 && n < 80000) { const d = new Date(Math.round((n - 25569) * 86400000)); return d.getUTCFullYear() + '-' + String(d.getUTCMonth() + 1).padStart(2, '0') + '-' + String(d.getUTCDate()).padStart(2, '0'); }
+  }
+  const t = String(v).trim();
+  if (!t) return '';
+  let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(t);
+  if (m) return t;
+  m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?(?:\.\d+)?(Z|[+-]\d{2}:?\d{2})?$/.exec(t);
+  if (m) {
+    if (m[4] === '00' && m[5] === '00' && (!m[6] || m[6] === '00')) return m[1] + '-' + m[2] + '-' + m[3];
+    if (m[7]) { const d = new Date(t); if (!isNaN(d)) return ymd(d); }
+    return m[1] + '-' + m[2] + '-' + m[3];
+  }
+  m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/.exec(t);
+  if (m) return m[3] + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0');
+  const d = new Date(t);
+  return isNaN(d) ? '' : ymd(d);
+}
+function expenseDateKeyOf(e) {
+  return Object.keys(e || {}).find(k => EXPENSE_DATE_KEYS.indexOf(String(k).toLowerCase().replace(/[^a-z0-9]/g, '')) !== -1);
+}
+/* Expense date of a record in YYYY-MM-DD, or '' when the sheet has none. */
+function expDateOf(e) {
+  if (!e) return '';
+  if (e._expDate !== undefined) return e._expDate;
+  const k = expenseDateKeyOf(e);
+  e._expDate = k ? toIsoDate(e[k]) : '';
+  return e._expDate;
+}
+
 function normalizeRecord(r) {
   if (!r || typeof r !== 'object') return r;
   ARRAY_FIELDS.forEach(f => { r[f] = asArray(r[f]); });
@@ -2661,6 +2705,10 @@ async function fetchBackendData(forceFull) {
     else fullState = 'ready';
     if (fullState === 'ready') persistLocalEntries();
     feedAnalytics(reqKey, STORED_ENTRIES);
+    try {
+      const outs = STORED_ENTRIES.filter(r => r && r.direction === 'out');
+      if (outs.length && !outs.some(r => expDateOf(r))) console.warn('[Expense Date] No expense-date column found in the flow response. Keys received:', Object.keys(outs[0]));
+    } catch (e) {}
     lastSyncedAt = new Date();
     setSyncState('ok', 'Synced ' + lastSyncedAt.toLocaleTimeString());
     loadBalances();
@@ -2956,6 +3004,7 @@ function openDrawer(defaultBranch) {
   $('fBranch').value = defaultBranch;
   $('fBranch').disabled = (ALLOWED_BRANCHES.length <= 1);
   $('fDate').value = getISO();
+  $('fDate').max = getISO();
   $('fDate').readOnly = false;
   $('fDate').style.pointerEvents = '';
   $('fDate').style.opacity = '';
@@ -3057,9 +3106,12 @@ async function editEntry(id) {
 function closeDrawer() { $('entryDrawer').classList.remove('open'); }
 
 function computeDateMeta(dateStr) {
-  const d = new Date(dateStr);
+  /* Parse YYYY-MM-DD by hand (no timezone shift) and use fixed English month
+     names so the stored Month never depends on the browser language. */
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(dateStr || ''));
+  const d = m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : new Date(dateStr);
   const monthNum = d.getMonth() + 1;
-  const monthName = d.toLocaleString('default', { month: 'short' });
+  const monthName = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][d.getMonth()];
   return { month: monthName, monthType: LOOKUP_MONTH_TYPES[monthNum] || monthName, year: d.getFullYear(), qtr: 'Q' + Math.ceil(monthNum / 3) };
 }
 
@@ -3077,6 +3129,7 @@ async function saveDrawerEntry(submitForApproval) {
      would point at the symptom rather than the cause. */
   const baseMissing = [];
   if (!date) baseMissing.push('Date');
+  if (date && date > getISO()) { $('formError').textContent = 'Entry date cannot be in the future.'; $('formError').style.display = 'block'; return; }
   if (!amount || amount <= 0) baseMissing.push('Amount');
   if (isExpense && !expenseType) baseMissing.push('Expense Type');
   if (!category) baseMissing.push(isExpense ? 'Expense Category' : 'Credit Source / Category');
@@ -3338,7 +3391,7 @@ const EXCEL_HEADERS = [
   'Person Name/Paid to Name', 'Invoice No', 'Invoice Date', 'Vendor GSTIN No',
   'LR / POD Number', 'Approval Taken from Person Name(HO)',
   'Received Amount UTR No', 'Received Amount', 'Expense Amount',
-  'Actual in Hand', 'Detailed Remark', 'Document Image upload'
+  'Actual in Hand', 'Detailed Remark', 'Document Image upload', 'Expense Date'
 ];
 
 function buildExportRows(dataset) {
@@ -3388,7 +3441,8 @@ function buildExportRows(dataset) {
       e.direction === 'out' ? Number(e.expenseAmount || 0) : null, // Explicit numeric conversion or null cell
       Number(running.toFixed(2)), // Explicitly cast the running balance calculation as a clean Number type
       e.remark || '', 
-      e.docImageName || ''
+      e.docImageName || '',
+      e.direction === 'out' ? (expDateOf(e) || '') : ''
     ];
   });
 }
@@ -3416,34 +3470,41 @@ function exportCSVPayload(filename, dataset) {
 /* Branch-wise debit / credit totals. */
 function buildBranchSummaryRows(dataset) {
   const by = {};
+  const blank = () => ({ opening: 0, credit: 0, debit: 0, cr: 0, dr: 0, last: '', lastCr: '', lastDr: '' });
+  /* Month view: a branch with an opening balance but no entries yet must
+     still appear, otherwise its carried-forward cash vanishes from the totals. */
+  if (openingActive()) (SCOPED_BRANCHES || []).forEach(b => { by[b.code] = blank(); });
   (dataset || []).forEach(e => {
     const code = e.branch || 'Unassigned';
-    if (!by[code]) by[code] = { credit: 0, debit: 0, cr: 0, dr: 0, last: '' };
+    if (!by[code]) by[code] = blank();
     const g = by[code];
-    if (e.direction === 'in') { g.credit += Number(e.receivedAmount) || 0; g.cr++; }
-    else                      { g.debit  += Number(e.expenseAmount)  || 0; g.dr++; }
+    if (e.direction === 'in') { g.credit += Number(e.receivedAmount) || 0; g.cr++; if (e.date && e.date > g.lastCr) g.lastCr = e.date; }
+    else                      { g.debit  += Number(e.expenseAmount)  || 0; g.dr++; const xd = expDateOf(e) || e.date; if (xd && xd > g.lastDr) g.lastDr = xd; }
     if (e.date && e.date > g.last) g.last = e.date;
   });
+  Object.keys(by).forEach(code => { by[code].opening = openingFor(code); });
 
   const rows = [[
-    'Branch Code', 'Branch Name', 'Region',
+    'Branch Code', 'Branch Name', 'Region', 'Opening Balance',
     'Credit (Cash Received)', 'Debit (Cash Spent)', 'Closing Balance',
-    'Credit Entries', 'Debit Entries', 'Total Entries', 'Last Transaction'
+    'Credit Entries', 'Debit Entries', 'Total Entries',
+    'Last Credit Date', 'Last Expense Date', 'Last Transaction'
   ]];
 
-  let tc = 0, td = 0, tcr = 0, tdr = 0;
+  let to = 0, tc = 0, td = 0, tcr = 0, tdr = 0;
+  const fmt = d => d ? formatDateDMY(d) : '';
   Object.keys(by).sort((a, b) => branchName(a).localeCompare(branchName(b))).forEach(code => {
     const g = by[code];
-    tc += g.credit; td += g.debit; tcr += g.cr; tdr += g.dr;
+    to += g.opening; tc += g.credit; td += g.debit; tcr += g.cr; tdr += g.dr;
     rows.push([
       code, branchName(code), regionName(regionOf(code)),
-      g.credit, g.debit, g.credit - g.debit,
+      g.opening, g.credit, g.debit, g.opening + g.credit - g.debit,
       g.cr, g.dr, g.cr + g.dr,
-      g.last ? formatDateDMY(g.last) : ''
+      fmt(g.lastCr), fmt(g.lastDr), fmt(g.last)
     ]);
   });
   rows.push([]);
-  rows.push(['TOTAL', '', '', tc, td, tc - td, tcr, tdr, tcr + tdr, '']);
+  rows.push(['TOTAL', '', '', to, tc, td, to + tc - td, tcr, tdr, tcr + tdr, '', '', '']);
   return rows;
 }
 
@@ -3483,7 +3544,7 @@ function buildLastCreditRows(dataset) {
 
     if (!e) {
       rows.push([code, branchName(code), regionName(regionOf(code)),
-                 'No credit received', '', '', '', '', '', credits, credits - debits]);
+                 'No credit received', '', '', '', '', '', credits, openingFor(code) + credits - debits]);
       return;
     }
     const d = new Date(e.date);
@@ -3492,7 +3553,7 @@ function buildLastCreditRows(dataset) {
       code, branchName(code), regionName(regionOf(code)),
       formatDateDMY(e.date), Number(e.receivedAmount) || 0,
       e.receivedUTR || '', e.person || '', e.remark || '',
-      days, credits, credits - debits
+      days, credits, openingFor(code) + credits - debits
     ]);
   });
   return rows;
@@ -3524,8 +3585,8 @@ function exportExcelPayload(filename, dataset, branchLabel) {
   /* Branch-wise debit & credit */
   const bRows = buildBranchSummaryRows(dataset);
   const wsBranch = XLSX.utils.aoa_to_sheet(bRows);
-  wsBranch['!cols'] = [{wch:16},{wch:18},{wch:14},{wch:20},{wch:18},{wch:17},
-                       {wch:14},{wch:13},{wch:12},{wch:16}];
+  wsBranch['!cols'] = [{wch:16},{wch:18},{wch:14},{wch:17},{wch:20},{wch:18},{wch:17},
+                       {wch:14},{wch:13},{wch:12},{wch:17},{wch:17},{wch:17}];
   XLSX.utils.book_append_sheet(wb, wsBranch, 'Branch Summary');
 
   /* Branch-wise last credit */
@@ -3792,7 +3853,7 @@ function renderBranchLedgerView(branchCode) {
             <tr><td colspan="12" style="text-align:center; padding: 36px; color: var(--text-muted);">No records found for this period.</td></tr>
           ` : pageRows.map(row => `
             <tr>
-              <td class="mono nw">${escapeHtml(row.date)}${pendingIds.has(row.id) ? '<br><span class="badge pending">Pending sync</span>' : ''}</td>
+              <td class="mono nw">${escapeHtml(row.date)}${(row.direction === 'out' && expDateOf(row)) ? '<br><span style="font-size:11px;color:var(--text-secondary);" title="Expense Date">Exp: ' + escapeHtml(formatDateDMY(expDateOf(row))) + '</span>' : ''}${pendingIds.has(row.id) ? '<br><span class="badge pending">Pending sync</span>' : ''}</td>
               <td>${escapeHtml(row.division) || '—'}</td>
               <td><span class="badge ${row.direction}">${escapeHtml(row.expenseType) || '—'}</span></td>
               <td>${escapeHtml(row.category) || '—'}</td>
@@ -3882,8 +3943,11 @@ function renderLedgerBody() {
         </div>
       </div>
       <div class="grid-branch-cards">${SCOPED_BRANCHES.map(b => {
-      const s = getStats(STORED_ENTRIES.filter(e => e.branch === b.code && matchDateFilter(e.date)), openingFor(b.code));
-      return `<div class="branch-summary-card" onclick="switchTab('${b.code}')"><div class="bsc-code">${escapeHtml(b.code)}</div><div class="bsc-name">${escapeHtml(b.name)}</div><div class="bsc-balance mono ${s.balance < 0 ? 'debit' : ''}">${formatINR(s.balance)}</div><div class="bsc-meta"><span style="color:var(--credit)">▲ ${formatINR(s.credit)}</span><span style="color:var(--debit)">▼ ${formatINR(s.debit)}</span></div></div>`;
+      const bl = STORED_ENTRIES.filter(e => e.branch === b.code && matchDateFilter(e.date));
+      const s = getStats(bl, openingFor(b.code));
+      let lastIn = '', lastOut = '';
+      bl.forEach(e => { if (e.direction === 'in') { if (e.date && e.date > lastIn) lastIn = e.date; } else { const xd = expDateOf(e) || e.date; if (xd && xd > lastOut) lastOut = xd; } });
+      return `<div class="branch-summary-card" onclick="switchTab('${b.code}')"><div class="bsc-code">${escapeHtml(b.code)}</div><div class="bsc-name">${escapeHtml(b.name)}</div><div class="bsc-balance mono ${s.balance < 0 ? 'debit' : ''}">${formatINR(s.balance)}</div><div class="bsc-meta"><span style="color:var(--credit)">▲ ${formatINR(s.credit)}</span><span style="color:var(--debit)">▼ ${formatINR(s.debit)}</span></div><div class="bsc-meta" style="font-size:11px;color:var(--text-secondary);align-items:flex-start;"><span style="display:flex;flex-direction:column;gap:2px;"><span>Last credit</span><b style="white-space:nowrap;font-size:12px;color:var(--text-primary);">${lastIn ? formatDateDMY(lastIn) : '—'}</b></span><span style="display:flex;flex-direction:column;gap:2px;text-align:right;align-items:flex-end;"><span>Last expense</span><b style="white-space:nowrap;font-size:12px;color:var(--text-primary);">${lastOut ? formatDateDMY(lastOut) : '—'}</b></span></div></div>`;
     }).join('')}</div>`;
   } else {
     viewHtml += renderBranchLedgerView(activeTab);
@@ -3929,7 +3993,8 @@ async function viewDetailModal(id) {
   let detailsHtml = `
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
       <p><b>Branch Name:</b> ${escapeHtml(bObj ? bObj.name : item.branch)}</p>
-      <p><b>Date:</b> ${escapeHtml(item.date)} (${escapeHtml(item.monthType)}, ${escapeHtml(item.year)}, ${escapeHtml(item.qtr)})</p>
+      <p><b>Entry Date:</b> ${escapeHtml(item.date)} (${escapeHtml(item.monthType)}, ${escapeHtml(item.year)}, ${escapeHtml(item.qtr)})</p>
+      ${(item.direction === 'out' && expDateOf(item)) ? `<p><b>Expense Date:</b> ${escapeHtml(formatDateDMY(expDateOf(item)))}</p>` : ''}
       <p><b>Movement:</b> <span class="badge ${item.direction}">${item.direction === 'in' ? 'Received (Inflow)' : 'Expense (Outflow)'}</span></p>
       <p><b>Amount:</b> <span class="mono" style="font-weight:700; color:${item.direction==='in'?'var(--credit)':'var(--debit)'}">${formatINR(item.direction==='in'?item.receivedAmount:item.expenseAmount)}</span></p>
       <p><b>Expense Type:</b> ${escapeHtml(item.expenseType)}</p>

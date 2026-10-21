@@ -33,15 +33,20 @@
   const split = value => String(value || '').split(/[;,|]/).map(text).filter(Boolean);
   function branchCode(value) { return text(value).replace(/\s*-\s*/g, '_'); }
   function rolesFor(row) {
-    // Some existing directory rows use Designation instead of Role.  Include
-    // it as a compatibility source, while explicit Roles remain preferred.
-    const raw = [get(row, 'Roles', 'Role', 'User Role', 'UserRole', 'Role Name', 'RoleName', 'Access Level', 'AccessLevel', 'User Type', 'UserType'), get(row, 'Designation')]
-      .map(value => split(value).join(' ')).join(' ').toLowerCase();
+    // Explicit Role columns are authoritative. Designation is only a
+    // compatibility source for non-admin roles: a designation such as
+    // "Branch Admin" or "Admin Executive" must never grant HO Admin.
+    const explicit = [get(row, 'Roles', 'Role', 'User Role', 'UserRole', 'Role Name', 'RoleName', 'Access Level', 'AccessLevel', 'User Type', 'UserType')];
+    const tokens = explicit.flatMap(v => split(v)).map(t => t.toLowerCase().replace(/[^a-z ]/g, ' ').replace(/\s+/g, ' ').trim());
+    const raw = tokens.join(' ');
+    const desig = String(get(row, 'Designation') || '').toLowerCase();
+    const truthy = v => ['true', 'yes', '1'].includes(String(v || '').toLowerCase());
+    const ADMIN_TOKENS = ['admin', 'ho admin', 'hoadmin', 'head office admin', 'administrator', 'super admin'];
     const roles = new Set();
-    if (/admin/.test(raw) || ['true', 'yes', '1'].includes(String(get(row, 'IsAdmin', 'IsHOAdmin') || '').toLowerCase())) roles.add('admin');
-    if (/audit/.test(raw)) roles.add('auditor');
-    if (/regional|\brm\b/.test(raw)) roles.add('regional');
-    if (/final approv/.test(raw) || ['true', 'yes', '1'].includes(String(get(row, 'IsFinalApprover') || '').toLowerCase()) || /final approving authority/.test(String(get(row, 'Designation') || '').toLowerCase())) roles.add('final_approver');
+    if (tokens.some(t => ADMIN_TOKENS.includes(t)) || truthy(get(row, 'IsAdmin', 'IsHOAdmin'))) roles.add('admin');
+    if (/\baudit/.test(raw) || /\bfinance audit/.test(desig)) roles.add('auditor');
+    if (/\bregional\b|\brm\b/.test(raw) || /\bregional manager\b/.test(desig)) roles.add('regional');
+    if (/final approv/.test(raw) || truthy(get(row, 'IsFinalApprover')) || /final approving authority/.test(desig)) roles.add('final_approver');
     if (!roles.size) roles.add('branch');
     return ROLE_ORDER.filter(r => roles.has(r));
   }
