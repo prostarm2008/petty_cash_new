@@ -1845,6 +1845,18 @@ function feedAnalytics(key, rows) {
   } catch (e) {}
 }
 
+/* Verify / Audit / My Tasks ideally need every month. While the full load is on its way
+   (or if it fails) the records ALREADY in the browser stay visible — nothing is blanked —
+   with a banner saying exactly what is shown. */
+let fullState = 'ready';   // ready | partial (month data shown, all months loading) | empty | failed
+function fullLoadBanner() {
+  const n = STORED_ENTRIES.length;
+  const msg = fullState === 'partial' ? `Showing the ${n} records already loaded (${escapeHtml(selectedMonth)}). Loading all months…`
+    : fullState === 'empty' ? `The server returned no records for “all months”, so only the ${n} already-loaded records (${escapeHtml(selectedMonth)}) are shown. Check the GET flow with month empty.`
+    : `Could not load all months — showing the ${n} records already loaded (${escapeHtml(selectedMonth)}).`;
+  return `<div class="stale-banner"><span>${fullState === 'partial' ? '⏳' : '⚠'}</span><span>${msg}</span>
+    ${fullState === 'partial' ? '' : '<button class="btn sm secondary" onclick="manualSync(event)" style="margin-left:auto;">Retry</button>'}</div>`;
+}
 function monthViewOn() { return MONTH_VIEW && isConfigured(API_ENDPOINTS.GET_RECORDS); }
 /* Ledger screen = one month. Verify / audit / queries / critical need pending items from every month. */
 function datasetKey() { return (monthViewOn() && (currentView === 'ledger' || (currentView === 'critical' && balancesOn()))) ? selectedMonth : ''; }
@@ -2595,6 +2607,8 @@ async function fetchBackendData(forceFull) {
   let cached = [];
   try { cached = JSON.parse(IDBKV.getItem(entriesKey())) || []; } catch (e) { cached = []; }
 
+  const interim = (reqKey === '' && !cached.length && Array.isArray(STORED_ENTRIES) && STORED_ENTRIES.length) ? STORED_ENTRIES : null;
+  fullState = (reqKey === '' && !cached.length) ? 'partial' : 'ready';
   if (cached.length) {
     STORED_ENTRIES = cached;
     drainRequisitionHandoff();
@@ -2603,7 +2617,7 @@ async function fetchBackendData(forceFull) {
   } else {
     // Render the complete workspace immediately, even on a first visit with
     // no local cache. The cloud request updates it when it completes.
-    STORED_ENTRIES = [];
+    STORED_ENTRIES = interim || [];
     drainRequisitionHandoff();
     setSyncState('busy', 'Loading…');
     renderApp();
@@ -2643,7 +2657,9 @@ async function fetchBackendData(forceFull) {
     }
     applyOpenings(data, reqKey, serverRows);
     drainRequisitionHandoff();
-    persistLocalEntries();
+    if (interim && !STORED_ENTRIES.length) { STORED_ENTRIES = interim; fullState = 'empty'; }
+    else fullState = 'ready';
+    if (fullState === 'ready') persistLocalEntries();
     feedAnalytics(reqKey, STORED_ENTRIES);
     lastSyncedAt = new Date();
     setSyncState('ok', 'Synced ' + lastSyncedAt.toLocaleTimeString());
@@ -2652,6 +2668,7 @@ async function fetchBackendData(forceFull) {
     flushPendingDocuments(true);   // retry any file still held locally
   } catch (error) {
     if (seq !== fetchSeq) return;
+    if (reqKey === '' && interim && !cached.length) { STORED_ENTRIES = interim; fullState = 'failed'; }
     if (openingsState === 'loading') openingsState = 'missing';
     console.warn("API Error. Loading local data fallback.", error);
     STORED_ENTRIES = cached.length ? cached : (JSON.parse(IDBKV.getItem(entriesKey())) || []);
@@ -3825,6 +3842,8 @@ function renderApp() {
   if (isAuditor() && currentView === 'ledger') currentView = 'audit';
   const nav = renderViewNav();
   let body;
+  const needsFull = ['audit', 'verify', 'queries'].indexOf(currentView) !== -1 && monthViewOn() && loadedKey === '';
+  const fullBanner = (needsFull && fullState !== 'ready') ? fullLoadBanner() : '';
   switch (currentView) {
     case 'audit':    body = renderAuditQueueView();    break;
     case 'verify':   body = renderVerifyView();        break;
@@ -3833,7 +3852,7 @@ function renderApp() {
     case 'config':   body = renderConfigView();        break;
     default:         body = renderLedgerBody();
   }
-  $('mainApp').innerHTML = nav + body;
+  $('mainApp').innerHTML = nav + fullBanner + body;
 }
 
 function renderLedgerBody() {
@@ -4626,25 +4645,74 @@ function removeUploadedDoc(recId, docId) {
 /* ================================================================
    BRANCH TASK VIEW
    ================================================================ */
+/* My Tasks: filter by branch / search, newest first, 25 rows per page per section. */
+const TASK_PAGE_SIZE = 25;
+let taskBranch = 'ALL', taskSearch = '';
+let taskPage = { returned: 1, awaiting: 1, inflight: 1 };
+function taskGo(key, p) { taskPage[key] = Math.max(1, p); bootstrapApp(); }
+function setTaskBranch(v) { taskBranch = v; taskPage = { returned: 1, awaiting: 1, inflight: 1 }; bootstrapApp(); }
+function onTaskSearch(v) { taskSearch = v; taskPage = { returned: 1, awaiting: 1, inflight: 1 }; bootstrapApp(); }
+function taskMatches(r) {
+  if (taskBranch !== 'ALL' && r.branch !== taskBranch) return false;
+  const q = String(taskSearch || '').trim().toLowerCase();
+  if (!q) return true;
+  return [r.voucher, r.expenseType, r.category, r.person, r.branch, branchName(r.branch), r.ticket, r.remark]
+    .some(v => String(v || '').toLowerCase().indexOf(q) !== -1);
+}
+function taskPager(key, total) {
+  if (total <= TASK_PAGE_SIZE) return '';
+  const pages = Math.ceil(total / TASK_PAGE_SIZE), p = Math.min(taskPage[key], pages);
+  return `<div style="display:flex; gap:8px; align-items:center; justify-content:flex-end; padding:8px 12px;">
+    <span class="st-sub">${(p - 1) * TASK_PAGE_SIZE + 1}–${Math.min(p * TASK_PAGE_SIZE, total)} of ${total}</span>
+    <button class="btn sm secondary" ${p <= 1 ? 'disabled' : ''} onclick="taskGo('${key}', ${p - 1})">‹ Prev</button>
+    <button class="btn sm secondary" ${p >= pages ? 'disabled' : ''} onclick="taskGo('${key}', ${p + 1})">Next ›</button>
+  </div>`;
+}
+function taskSlice(list, key) {
+  const pages = Math.max(1, Math.ceil(list.length / TASK_PAGE_SIZE));
+  if (taskPage[key] > pages) taskPage[key] = pages;
+  const st = (taskPage[key] - 1) * TASK_PAGE_SIZE;
+  return list.slice(st, st + TASK_PAGE_SIZE);
+}
+
 function renderBranchQueriesView() {
-  const returned = branchActionEntries();
-  const awaiting = branchAwaitingDocsEntries();
-  const inFlight = scopedWorkflowEntries().filter(e => ['PENDING_RM','PENDING_FA'].indexOf(wfStatusOf(e)) !== -1);
+  const newestFirst = (a, b) => String(b.date || '').localeCompare(String(a.date || '')) || (txNum(b.id) - txNum(a.id));
+  const returnedAll = branchActionEntries();
+  const awaitingAll = branchAwaitingDocsEntries().slice().sort(newestFirst);
+  const inFlightAll = scopedWorkflowEntries().filter(e => ['PENDING_RM','PENDING_FA'].indexOf(wfStatusOf(e)) !== -1).sort(newestFirst);
+
+  const returned = returnedAll.filter(taskMatches), awaiting = awaitingAll.filter(taskMatches), inFlight = inFlightAll.filter(taskMatches);
+  const filtered = taskBranch !== 'ALL' || String(taskSearch || '').trim() !== '';
+  const multiBranch = SCOPED_BRANCHES.length > 1;
 
   let h = `<h2 class="section-title">My Tasks
-    <span class="st-sub">${returned.length} returned · ${awaiting.length} awaiting documents · ${inFlight.length} in review</span></h2>`;
+    <span class="st-sub">${returnedAll.length} returned · ${awaitingAll.length} awaiting documents · ${inFlightAll.length} in review</span></h2>`;
 
-  if (!returned.length && !awaiting.length && !inFlight.length) {
+  if (!returnedAll.length && !awaitingAll.length && !inFlightAll.length) {
     return h + `<div class="empty-state"><div class="es-icon">✅</div>
       <div class="es-title">Nothing needs your attention</div>
       <div class="es-body">No expenses are awaiting documents or returned for correction.</div></div>`;
   }
 
-  const table = (list, showRemark) => `<table class="ledger-table" style="width:100%;"><thead><tr>
-      <th>Date</th><th>Voucher</th><th>Expense Type</th><th style="text-align:right;">Amount</th>
+  h += `<div class="toolbar"><div class="toolbar-left">
+      ${multiBranch ? `<select class="select-ctrl" onchange="setTaskBranch(this.value)"><option value="ALL">All Branches</option>
+        ${SCOPED_BRANCHES.map(b => `<option value="${escapeHtml(b.code)}" ${taskBranch === b.code ? 'selected' : ''}>${escapeHtml(b.name)}</option>`).join('')}</select>` : ''}
+      <input id="taskSearch" class="form-ctrl" style="max-width:260px;" placeholder="Search voucher, expense type, person…"
+        value="${escapeHtml(taskSearch)}" oninput="onTaskSearch(this.value)">
+      ${filtered ? `<span class="st-sub">Showing ${returned.length} returned · ${awaiting.length} awaiting · ${inFlight.length} in review</span>` : ''}
+    </div></div>`;
+
+  if (!returned.length && !awaiting.length && !inFlight.length) {
+    return h + `<div class="empty-state"><div class="es-icon">🔎</div><div class="es-title">No tasks match this filter</div></div>`;
+  }
+
+  const brCell = r => `<td>${escapeHtml(branchName(r.branch) || r.branch || '—')}</td>`;
+  const table = (list, showRemark, key) => `<table class="ledger-table" style="width:100%;"><thead><tr>
+      <th>Date</th><th>Branch</th><th>Voucher</th><th>Expense Type</th><th style="text-align:right;">Amount</th>
       <th>Docs</th>${showRemark?'<th>Reviewer Remark</th>':''}<th>Status</th><th style="text-align:right;">Action</th>
-    </tr></thead><tbody>${list.map(r => `<tr>
+    </tr></thead><tbody>${taskSlice(list, key).map(r => `<tr>
       <td>${escapeHtml(formatDateDMY(r.date))}</td>
+      ${brCell(r)}
       <td class="mono">${escapeHtml(r.voucher||'—')}</td>
       <td>${escapeHtml(r.expenseType||'—')}</td>
       <td class="mono" style="text-align:right;color:var(--debit);font-weight:700;">${formatINR(r.expenseAmount)}</td>
@@ -4652,25 +4720,25 @@ function renderBranchQueriesView() {
       ${showRemark?`<td style="white-space:normal;max-width:260px;">${escapeHtml((r.returnRemark||'').slice(0,120))}</td>`:''}
       <td>${wfBadge(r)}</td>
       <td style="text-align:right;"><button class="btn sm" onclick="openDocDrawer('${r.id}')">${showRemark?'Respond':'Upload Docs'}</button></td>
-    </tr>`).join('')}</tbody></table>`;
+    </tr>`).join('')}</tbody></table>${taskPager(key, list.length)}`;
 
   if (returned.length) h += `<div class="section-accordion">
     <div class="section-header" style="background:linear-gradient(180deg,#d4645a,#c0392b);">Returned for Correction — ${returned.length}</div>
-    <div class="section-body" style="padding:0;">${table(returned, true)}</div></div>`;
+    <div class="section-body" style="padding:0;">${table(returned, true, 'returned')}</div></div>`;
 
   if (awaiting.length) h += `<div class="section-accordion">
     <div class="section-header">Awaiting Supporting Documents — ${awaiting.length}</div>
-    <div class="section-body" style="padding:0;">${table(awaiting, false)}</div></div>`;
+    <div class="section-body" style="padding:0;">${table(awaiting, false, 'awaiting')}</div></div>`;
 
   if (inFlight.length) h += `<div class="section-accordion">
     <div class="section-header" style="background:linear-gradient(180deg,#8fa9bd,#5d7c93);">In Review — ${inFlight.length}</div>
     <div class="section-body" style="padding:0;"><table class="ledger-table" style="width:100%;"><thead><tr>
-      <th>Date</th><th>Voucher</th><th style="text-align:right;">Amount</th><th>Docs</th><th>Status</th><th>Submitted</th>
-    </tr></thead><tbody>${inFlight.map(r => `<tr>
-      <td>${escapeHtml(formatDateDMY(r.date))}</td><td class="mono">${escapeHtml(r.voucher||'—')}</td>
+      <th>Date</th><th>Branch</th><th>Voucher</th><th style="text-align:right;">Amount</th><th>Docs</th><th>Status</th><th>Submitted</th>
+    </tr></thead><tbody>${taskSlice(inFlight, 'inflight').map(r => `<tr>
+      <td>${escapeHtml(formatDateDMY(r.date))}</td>${brCell(r)}<td class="mono">${escapeHtml(r.voucher||'—')}</td>
       <td class="mono" style="text-align:right;">${formatINR(r.expenseAmount)}</td>
       <td>${docCountChip(r)}</td><td>${wfBadge(r)}</td>
-      <td>${escapeHtml(fmtStamp(r.docsSubmittedOn))}</td></tr>`).join('')}</tbody></table></div></div>`;
+      <td>${escapeHtml(fmtStamp(r.docsSubmittedOn))}</td></tr>`).join('')}</tbody></table>${taskPager('inflight', inFlight.length)}</div></div>`;
   return h;
 }
 
@@ -5138,6 +5206,7 @@ function downloadSheet(aoa, filename, sheetName) {
    (keeping their metadata) rather than losing the ledger itself.
    ================================================================ */
 function persistLocalEntries() {
+  if (fullState !== 'ready' && loadedKey === '') return true;   // never save partial rows as the 'all months' cache
   try {
     IDBKV.setItem(entriesKey(), JSON.stringify(STORED_ENTRIES));
     return true;
