@@ -1909,8 +1909,72 @@ function applyOpenings(data, key, rows) {
     });
     ok = true;
   }
+  /* Keep branches that were completed by ensureOpenings() below. */
+  const ex = OPENINGS_EXTRA[key];
+  if (ex) Object.keys(ex.map).forEach(b => { if (map[b] === undefined) map[b] = ex.map[b]; });
   OPENINGS = map; openingsState = ok ? 'ok' : 'missing';
   try { IDBKV.setItem(OPENINGS_KEY + ':' + key, JSON.stringify({ map: map, ok: ok })); } catch (e) {}
+}
+
+/* --- OPENINGS FOR EVERY BRANCH OF A MULTI-BRANCH USER ---------------
+   The flow scopes the opening balances by the single `branch` value (the
+   user's first branch), so a user with several branches (or a regional
+   manager) got a correct opening for the first branch only and 0 for the
+   rest. For every allowed branch the flow did not return, ask it once
+   for that branch alone, exactly like a single-branch user, and keep the
+   result for 30 minutes. */
+const OPENINGS_EXTRA = {};   // monthKey -> { at, map }
+const OPENINGS_EXTRA_TTL_MS = 30 * 60 * 1000;
+function openingFromResponse(data, key, code) {
+  if (data && !Array.isArray(data) && Array.isArray(data.openings)) {
+    const r = data.openings.find(o => o && o.month === key && o.branch === code);
+    return r ? (Number(r.opening) || 0) : 0;
+  }
+  const rows = Array.isArray(data) ? data : ((data && data.value) || []);
+  const from = key + '-01';
+  let n = 0;
+  rows.forEach(r => {
+    if (r && r.branch === code && r.date && String(r.date).slice(0, 10) < from) {
+      n += r.direction === 'in' ? Number(r.receivedAmount || 0) : -Number(r.expenseAmount || 0);
+    }
+  });
+  return n;
+}
+let openingsFillBusy = false;
+async function ensureOpenings(key, seq) {
+  if (!key || !monthViewOn() || openingsFillBusy || !activeUser) return;
+  const codes = (ALLOWED_BRANCHES || []).filter(c => c && c !== 'ALL');
+  if (codes.length < 2) return;                         // one branch: the flow already scopes to it
+  const ex = OPENINGS_EXTRA[key];
+  const fresh = ex && (Date.now() - ex.at < OPENINGS_EXTRA_TTL_MS);
+  /* A non-zero opening from the flow is trusted; a missing or 0 one is verified once per 30 min. */
+  const missing = codes.filter(c => {
+    if (ex && ex.map[c] !== undefined) return !fresh;
+    return OPENINGS[c] === undefined || OPENINGS[c] === 0;
+  });
+  if (!missing.length) return;
+  openingsFillBusy = true;
+  try {
+    const got = {};
+    for (let i = 0; i < missing.length; i += 3) {
+      await Promise.all(missing.slice(i, i + 3).map(async code => {
+        try {
+          const res = await apiRequest(API_ENDPOINTS.GET_RECORDS, {
+            method: 'POST',
+            body: JSON.stringify({ role: 'branch', branch: code, branches: code, summary: false, since: '', month: key })
+          }, 0);
+          got[code] = openingFromResponse(await res.json(), key, code);
+        } catch (e) { console.warn('[Opening] could not load opening for', code, e); }
+      }));
+      if (seq !== fetchSeq || selectedMonth !== key) return;
+    }
+    if (!Object.keys(got).length) return;
+    const map = Object.assign({}, ex ? ex.map : {}, got);
+    OPENINGS_EXTRA[key] = { at: Date.now(), map: map };
+    Object.keys(got).forEach(c => { OPENINGS[c] = got[c]; });
+    try { IDBKV.setItem(OPENINGS_KEY + ':' + key, JSON.stringify({ map: OPENINGS, ok: true })); } catch (e) {}
+    renderApp();
+  } finally { openingsFillBusy = false; }
 }
 
 function monthPickerHtml() {
@@ -2711,6 +2775,7 @@ async function fetchBackendData(forceFull) {
     } catch (e) {}
     lastSyncedAt = new Date();
     setSyncState('ok', 'Synced ' + lastSyncedAt.toLocaleTimeString());
+    ensureOpenings(reqKey, seq);
     loadBalances();
     flushPendingQueue(false);
     flushPendingDocuments(true);   // retry any file still held locally
