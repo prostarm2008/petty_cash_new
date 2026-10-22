@@ -558,7 +558,8 @@ const LIVE_BRANCHES = [
   {code:"MH_HO", name:"Head Office", zone:"HO"},
   {code:"RJ_Jaipur", name:"Jaipur", zone:"North - 1"},
   {code:"UP_Lucknow", name:"Lucknow", zone:"North - 1"},
-  {code:"UP_Noida", name:"Noida", zone:"North - 1"},
+  {code:"UP_Noida", name:"Noida-Production", zone:"North - 1"},
+  {code:"UP_Noida_Service", name:"Noida-Service", zone:"North - 1"},
   {code:"JK_Jammu", name:"Jammu", zone:"North - 2"},
   {code:"PN_Mohali", name:"Mohali", zone:"North - 2"},
   {code:"KL_Kerala", name:"Kerala", zone:"South - 1"},
@@ -603,14 +604,29 @@ function buildLiveData(){
   if (allowed) expenses = expenses.filter(e => allowed.indexOf(e.branch) !== -1);
   if (!expenses.length) return null;
 
+  /* The branch master above is a fixed list. A branch that exists in the ledger but is
+     missing here used to be dropped silently, so Total Spent fell short of the ledger.
+     Unknown branch codes are now added automatically (zone borrowed from a branch with
+     the same state prefix, else "Other"). Matching ignores letter case. */
+  const lc = v => String(v || '').toLowerCase();
+  const knownCodes = new Set(LIVE_BRANCHES.map(b => lc(b.code)));
+  const extraBranches = [];
+  expenses.forEach(e => {
+    const k = lc(e.branch);
+    if (knownCodes.has(k)) return;
+    knownCodes.add(k);
+    const sib = LIVE_BRANCHES.find(b => lc(b.code).split('_')[0] === k.split('_')[0] && b.zone !== 'HO');
+    extraBranches.push({ code: e.branch, name: String(e.branch).replace(/^[^_]*_/, '').replace(/_/g, '-'), zone: sib ? sib.zone : 'Other' });
+  });
+  const allBranches = LIVE_BRANCHES.concat(extraBranches);
   const visibleBranches = allowed
-    ? LIVE_BRANCHES.filter(b => allowed.indexOf(b.code) !== -1)
-    : LIVE_BRANCHES;
+    ? allBranches.filter(b => allowed.some(a => lc(a) === lc(b.code)))
+    : allBranches;
   const zoneNames = Array.from(new Set(visibleBranches.map(b => b.zone)));
   const zoneIndex = Object.fromEntries(zoneNames.map((z, i) => [z, i]));
 
   const branchIndex = {};
-  const branchesOut = visibleBranches.map((b, i) => { branchIndex[b.code] = i; return [b.name, zoneIndex[b.zone]]; });
+  const branchesOut = visibleBranches.map((b, i) => { branchIndex[lc(b.code)] = i; return [b.name, zoneIndex[b.zone]]; });
 
   const monthMeta = new Map(); // 'YYYY-MM' -> {label}
   expenses.forEach(e => {
@@ -644,9 +660,9 @@ function buildLiveData(){
   let grand = 0;
 
   expenses.forEach(e => {
-    const bi = branchIndex[e.branch];
+    const bi = branchIndex[lc(e.branch)];
     if (bi === undefined) return;
-    const d = new Date(e.date);
+    const d = /^\d{4}-\d{2}-\d{2}/.test(String(e.date)) ? parseYmd(String(e.date).slice(0, 10)) : new Date(e.date);
     if (isNaN(d)) return;
     const mkey = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
     const mi = monthIndex[mkey];
