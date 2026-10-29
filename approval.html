@@ -871,7 +871,7 @@ async function pushToExcel(rq, isUpdate = false) {
         }
     });
 
-    const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step'];
+    const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step', 'docCount'];
     numFields.forEach(f => {
         if (payload[f] === "" || payload[f] === null || payload[f] === undefined) {
             delete payload[f];
@@ -3245,7 +3245,7 @@ async function confirmTransfer() {
     legacy.versions = JSON.stringify(r.versions || []);
 
     // Date fields ko sahi format mein set karna
-    const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered', 'firstViewedAt', 'approvalDate', 'cancelledAt'];
+    const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered', 'firstViewedAt', 'approvalDate', 'cancelledAt', 'docsSubmittedOn'];
     dateFields.forEach(f => {
         if (!legacy[f] || legacy[f] === "") {
             delete legacy[f];
@@ -3255,7 +3255,7 @@ async function confirmTransfer() {
     });
 
     // Number fields ko strict Number type mein convert karna (Yahi Error 400 ka fix hai)
-    const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step'];
+    const numFields = ['expenseAmount', 'originalAmount', 'requestedAmount', 'currentTargetedAmount', 'currentRevisedAmount', 'approvedAmount', 'targetedAmount', 'currentVersion', 'submissionCount', 'maxResubmissions', 'step', 'docCount'];
     numFields.forEach(f => {
         if (legacy[f] === "" || legacy[f] === null || legacy[f] === undefined) {
             delete legacy[f]; // Khali number fields ko remove karein taaki schema fail na ho

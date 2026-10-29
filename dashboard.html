@@ -3089,7 +3089,7 @@ function openDrawer(defaultBranch) {
 
   setEntryDirection('in');
 
-  const fields = ['fAmount','fUTR','fPerson','fDivision','fExpenseGroup','fEngineerInput','fEngineerSelect','fBizCategory','fCustomerName','fVoucher','fTicket','fUid','fAtmSiteId','fSiteAddress','fInOutMaterial','fMaterialDetails','fFromLoc','fToLoc','fDistancePlace','fTransporterCo','fVehicleNo','fTransporterContact','fInvoiceNo','fInvoiceDate','fVendorGstin','fLrPodNo','fHOApproval','fRemark','fDocUpload'];
+  const fields = ['fAmount','fUTR','fPerson','fDivision','fExpenseGroup','fEngineerInput','fEngineerSelect','fBizCategory','fCustomerName','fVoucher','fTicket','fUid','fAtmSiteId','fSiteAddress','fInOutMaterial','fMaterialDetails','fFromLoc','fToLoc','fDistancePlace','fTransporterCo','fVehicleNo','fTransporterContact','fInvoiceNo','fInvoiceDate','fVendorGstin','fLrPodNo','fHOApproval','fRemark','fDocUpload','entryDocs'];
   fields.forEach(f => { if($(f)) $(f).value = ''; });
   refreshVoucherNo();          // must run after the reset — it blanks fVoucher
   currentUploadedFileName = "";
@@ -3362,7 +3362,11 @@ async function saveDrawerEntry(submitForApproval) {
   } else if (priorRecord) {
     // Carry audit state forward — `entry` is rebuilt from the form on every save.
     entry.auditTrail = Array.isArray(priorRecord.auditTrail) ? priorRecord.auditTrail.slice() : [];
-    entry.supportingDocs = Array.isArray(priorRecord.supportingDocs) ? priorRecord.supportingDocs.slice() : [];
+    entry.supportingDocs = (Array.isArray(priorRecord.supportingDocs) ? priorRecord.supportingDocs.slice() : []).concat(entryStagedDocs.slice());
+    if (entryStagedDocs.length) {
+      pushTrail(entry, 'DOCS_UPLOADED', priorRecord.wfStatus || 'SUBMITTED', priorRecord.wfStatus || 'SUBMITTED',
+        entryStagedDocs.length + ' document(s) attached on edit: ' + entryStagedDocs.map(d => d.name).join(', '));
+    }
     ['docsSubmittedOn','rmApprovedBy','rmApprovedOn','auditedBy','auditedOn',
      'returnedBy','returnedOn','returnRemark','returnReason','reviewRemark']
       .forEach(f => { if (priorRecord[f] !== undefined) entry[f] = priorRecord[f]; });
@@ -3416,15 +3420,18 @@ async function saveDrawerEntry(submitForApproval) {
     : 'Record updated.', 'ok');
   if (auditResetNotice) showToast('Expense amended — verification chain restarted from Submitted.', 'warn');
 
-  if (isNew && docStorageConfigured() && Array.isArray(entry.supportingDocs) && entry.supportingDocs.length) {
+  if (docStorageConfigured() && Array.isArray(entry.supportingDocs) && entry.supportingDocs.length) {
+    setSyncState('busy', 'Uploading documents…');
     for (const d of entry.supportingDocs) {
       if (d.url || !d.data) continue;
       try {
         const url = await uploadDocumentToCloud(d, entry);
         if (url) { d.url = url; d.cloudPending = false; }
+        else { d.cloudPending = true; }
       } catch (e) { d.cloudPending = true; }
     }
     try { IDBKV.setItem(entriesKey(), JSON.stringify(STORED_ENTRIES)); } catch (e) {}
+    renderApp();
   }
 
   const endpoint = isNew ? API_ENDPOINTS.ADD_RECORD : API_ENDPOINTS.UPDATE_RECORD;
