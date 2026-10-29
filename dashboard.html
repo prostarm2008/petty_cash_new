@@ -2267,18 +2267,30 @@ function docStorageConfigured() { return isConfigured(DOC_UPLOAD_ENDPOINT); }
 
 async function uploadDocumentToCloud(doc, rec) {
   if (!docStorageConfigured()) return '';
-  const res = await apiRequest(DOC_UPLOAD_ENDPOINT, {
-    method: 'POST',
-    body: JSON.stringify({
-      recordId: rec.id, branch: rec.branch, voucher: rec.voucher || '',
-      docId: doc.id, fileName: doc.name,
-      contentType: doc.mime || 'application/octet-stream',
-      contentBytes: doc.data || ''
-    })
-  }, 1);
-  let out = {};
-  try { out = await res.json(); } catch (e) { out = {}; }
-  return out.url || out.link || out.webUrl || out.WebUrl || out.Path || '';
+  try {
+    const res = await apiRequest(DOC_UPLOAD_ENDPOINT, {
+      method: 'POST',
+      body: JSON.stringify({
+        recordId: rec.id, branch: rec.branch, voucher: rec.voucher || '',
+        docId: doc.id, fileName: doc.name,
+        contentType: doc.mime || 'application/octet-stream',
+        contentBytes: doc.data || ''
+      })
+    }, 1);
+    let out = {};
+    try { out = await res.json(); } catch (e) { out = {}; }
+    const url = out.url || out.link || out.webUrl || out.WebUrl || out.Path || '';
+    if (url) {
+      doc.url = url;
+      doc.cloudPending = false;
+      // Sirf tabhi local data remove karein jab cloud URL mil jaye
+      doc.data = ''; 
+    }
+    return url;
+  } catch (e) {
+    console.warn('Cloud upload failed, retaining local backup:', e);
+    return '';
+  }
 }
 
 /* Push any document whose bytes are still only in this browser. Runs after
@@ -2928,6 +2940,7 @@ function renderLegacyVoucher() {
 const VMON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 
 function branchVoucherToken(code) {
+  if (code === 'UP_Noida_Service') return 'UPNSV';
   const parts = String(code || '').split('_');
   if (parts.length < 2) return String(code || '').slice(0, 5).toUpperCase();
   return (parts[0] + parts[1].slice(0, 3)).toUpperCase();
@@ -3402,6 +3415,17 @@ async function saveDrawerEntry(submitForApproval) {
         : 'Record saved. Upload supporting documents from My Tasks when ready, then submit.')
     : 'Record updated.', 'ok');
   if (auditResetNotice) showToast('Expense amended — verification chain restarted from Submitted.', 'warn');
+
+  if (isNew && docStorageConfigured() && Array.isArray(entry.supportingDocs) && entry.supportingDocs.length) {
+    for (const d of entry.supportingDocs) {
+      if (d.url || !d.data) continue;
+      try {
+        const url = await uploadDocumentToCloud(d, entry);
+        if (url) { d.url = url; d.cloudPending = false; }
+      } catch (e) { d.cloudPending = true; }
+    }
+    try { IDBKV.setItem(entriesKey(), JSON.stringify(STORED_ENTRIES)); } catch (e) {}
+  }
 
   const endpoint = isNew ? API_ENDPOINTS.ADD_RECORD : API_ENDPOINTS.UPDATE_RECORD;
   if (!isConfigured(endpoint)) return; // local-only mode

@@ -62,6 +62,7 @@ window.IDBKV = (function(){
 
   return {
     ready,
+    keys(){ return Array.from(cache.keys()); },
     getItem(key){ return cache.has(key) ? cache.get(key) : null; },
     setItem(key, value){ cache.set(key, String(value)); persistSet(key, String(value)); },
     removeItem(key){ cache.delete(key); persistRemove(key); }
@@ -585,13 +586,22 @@ const fmtDay = s => parseYmd(s).toLocaleDateString('en-IN', { day: '2-digit', mo
 function buildLiveData(){
   let raw;
   try { raw = JSON.parse(IDBKV.getItem(LIVE_ENTRIES_KEY)) || []; } catch(e){ raw = []; }
-  /* The month-wise ledger no longer keeps every month in one cache: merge the slim
-     analytics store (all months opened so far) over the full cache, by entry id. */
+  /* Merge all month-partitioned caches (petty_cash_records_v2:YYYY-MM) + slim analytics store */
   try {
-    const slim = JSON.parse(IDBKV.getItem(LIVE_ANALYTICS_KEY)) || {};
     const byId = new Map();
     (Array.isArray(raw) ? raw : []).forEach(e => { if (e && e.id) byId.set(e.id, e); else byId.set(Symbol(), e); });
-    Object.keys(slim).forEach(id => byId.set(id, slim[id]));
+    if (typeof IDBKV.keys === 'function') {
+      IDBKV.keys().forEach(k => {
+        if (String(k).indexOf(LIVE_ENTRIES_KEY + ':') === 0) {
+          try {
+            const mRows = JSON.parse(IDBKV.getItem(k)) || [];
+            if (Array.isArray(mRows)) mRows.forEach(e => { if (e && e.id) byId.set(e.id, e); });
+          } catch (err) {}
+        }
+      });
+    }
+    const slim = JSON.parse(IDBKV.getItem(LIVE_ANALYTICS_KEY)) || {};
+    Object.keys(slim).forEach(id => { if (!byId.has(id)) byId.set(id, slim[id]); });
     raw = Array.from(byId.values());
   } catch(e){}
   if (!Array.isArray(raw) || !raw.length) return null;

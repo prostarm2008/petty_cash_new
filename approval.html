@@ -653,7 +653,7 @@ const BRANCH_CONFIG = [
   {code:"OD_Bhubaneswar", name:"Bhubaneswar"}, {code:"PN_Mohali", name:"Mohali"},
   {code:"RJ_Jaipur", name:"Jaipur"}, {code:"TL_Hyderabad", name:"Hyderabad"},
   {code:"TN_Chennai", name:"Chennai"}, {code:"TN_Coimbatore", name:"Coimbatore"},
-  {code:"UP_Lucknow", name:"Lucknow"}, {code:"UP_Noida", name:"Noida"},
+  {code:"UP_Lucknow", name:"Lucknow"}, {code:"UP_Noida", name:"Noida-Production"}, {code:"UP_Noida_Service", name:"Noida-Service"},
   {code:"WB_Kolkata", name:"Kolkata"}
 ];
 
@@ -862,7 +862,7 @@ async function pushToExcel(rq, isUpdate = false) {
     payload.trail    = JSON.stringify(rq.trail || []);
     payload.versions = JSON.stringify(rq.versions || []);
 
-    const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered', 'firstViewedAt', 'approvalDate', 'cancelledAt'];
+    const dateFields = ['date', 'raised', 'pendingSince', 'invoiceDate', 'approvedOn', 'entered', 'firstViewedAt', 'approvalDate', 'cancelledAt', 'docsSubmittedOn'];
     dateFields.forEach(f => {
         if (!payload[f] || payload[f] === "") {
             delete payload[f];
@@ -987,11 +987,17 @@ function stampHeader(){
 }
 
 const MON=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+function branchVoucherToken(code) {
+  if (code === 'UP_Noida_Service') return 'UPNSV';
+  const parts = String(code || '').split('_');
+  if (parts.length < 2) return String(code || '').slice(0, 5).toUpperCase();
+  return (parts[0] + parts[1].slice(0, 3)).toUpperCase();
+}
 function voucherPrefix(branch,dateStr){
   if(!branch||!dateStr) return "";
   const d=new Date(dateStr);
   if(isNaN(d.getTime())) return "";
-  return branch.substring(0,2).toUpperCase()+"-"+MON[d.getMonth()]+String(d.getFullYear()).slice(2)+"-";
+  return branchVoucherToken(branch)+"-"+MON[d.getMonth()]+String(d.getFullYear()).slice(2)+"-";
 }
 
 async function refreshVoucher(){
@@ -2252,8 +2258,7 @@ async function refresh(){
 
   /* --- Reporting Manager / Approver queue --- */
   const inbox = list.filter(r =>
-    ACTIONABLE.indexOf(r.status)>-1 && !isTerminal(r) && r.chain && r.chain[r.step] &&
-    String(r.chain[r.step]).trim().toUpperCase() === ME);
+    ACTIONABLE.indexOf(r.status)>-1 && !isTerminal(r) && isMyTurn(r));
   $("inboxCount").textContent = inbox.length;
   window.__inboxRows = inbox;
   renderInbox();
@@ -2316,6 +2321,17 @@ async function refresh(){
 }
 
 $("fltStatus").addEventListener("change",refresh);
+$("csvBtn").addEventListener("click", () => {
+  const rows = window.__allRows || [];
+  if (!rows.length) { alert("No requisitions to export."); return; }
+  const cols = ["no","raised","by","branch","zone","date","voucher","division","expenseLimit","expenseType","category","originalAmount","approvedAmount","status","vendorName","customerName","ticket","invoiceNo","remark"];
+  const esc = v => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
+  const csv = [cols.join(",")].concat(rows.map(r => cols.map(c => esc(r[c])).join(","))).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+  a.download = "Requisitions_" + new Date().toISOString().slice(0, 10) + ".csv";
+  a.click();
+});
 
 /* =========================================================
    EXPENSE ENTRY SYNC — only the Approved Amount travels
@@ -2348,7 +2364,13 @@ async function postToTracker(no){
   if(r.status!==ST.FINAL){ alert("Only finally approved requisitions can be posted."); return; }
   if(isConverted(r)&&!confirm("This was already posted. Open it again?")) return;
   const p=toPayload(r);
-  try{ sessionStorage.setItem(HANDOFF_KEY,JSON.stringify(p)); IDBKV.setItem(HANDOFF_KEY,JSON.stringify(p)); }catch(e){}
+  try{
+    const q = JSON.parse(IDBKV.getItem(HANDOFF_KEY) || "[]");
+    const arr = Array.isArray(q) ? q : [];
+    arr.push(p);
+    sessionStorage.setItem(HANDOFF_KEY, JSON.stringify(arr));
+    IDBKV.setItem(HANDOFF_KEY, JSON.stringify(arr));
+  }catch(e){}
   window.open(TRACKER_URL+"?req="+b64(p),"_blank");
 }
 
@@ -3177,15 +3199,47 @@ async function confirmTransfer() {
   const btn = $("pcConfirmBtn");
   btn.disabled = true; btn.textContent = 'Transferring…';
 
-  //try {
-  //  const q = JSON.parse(IDBKV.getItem(PC_HANDOFF_KEY) || '[]');
-  //  q.push(rec);
-  //  IDBKV.setItem(PC_HANDOFF_KEY, JSON.stringify(q));
-  //} catch (e) { }
+  const DOC_UPLOAD_URL = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/11/workflows/e7dfaa71103547e4bff304a11b0391fe/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=-HhA9WJckySh_iG_Eo11zswJ4YYuOjtlDrBW61Z0vbg";
+  if (rec.supportingDocs && rec.supportingDocs.length) {
+    btn.textContent = 'Uploading documents…';
+    for (const d of rec.supportingDocs) {
+      if (d.url || !d.data) continue;
+      try {
+        const upRes = await fetch(DOC_UPLOAD_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recordId: rec.id, branch: rec.branch, voucher: rec.voucher || '',
+            docId: d.id, fileName: d.name,
+            contentType: d.mime || 'application/octet-stream',
+            contentBytes: d.data || ''
+          })
+        });
+        if (upRes.ok) {
+          const out = await upRes.json().catch(() => ({}));
+          const url = out.url || out.link || out.webUrl || out.WebUrl || out.Path || '';
+          if (url) { d.url = url; d.cloudPending = false; }
+        }
+      } catch (e) { console.warn('Doc upload during transfer failed, cached locally:', e); }
+    }
+    btn.textContent = 'Transferring…';
+  }
 
   let serverOk = false, errMsg = '';
   try {
-    const legacy = { ...r };
+    const legacy = {
+      ...r,
+      wfStatus: wfStatus,
+      docsSubmittedOn: rec.docsSubmittedOn || '',
+      docCount: (rec.supportingDocs || []).length,
+      docNames: (rec.supportingDocs || []).map(d => d.name).join(', ').slice(0, 500),
+      supportingDocs: JSON.stringify((rec.supportingDocs || []).map(d => ({
+        id: String(d.id || ''), name: String(d.name || ''), mime: String(d.mime || ''),
+        size: Number(d.size || 0), uploadedBy: String(d.uploadedBy || ''),
+        uploadedOn: String(d.uploadedOn || ''), url: String(d.url || ''), data: ''
+      }))),
+      auditTrail: JSON.stringify(rec.auditTrail || [])
+    };
     legacy.chain = JSON.stringify(r.chain || []);
     legacy.trail = JSON.stringify(r.trail || []);
     legacy.versions = JSON.stringify(r.versions || []);
@@ -3236,6 +3290,12 @@ async function confirmTransfer() {
     return; 
   }
 
+  try {
+    const q = JSON.parse(IDBKV.getItem(PC_HANDOFF_KEY) || '[]');
+    const arr = Array.isArray(q) ? q : [];
+    arr.push(rec);
+    IDBKV.setItem(PC_HANDOFF_KEY, JSON.stringify(arr));
+  } catch (e) { }
   markAsTransferred(r);
   r.entered = new Date().toISOString();
   r.pettyCashId = rec.id;
