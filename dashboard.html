@@ -849,6 +849,11 @@ window.IDBKV = (function(){
     .clockbox .ck-date { display: none; }
     .user-id .u-name, .user-id .u-scope { max-width: 130px; }
   }
+
+/* Amount fields: no up/down spinner buttons */
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 </style>
 </head>
 <body>
