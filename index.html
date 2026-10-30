@@ -291,6 +291,7 @@
 
   const $ = (id) => document.getElementById(id);
   let DIRECTORY_READY = false;
+  let loginInFlight = false;
 
   // Load the access directory once (rbac.js caches it for the whole suite).
   // Sign In stays disabled until it is available, so a server problem is
@@ -379,6 +380,7 @@
 
   $('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (loginInFlight) return;            // one submit = one login flow run
     hideLoginError();
 
     const username = $('loginUsername').value.trim();
@@ -388,11 +390,13 @@
     if (!username) { showLoginError('Please enter your username.'); return; }
     if (!pwd) { showLoginError('Please enter your password.'); return; }
 
+    loginInFlight = true;
     setLoginLoading(true);
     try {
       const activeUser = await handleServerLogin(username, pwd);
       startSession(activeUser);
     } catch (err) {
+      loginInFlight = false;
       showLoginError(err.name === 'AbortError' ? 'Login request timed out. Check your connection and try again.' : (err.message || 'Login failed.'));
       setLoginLoading(false);
     }

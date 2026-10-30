@@ -1230,6 +1230,22 @@ API_ENDPOINTS.GET_RECORD = "";
    the Critical Cash screen and its badge never need the full ledger in the browser. */
 API_ENDPOINTS.GET_BALANCES = "https://8549b42c711be8948675eefb5cf215.dd.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/25/workflows/addff660b5f640d097cee485bbe95a5b/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=inMira-XoR_YKn1nxwJywtJzXYYCkdOIcHvFA-gV4lc";
 
+/* Duplicate-trigger guards (see notes in each function). */
+let SAVE_BUSY = false;                 // one Save at a time
+const SAVING_IDS = new Set();          // record ids being saved right now: background sync must not touch them
+const SAVING_LIVE = new Map();         // id -> the live record object of the Save in progress
+/* A background sync swaps STORED_ENTRIES for copies read from the browser cache. The record
+   being saved would then be a detached object: its uploaded link is lost and the same file is
+   uploaded again later. This puts the live object back. */
+function relinkSaving() {
+  SAVING_LIVE.forEach((r, id) => {
+    const i = STORED_ENTRIES.findIndex(e => e && e.id === id);
+    if (i >= 0) STORED_ENTRIES[i] = r; else STORED_ENTRIES.push(r);
+  });
+}
+let flushingQueue = false, flushingDocs = false;
+const DOC_INFLIGHT = {};               // one upload per document at any moment
+
 const API_KEY = ""; // optional shared secret sent as X-API-Key header — must match your flow's condition check
 const REQUEST_TIMEOUT_MS = 120000;
 const MAX_ATTACHMENT_BYTES = 3 * 1024 * 1024; // 3MB
@@ -2265,7 +2281,14 @@ async function fetchWithTimeout(url, options, timeoutMs) {
 --------------------------------------------------------------------- */
 function docStorageConfigured() { return isConfigured(DOC_UPLOAD_ENDPOINT); }
 
-async function uploadDocumentToCloud(doc, rec) {
+function uploadDocumentToCloud(doc, rec) {
+  if (!docStorageConfigured()) return Promise.resolve('');
+  const key = String(rec.id) + '|' + String(doc.id);
+  if (DOC_INFLIGHT[key]) return DOC_INFLIGHT[key];           // already uploading: share that request
+  DOC_INFLIGHT[key] = _uploadDocumentToCloud(doc, rec).finally(() => { delete DOC_INFLIGHT[key]; });
+  return DOC_INFLIGHT[key];
+}
+async function _uploadDocumentToCloud(doc, rec) {
   if (!docStorageConfigured()) return '';
   try {
     const res = await apiRequest(DOC_UPLOAD_ENDPOINT, {
@@ -2276,7 +2299,7 @@ async function uploadDocumentToCloud(doc, rec) {
         contentType: doc.mime || 'application/octet-stream',
         contentBytes: doc.data || ''
       })
-    }, 1);
+    }, 0);
     let out = {};
     try { out = await res.json(); } catch (e) { out = {}; }
     const url = out.url || out.link || out.webUrl || out.WebUrl || out.Path || '';
@@ -2296,26 +2319,30 @@ async function uploadDocumentToCloud(doc, rec) {
 /* Push any document whose bytes are still only in this browser. Runs after
    an upload and again on every sync, so a failed attempt is not permanent. */
 async function flushPendingDocuments(silent) {
-  if (!docStorageConfigured()) return 0;
+  if (!docStorageConfigured() || flushingDocs) return 0;
+  flushingDocs = true;
   let uploaded = 0, failed = 0;
-  for (const rec of STORED_ENTRIES) {
-    const docs = asArray(rec.supportingDocs);
-    for (const d of docs) {
-      if (d.url || !d.data) continue;              // already stored, or nothing to store
-      try {
-        const url = await uploadDocumentToCloud(d, rec);
-        if (url) { d.url = url; d.cloudPending = false; uploaded++; }
-        else failed++;
-      } catch (e) { failed++; }
+  try {
+    for (const rec of STORED_ENTRIES) {
+      if (SAVING_IDS.has(rec.id)) continue;          // the Save in progress uploads its own files
+      let recUploaded = 0;
+      for (const d of asArray(rec.supportingDocs)) {
+        if (d.url || !d.data) continue;              // already stored, or nothing to store
+        try {
+          const url = await uploadDocumentToCloud(d, rec);
+          if (url) { d.url = url; d.cloudPending = false; uploaded++; recUploaded++; }
+          else failed++;
+        } catch (e) { failed++; }
+      }
+      if (recUploaded) { try { await pushRecordUpdate(rec); } catch (e) {} }   // only records that changed
     }
-    if (uploaded) { try { await pushRecordUpdate(rec); } catch (e) {} }
-  }
+  } finally { flushingDocs = false; }
   if (uploaded) {
     persistLocalEntries();
     if (!silent) showToast(uploaded + ' document(s) stored in the document library.', 'success');
   }
   if (failed && !silent) {
-    showToast(failed + ' document(s) could not be uploaded yet — they stay on this device and will retry.', 'warn');
+    showToast(failed + ' document(s) could not be uploaded yet \u2014 they stay on this device and will retry.', 'warn');
   }
   return uploaded;
 }
@@ -2433,6 +2460,10 @@ async function apiRequest(url, options, retries) {
   let lastErr;
   while (attempt < maxAttempts) {
     try {
+      try {
+        const tag = Object.keys(API_ENDPOINTS).find(k => API_ENDPOINTS[k] === url) || (url === DOC_UPLOAD_ENDPOINT ? 'DOC_UPLOAD' : 'OTHER');
+        console.info('[Flow]', tag, 'attempt ' + (attempt + 1) + '/' + maxAttempts);
+      } catch (e) {}
       const res = await fetchWithTimeout(url, { ...options, headers }, REQUEST_TIMEOUT_MS);
       if (!res.ok) {
         /* Include the body — a Flow rejection explains itself there, and
@@ -2478,8 +2509,14 @@ function getPendingQueue() {
 }
 function setPendingQueue(q) { IDBKV.setItem(PENDING_QUEUE_KEY, JSON.stringify(q)); updatePendingBadge(); }
 function queueOperation(op) {
+  op.qid = op.qid || ('Q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
   const q = getPendingQueue();
-  q.push(op);
+  const id = op.payload && op.payload.id;
+  /* Latest wins: one queued write per record. An update of a record whose add
+     is still queued just refreshes that add, so the flow runs once, not twice. */
+  const i = id ? q.findIndex(o => o.payload && o.payload.id === id && (o.type === op.type || (o.type === 'add' && op.type === 'update'))) : -1;
+  if (i >= 0) { const keepType = q[i].type === 'add' ? 'add' : op.type; q[i] = Object.assign({}, op, { type: keepType, qid: q[i].qid }); }
+  else q.push(op);
   setPendingQueue(q);
 }
 
@@ -2762,6 +2799,8 @@ async function fetchBackendData(forceFull) {
     }, 1);
     const data = await res.json();
     if (seq !== fetchSeq) return;   // a newer month/view was requested meanwhile
+    /* A record that is being saved right now is not on the server yet; the merge
+       below would drop it from the ledger until the next sync. Keep it. */
     const serverRows = Array.isArray(data) ? data : (data.value || []);
     const isSummary = lite && !Array.isArray(data) && data.summary === true;
     const isDelta = canDelta && isSummary && data.delta === true;
@@ -2775,6 +2814,7 @@ async function fetchBackendData(forceFull) {
       STORED_ENTRIES = mergeServerWithPending(serverRows, cached);
       writeSyncMeta({});   // flow is not in summary mode — always full
     }
+    relinkSaving();                                   // the record being saved stays visible and live
     applyOpenings(data, reqKey, serverRows);
     drainRequisitionHandoff();
     if (interim && !STORED_ENTRIES.length) { STORED_ENTRIES = interim; fullState = 'empty'; }
@@ -2811,25 +2851,32 @@ async function manualSync(ev) {
 
 /* Attempts to push any queued add/update/delete operations to the backend. */
 async function flushPendingQueue(silent) {
-  if (!isConfigured(API_ENDPOINTS.ADD_RECORD)) return;
-  let queue = getPendingQueue();
+  if (!isConfigured(API_ENDPOINTS.ADD_RECORD) || flushingQueue) return;     // one flush at a time
+  const queue = getPendingQueue();
   if (queue.length === 0) return;
+  queue.forEach(o => { if (!o.qid) o.qid = 'Q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); });
+  setPendingQueue(queue);
 
-  setSyncState('busy', 'Syncing ' + queue.length + ' pending…');
-  const remaining = [];
-  for (const op of queue) {
-    try {
-      if (op.type === 'add') {
-        await apiRequest(API_ENDPOINTS.ADD_RECORD, { method: 'POST', body: JSON.stringify(toBackendPayload(op.payload)) }, 1);
-      } else if (op.type === 'update') {
-        await apiRequest(API_ENDPOINTS.UPDATE_RECORD, { method: 'POST', body: JSON.stringify(toBackendPayload(op.payload)) }, 1);
-      } else if (op.type === 'delete') {
-        await apiRequest(API_ENDPOINTS.DELETE_RECORD, { method: 'POST', body: JSON.stringify({ id: op.payload.id }) }, 1);
-      }
-    } catch (err) {
-      remaining.push(op);
+  flushingQueue = true;
+  setSyncState('busy', 'Syncing ' + queue.length + ' pending');
+  const done = new Set();
+  try {
+    for (const op of queue) {
+      if (op.payload && SAVING_IDS.has(op.payload.id)) continue;            // being saved right now
+      try {
+        if (op.type === 'add') {
+          await apiRequest(API_ENDPOINTS.ADD_RECORD, { method: 'POST', body: JSON.stringify(toBackendPayload(op.payload)) }, 0);
+        } else if (op.type === 'update') {
+          await apiRequest(API_ENDPOINTS.UPDATE_RECORD, { method: 'POST', body: JSON.stringify(toBackendPayload(op.payload)) }, 0);
+        } else if (op.type === 'delete') {
+          await apiRequest(API_ENDPOINTS.DELETE_RECORD, { method: 'POST', body: JSON.stringify({ id: op.payload.id }) }, 0);
+        }
+        done.add(op.qid);
+      } catch (err) { /* stays queued */ }
     }
-  }
+  } finally { flushingQueue = false; }
+  /* Re-read the queue: anything queued while this ran must not be lost. */
+  const remaining = getPendingQueue().filter(o => !done.has(o.qid));
   setPendingQueue(remaining);
   if (remaining.length === 0) {
     setSyncState('ok', 'Synced ' + new Date().toLocaleTimeString());
@@ -3195,6 +3242,14 @@ function computeDateMeta(dateStr) {
 
 /* --- ADD / UPDATE RECORD --- */
 async function saveDrawerEntry(submitForApproval) {
+  if (SAVE_BUSY) return;                       // double-click / Enter twice = ONE record, ONE set of flow runs
+  SAVE_BUSY = true;
+  const btns = ['saveEntryBtn', 'saveSubmitBtn'].map(id => $(id)).filter(Boolean);
+  btns.forEach(b => { b.disabled = true; });
+  try { await _saveDrawerEntry(submitForApproval); }
+  finally { SAVE_BUSY = false; SAVING_IDS.clear(); SAVING_LIVE.clear(); btns.forEach(b => { b.disabled = false; }); }
+}
+async function _saveDrawerEntry(submitForApproval) {
   const amount = parseFloat($('fAmount').value);
   const date = $('fDate').value;
   const category = $('fCategory').value;
@@ -3392,6 +3447,8 @@ async function saveDrawerEntry(submitForApproval) {
     }
   }
 
+  SAVING_IDS.add(entry.id);   // keep background sync/flush away from this record until the Save finishes
+  SAVING_LIVE.set(entry.id, entry);
   // Optimistic local update
   const prevEntries = STORED_ENTRIES.slice();
   if (isNew) {
@@ -3430,16 +3487,18 @@ async function saveDrawerEntry(submitForApproval) {
         else { d.cloudPending = true; }
       } catch (e) { d.cloudPending = true; }
     }
+    relinkSaving();
     try { IDBKV.setItem(entriesKey(), JSON.stringify(STORED_ENTRIES)); } catch (e) {}
     renderApp();
   }
 
+  relinkSaving();
   const endpoint = isNew ? API_ENDPOINTS.ADD_RECORD : API_ENDPOINTS.UPDATE_RECORD;
   if (!isConfigured(endpoint)) return; // local-only mode
 
   try {
     setSyncState('busy', 'Saving…');
-    await apiRequest(endpoint, { method: 'POST', body: JSON.stringify(toBackendPayload(entry)) }, 1);
+    await apiRequest(endpoint, { method: 'POST', body: JSON.stringify(toBackendPayload(entry)) }, 0);
     setSyncState('ok', 'Synced ' + new Date().toLocaleTimeString());
   } catch (err) {
     console.error(err);
@@ -5392,7 +5451,7 @@ async function pushRecordUpdate(rec) {
   if (!isConfigured(API_ENDPOINTS.UPDATE_RECORD)) return;
   try {
     setSyncState('busy', 'Saving…');
-    await apiRequest(API_ENDPOINTS.UPDATE_RECORD, { method:'POST', body: JSON.stringify(toBackendPayload(rec)) }, 1);
+    await apiRequest(API_ENDPOINTS.UPDATE_RECORD, { method:'POST', body: JSON.stringify(toBackendPayload(rec)) }, 0);
     setSyncState('ok', 'Synced'); lastSyncedAt = Date.now();
   } catch (e) {
     queueOperation({ type:'update', payload:rec });

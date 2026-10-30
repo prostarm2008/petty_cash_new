@@ -94,20 +94,31 @@
   ------------------------------------------------------------------- */
   const CACHE_KEY = 'prostarm:directory:v1';
   const CACHE_TTL_MS = 30 * 60 * 1000;
+  /* A directory fetched less than this long ago is not re-validated on the next
+     page. Without it every page load after login re-ran the directory flow. */
+  const FRESH_MS = 2 * 60 * 1000;
 
-  function readCache() {
+  function readCacheEntry() {
     try {
       const raw = JSON.parse(sessionStorage.getItem(CACHE_KEY) || 'null');
       if (!raw || !Array.isArray(raw.rows) || !raw.rows.length) return null;
       if (Date.now() - (raw.at || 0) > CACHE_TTL_MS) return null;
-      return raw.rows;
+      return raw;
     } catch (e) { return null; }
   }
+  function readCache() { const e = readCacheEntry(); return e ? e.rows : null; }
   function writeCache(rows) {
     try { sessionStorage.setItem(CACHE_KEY, JSON.stringify({ at: Date.now(), rows: rows })); }
     catch (e) { /* quota — the network path still works */ }
   }
+  let inflightRows = null;
+  /* Every caller shares one request. */
   function fetchRows() {
+    if (inflightRows) return inflightRows;
+    inflightRows = fetchRowsNow().then(r => { inflightRows = null; return r; }, e => { inflightRows = null; throw e; });
+    return inflightRows;
+  }
+  function fetchRowsNow() {
     return fetch(state.endpoint, { credentials: 'omit' })
       .then(r => { if (!r.ok) throw new Error('Directory service returned HTTP ' + r.status); return r.json(); })
       .then(payload => {
@@ -122,11 +133,14 @@
     if (state.loaded) return api.snapshot();
     if (state.loading) return state.loading;
 
-    const cached = readCache();
-    if (cached) {
-      rebuild(cached);
-      /* Revalidate quietly so an Excel change lands on the next page view. */
-      fetchRows().then(rows => { rebuild(rows); writeCache(rows); }).catch(() => {});
+    const entry = readCacheEntry();
+    if (entry) {
+      rebuild(entry.rows);
+      /* Revalidate quietly so an Excel change lands on the next page view,
+         but only once the copy is no longer fresh. */
+      if (Date.now() - (entry.at || 0) > FRESH_MS) {
+        fetchRows().then(rows => { rebuild(rows); writeCache(rows); }).catch(() => {});
+      }
       return api.snapshot();
     }
 
